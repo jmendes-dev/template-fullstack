@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# ──────────────────────────────────────────────
+# .githooks/post-commit
+# Verifica candidatos pendentes de promoção após cada commit.
+# Leve e não-bloqueante — apenas exibe aviso no terminal.
+# ──────────────────────────────────────────────
+
+REFACTOR_FILE="claude-stacks-refactor.md"
+
+# Só verificar se o arquivo existe
+[ ! -f "$REFACTOR_FILE" ] && exit 0
+
+# Contar candidatos pendentes
+COUNT=$(grep -c "⏳" "$REFACTOR_FILE" 2>/dev/null || true)
+
+if [ "$COUNT" -gt 0 ]; then
+  echo ""
+  echo -e "\033[1;33m📋 $COUNT candidato(s) pendente(s) de promoção no claude-stacks-refactor.md\033[0m"
+  echo -e "   Rode: \033[0;36m./promote-learning.sh /path/to/template-fullstack\033[0m"
+  echo ""
+fi

@@ -11,6 +11,7 @@
 > | `claude-subagents.md` | For delegar task para subagente via Task tool |
 > | `claude-stacks.md` | Precisar de regras de stack, estrutura do monorepo ou padrões técnicos |
 > | `claude-stacks-refactor.md` | Precisar de padrões de implementação, aprendizados ou regras complementares |
+> | `claude-debug.md` | Bug fix, troubleshooting, teste falhando após 2 tentativas, CI quebrando |
 > | `claude-design.md` | Task envolver criação ou modificação de componentes frontend |
 > | `docs/design-system/design-brief.md` | Montar prompt de subagente de componente (injetar no contexto do component-agent) |
 > | `docs/design-system/pages/*.md` | Montar prompt de subagente de componente para página com override |
@@ -20,7 +21,7 @@
 >
 > **Nunca abrir todos os arquivos preventivamente.** Ler apenas o necessário para a ação atual.
 >
-> Em caso de conflito, a hierarquia é: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `claude-design.md` > `claude-stacks-refactor.md` > `docs/*`
+> Em caso de conflito, a hierarquia é: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `claude-debug.md` > `claude-design.md` > `claude-stacks-refactor.md` > `docs/*`
 Para decisões visuais de projeto, `docs/design-system/MASTER.md` prevalece sobre `claude-design.md`. Para decisões estruturais (acessibilidade, responsividade, estados obrigatórios), `claude-design.md` prevalece.
 ---
 
@@ -50,6 +51,7 @@ Este projeto segue **XP (Extreme Programming)** com **TDD (Test-Driven Developme
 ├── claude-stacks.md          ← stack base e padrões técnicos (ler sob demanda: implementação)
 ├── claude-stacks-refactor.md ← extensões e aprendizados (ler sob demanda: implementação)
 ├── claude-design.md          ← regras estruturais de UI/UX (ler sob demanda: tasks de frontend)
+├── claude-debug.md           ← protocolo de debugging sistemático (ler sob demanda: bug fix, troubleshooting)
 ├── docs/
 │   ├── user-stories.md       ← histórias de usuário + critérios de aceite
 │   ├── backlog.md            ← backlog XP: stories, tasks e testes planejados
@@ -161,7 +163,12 @@ Executar a task 3.2 do backlog
 Corrigir o erro 500 ao criar evento sem campo location
 ```
 
-**Fluxo**: triage detecta fix → ler `claude-stacks.md` → TDD direto → investigar, escrever teste que reproduz o bug (Red), corrigir (Green), refatorar se necessário → commit.
+**Fluxo**: ler `claude-debug.md` → criar checkpoint git → seguir protocolo de 5 fases (reproduzir → isolar → diagnosticar → formular → corrigir) → commit.
+
+> **Quando usar o protocolo completo vs TDD direto**:
+> - Bug óbvio (typo, import errado, campo faltando): TDD direto
+> - Bug que precisa de investigação (causa não óbvia, já tentou corrigir e não funcionou): protocolo completo
+> - Após 2 tentativas falhas de fix em qualquer contexto: protocolo completo obrigatório
 
 ### Quando o prompt é ambíguo
 

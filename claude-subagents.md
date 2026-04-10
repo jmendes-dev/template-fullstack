@@ -95,17 +95,24 @@ O subagente **nunca** precisa ler `CLAUDE.md`, `claude-stacks.md` ou `claude-sta
 
 **Escopo**: corrigir uma falha específica identificada na validação
 
+**Protocolo**: segue `claude-debug.md` — Fases 1-5 obrigatórias (reproduzir → isolar → diagnosticar → formular → corrigir). Nunca aplica fix sem diagnóstico completo.
+
 **Contexto injetado**:
-- Mensagem de erro exata (output do test/lint/typecheck)
+- Mensagem de erro exata + stack trace (output do test/lint/typecheck)
+- Contexto de reprodução (comando ou ação que causou o erro)
 - Seção do spec que a task deveria implementar
 - Arquivo(s) com o problema (paths exatos)
 - Regra de stack violada (se aplicável)
+- Tentativas anteriores de fix (se houver — para não repetir)
 
 **Output esperado**:
+- Diagnóstico com causa raiz em uma frase
 - Correção no(s) arquivo(s) identificado(s)
-- Testes passando
+- Testes passando + regressão verificada
 
-**Validação**: re-executar o check que falhou
+**Validação**: re-executar o check que falhou + `bun test` completo
+
+**Escalação**: se não resolver após 3 tentativas, retorna diagnóstico parcial ao agente principal (não continua tentando)
 
 ---
 
@@ -213,11 +220,19 @@ VISUAL_CHECKLIST:
 ### Template: fix-agent
 
 ```
+PROTOCOLO: Seguir claude-debug.md — Fases 1-5. Sem atalhos.
+
 ERRO ENCONTRADO:
-{mensagem de erro exata}
+{mensagem de erro exata — copiar literalmente, não resumir}
+
+STACK TRACE (se houver):
+{stack trace completo}
+
+CONTEXTO DE REPRODUÇÃO:
+{como o erro foi produzido: comando, ação do usuário, teste que falhou}
 
 ARQUIVO COM PROBLEMA:
-{path}
+{path — baseado na stack trace ou no bisect do agente principal}
 
 SPEC SECTION:
 {seção do spec que define o comportamento esperado}
@@ -225,11 +240,21 @@ SPEC SECTION:
 REGRA VIOLADA:
 {regra do claude-stacks.md que se aplica, se houver}
 
+TENTATIVAS ANTERIORES (se houver):
+{lista de fixes já tentados e por que falharam — para não repetir}
+
 INSTRUÇÕES:
-1. Leia o arquivo indicado
-2. Identifique a causa raiz do erro
-3. Corrija mantendo conformidade com o spec
-4. Verifique que o fix não quebra outros testes
+1. REPRODUZIR: confirmar o erro executando o teste ou comando indicado
+2. ISOLAR: ler o arquivo na linha do erro, rastrear a cadeia de execução
+3. DIAGNOSTICAR: identificar causa raiz em uma frase
+4. FORMULAR: propor fix com máximo 3 ações + teste de validação
+5. CORRIGIR: aplicar fix + verificar regressão (bun test completo)
+
+Se não conseguir completar a Fase 3 (diagnosticar), PARAR e retornar:
+- O que sabe até agora
+- O que não sabe
+- Sugestão de próximo passo de investigação
+NÃO aplicar fix sem diagnóstico completo.
 ```
 
 ---
@@ -324,7 +349,7 @@ Após todas as tasks concluídas:
 | `schema-agent` | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
 | `api-agent` | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
 | `component-agent` | ≤ 3500 tokens | spec (~600) + paths (~100) + stack rules (~500) + design brief (~800) + page override (~300) + cenários (~400) + visual checklist (~200) |
-| `fix-agent` | ≤ 1000 tokens | erro (~200) + arquivo (~300) + spec section (~300) + regra (~200) |
+| `fix-agent` | ≤ 1500 tokens | erro (~300) + stack trace (~200) + arquivo (~300) + spec section (~300) + tentativas anteriores (~200) + regra (~200) |
 
 > Se o prompt ultrapassar o budget do tipo, **revisar e reduzir**.
 > Para `component-agent`: **nunca cortar a seção DESIGN_RULES para caber** — cortar stack rules genéricas primeiro.

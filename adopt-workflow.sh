@@ -218,6 +218,35 @@ touch "$TARGET_DIR/docs/design-system/pages/.gitkeep" 2>/dev/null || true
 
 ok "Estrutura docs/ completa"
 
+# ── Git hook (post-commit) ─────────────────────
+
+info "Instalando git hook..."
+
+mkdir -p "$TARGET_DIR/.githooks"
+
+cat > "$TARGET_DIR/.githooks/post-commit" << 'HOOK_EOF'
+#!/usr/bin/env bash
+REFACTOR_FILE="claude-stacks-refactor.md"
+[ ! -f "$REFACTOR_FILE" ] && exit 0
+COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || true)
+if [ "$COUNT" -gt 0 ]; then
+  echo ""
+  echo ">>> $COUNT candidato(s) pendente(s) de promocao no claude-stacks-refactor.md"
+  echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+  echo ""
+fi
+HOOK_EOF
+
+chmod +x "$TARGET_DIR/.githooks/post-commit"
+
+# Configurar git para usar a pasta de hooks (só funciona se for um repo git)
+if [ -d "$TARGET_DIR/.git" ]; then
+  git -C "$TARGET_DIR" config core.hooksPath .githooks
+  ok ".githooks/post-commit instalado + core.hooksPath configurado"
+else
+  ok ".githooks/post-commit criado (configurar core.hooksPath após git init)"
+fi
+
 # ── Resumo ─────────────────────────────────────
 
 echo ""

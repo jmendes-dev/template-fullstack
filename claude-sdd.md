@@ -1,8 +1,9 @@
 # claude-sdd.md — Spec Driven Development
 
 > **Este arquivo define o fluxo de Spec Driven Development (SDD).**
-> SDD é uma camada de planejamento técnico entre as User Stories e a implementação TDD.
-> Gera specs compactas e autocontidas que servem como contrato para subagentes com contexto mínimo.
+> SDD é uma camada de planejamento técnico entre as User Stories e a implementação.
+> Gera specs compactas e autocontidas que definem O QUÊ implementar.
+> O Superpowers (`writing-plans` + `subagent-driven-development`) define COMO executar.
 >
 > **Hierarquia**: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `claude-stacks-refactor.md`
 > SDD não substitui o TDD — ele alimenta o TDD com contratos precisos, reduzindo retrabalho e consumo de tokens.
@@ -16,16 +17,14 @@
 | Agente lê codebase inteiro para cada task | Subagente recebe apenas o spec + regras relevantes |
 | Testes são "descobertos" durante implementação | Cenários de teste já estão no spec antes do Red |
 | Contratos API ↔ Frontend surgem ad-hoc | Contratos definidos no spec, implementados em paralelo |
-| Refactors cascateiam por falta de contrato | Interfaces congeladas no spec — mudança exige novo spec |
-| Alto gasto de tokens por contexto desnecessário | Spec é o contexto mínimo suficiente — subagente não precisa de mais |
+| Refactors cascateiam por falta de contrato | Interfaces congeladas no spec — mudança exige amendment |
+| Alto gasto de tokens por contexto desnecessário | Spec é o contexto mínimo suficiente |
 
 ---
 
 ## 📐 O que é um Spec
 
 Um **spec** é um documento Markdown compacto que descreve **o quê** será implementado e **como** será validado — sem código de produção.
-
-Cada spec contém apenas o necessário para que um subagente implemente com TDD sem precisar ler mais nada além do spec + regras de stack.
 
 ### Estrutura obrigatória de um spec
 
@@ -62,9 +61,9 @@ Cada spec contém apenas o necessário para que um subagente implemente com TDD 
 
 ```
 docs/
-├── user-stories.md       ← histórias de usuário (já existe)
-├── backlog.md            ← backlog XP (já existe)
-└── specs/                ← specs SDD (novo)
+├── user-stories.md
+├── backlog.md
+└── specs/
     ├── US-01-nome.spec.md
     ├── US-02-nome.spec.md
     └── ...
@@ -74,10 +73,10 @@ Convenção de nome: `US-{número}-{slug-kebab-case}.spec.md`
 
 ---
 
-## 🔄 Fluxo SDD → TDD (automático, inline)
+## 🔄 Fluxo SDD → Superpowers (automático, inline)
 
 O usuário pede para implementar uma story com um único comando (ex: `Implementar a US-03`).
-O agente principal decide automaticamente se precisa de spec, gera, apresenta, e segue implementando após aprovação — tudo na mesma conversa.
+O agente principal decide se precisa de spec, gera, apresenta, e segue para o Superpowers — tudo na mesma conversa.
 
 ```
 Usuário: "Implementar a US-XX"
@@ -85,8 +84,6 @@ Usuário: "Implementar a US-XX"
   ▼
 ┌─────────────────────────────────────────┐
 │  0. TRIAGE — Precisa de spec?           │  ← Agente principal
-│     Avaliar via tabela de decisão       │
-│     (novo schema/endpoint/componente?)  │
 │     SIM → continuar │  NÃO → TDD direto│
 └──────────┬──────────────────────────────┘
            │ SIM
@@ -94,36 +91,42 @@ Usuário: "Implementar a US-XX"
 ┌─────────────────────────────────────────┐
 │  1. SPEC — Gerar spec automaticamente   │  ← Agente principal
 │     Salvar em docs/specs/US-XX.spec.md  │
-│     Apresentar ao usuário inline        │
 │     ⏸️  AGUARDAR APROVAÇÃO              │
 └──────────┬──────────────────────────────┘
            │ Aprovado
            ▼
 ┌─────────────────────────────────────────┐
-│  2. DECOMPOSE — Quebrar em tasks        │  ← Agente principal
-│     Ordem: schema → api → componente    │
-│     Cada task = 1 subagente             │
+│  2. PLAN — Superpowers writing-plans    │  ← Superpowers
+│     Lê o spec aprovado                  │
+│     Decompõe em micro-tasks (2-5 min)   │
+│     Injeta contexto do workflow          │
+│     Atualiza docs/backlog.md            │
 └──────────┬──────────────────────────────┘
            │
            ▼
 ┌─────────────────────────────────────────┐
-│  3. IMPLEMENT — Subagentes executam     │  ← Subagentes (contexto mínimo)
-│     Cada um recebe: spec section +      │
-│     regras de stack aplicáveis          │
-│     Cada um executa: Red→Green→Refactor │
+│  3. EXECUTE — Superpowers subagents     │  ← Superpowers
+│     subagent-driven-development ou      │
+│     dispatching-parallel-agents         │
+│     TDD enforced com hard gates         │
+│     Code review entre tasks             │
 └──────────┬──────────────────────────────┘
            │
            ▼
 ┌─────────────────────────────────────────┐
-│  4. VALIDATE — Verificação global       │  ← Agente principal
+│  4. VERIFY — Superpowers verification   │  ← Superpowers
 │     spec✓ testes✓ lint✓ typecheck✓      │
-│     Commit + atualizar backlog          │
+│     Visual checklist (se frontend)      │
+└──────────┬──────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────┐
+│  5. FINISH — Superpowers branch finish  │  ← Superpowers
+│     Merge/PR + backlog atualizado       │
 └─────────────────────────────────────────┘
 ```
 
-### Tabela de decisão (step 0 — TRIAGE)
-
-O agente principal avalia automaticamente:
+### Tabela de decisão (Step 0 — TRIAGE)
 
 | A story introduz...? | Decisão |
 |---|---|
@@ -137,26 +140,18 @@ O agente principal avalia automaticamente:
 | Componente estático (sem fetch, sem state) | → TDD direto |
 | Task < 10 linhas de código | → TDD direto |
 
-> Na dúvida, **gerar spec**. O custo de um spec desnecessário (~2 min) é menor que o retrabalho por falta de contrato.
+> Na dúvida, **gerar spec**. O custo de um spec desnecessário (~2 min) é menor que o retrabalho.
 
 ### Regras do fluxo
 
-1. **A decisão spec vs TDD direto é automática** — o agente principal avalia sem perguntar ao usuário.
-2. **Se spec é necessário, o agente gera e apresenta antes de escrever qualquer código.**
-3. **O único ponto de pausa é a aprovação do spec** — o agente pergunta "Spec gerado. Aprovo para implementar?" e só continua após OK.
-4. **Se o usuário pedir ajustes no spec**, o agente ajusta e re-apresenta. Não implementa com spec não aprovado.
-5. **Spec é imutável durante a implementação.** Se algo precisa mudar, gerar amendment e aprovar.
-6. **Cada task de subagente mapeia para exatamente uma seção do spec** (um endpoint, um schema, um componente).
-7. **Subagente não lê código fora do que está listado em "Dependências" do spec.**
-8. **Validação é feita pelo agente principal**, não pelo subagente.
+1. **A decisão spec vs TDD direto é automática** — sem perguntar ao usuário.
+2. **Se spec necessário, o agente gera e apresenta antes de qualquer código.**
+3. **O único ponto de pausa é a aprovação do spec.**
+4. **Após aprovação, o Superpowers assume a execução** (Steps 2-5).
+5. **Spec é imutável durante a implementação.** Mudança exige amendment aprovado.
+6. **Cada seção do spec mapeia para tasks no plan do Superpowers.**
 
 ### Como o agente apresenta o spec para aprovação
-
-Após gerar o spec, o agente principal deve:
-
-1. Salvar o arquivo em `docs/specs/US-XX-nome.spec.md`
-2. Exibir o spec completo no terminal
-3. Perguntar explicitamente:
 
 ```
 📐 SPEC GERADO — docs/specs/US-XX-nome.spec.md
@@ -170,38 +165,36 @@ Aprova este spec para iniciar a implementação?
 (Responda "sim" para prosseguir, ou indique os ajustes desejados)
 ```
 
-4. **Só prosseguir após "sim" explícito.** Qualquer outro input = ajustar e re-apresentar.
+S� prosseguir após "sim" explícito.
 
 ---
 
-## 📝 Como o agente gera um Spec (automático)
+## 📝 Como o agente gera um Spec
 
-### Input (coletado automaticamente pelo agente)
+### Input (coletado automaticamente)
 
-1. A User Story com critérios de aceite (de `docs/user-stories.md`)
-2. O estado atual dos schemas em `packages/shared/src/schemas/` (leitura dos arquivos existentes)
-3. Os endpoints existentes em `apps/api/src/routes/` (leitura dos arquivos existentes)
-4. Componentes existentes em `apps/web/src/` (se a story envolve frontend)
-
-> O agente coleta esses inputs silenciosamente — não pergunta ao usuário. Se algum arquivo não existir (projeto novo), o agente prossegue com o que tem.
+1. User Story com critérios de aceite (de `docs/user-stories.md`)
+2. Estado atual dos schemas em `packages/shared/src/schemas/`
+3. Endpoints existentes em `apps/api/src/routes/`
+4. Componentes existentes em `apps/web/src/` (se envolve frontend)
 
 ### Processo de geração
 
-1. **Ler** a User Story e seus critérios de aceite
-2. **Analisar** o estado atual do código (schemas, rotas, componentes existentes)
-3. **Derivar contratos**: types → API → componentes (nessa ordem, respeitando dependências)
+1. **Ler** a User Story e critérios de aceite
+2. **Analisar** estado atual do código
+3. **Derivar contratos**: types → API → componentes (ordem de dependência)
 4. **Derivar cenários de teste** dos critérios de aceite (cada critério gera ≥1 cenário)
-5. **Listar dependências** — paths exatos de arquivos que serão lidos ou modificados
-6. **Gerar checklist de conclusão** — cada item verificável por `bun test`, `bun run lint`, `bun run typecheck` ou inspeção visual
+5. **Listar dependências** — paths exatos
+6. **Gerar checklist de conclusão** — cada item verificável
 7. **Salvar** em `docs/specs/US-XX-nome.spec.md`
 8. **Apresentar** ao usuário e aguardar aprovação
 
-### Regras de qualidade do spec
+### Regras de qualidade
 
-- **Compacto**: um spec não deve ultrapassar 150 linhas. Se ultrapassar, a story é grande demais — quebre-a.
-- **Sem código de produção**: specs contêm apenas types, interfaces e assinaturas. Nunca implementação.
-- **Sem ambiguidade**: cada campo de contrato tem tipo explícito. Cada cenário de teste tem resultado esperado concreto.
-- **Autocontido**: um subagente deve conseguir implementar lendo apenas o spec + `claude-stacks.md`. Se precisar de mais contexto, o spec está incompleto.
+- **Compacto**: ≤ 150 linhas. Se ultrapassar, a story é grande demais — quebrá-la.
+- **Sem código de produção**: apenas types, interfaces e assinaturas.
+- **Sem ambiguidade**: cada campo com tipo explícito, cada cenário com resultado concreto.
+- **Autocontido**: subagente implementa lendo apenas o spec + regras de stack.
 
 ---
 
@@ -243,8 +236,8 @@ Aprova este spec para iniciar a implementação?
 - **Response 401**: `{ error: "Unauthorized", code: 401 }`
 
 ### Cenários de teste — API
-1. DADO body válido, QUANDO POST /recursos, ENTÃO 201 + recurso criado no banco
-2. DADO body sem campo obrigatório, QUANDO POST /recursos, ENTÃO 400 + VALIDATION_ERROR
+1. DADO body válido, QUANDO POST /recursos, ENTÃO 201 + recurso criado
+2. DADO body sem campo obrigatório, QUANDO POST /recursos, ENTÃO 400
 3. DADO sem auth header, QUANDO POST /recursos, ENTÃO 401
 ```
 
@@ -264,96 +257,91 @@ Aprova este spec para iniciar a implementação?
   - success: chama `onSuccess()` + toast de confirmação
 
 ### Cenários de teste — Componente
-1. DADO form renderizado, QUANDO preencher campos válidos e submeter, ENTÃO mutation é chamada com dados corretos
-2. DADO form renderizado, QUANDO submeter vazio, ENTÃO erros Zod aparecem nos campos
-3. DADO mutation com erro 400, QUANDO resposta chegar, ENTÃO toast exibe mensagem do backend
+1. DADO form renderizado, QUANDO preencher e submeter, ENTÃO mutation chamada
+2. DADO form vazio, QUANDO submeter, ENTÃO erros Zod nos campos
+3. DADO mutation erro 400, QUANDO resposta chegar, ENTÃO toast com mensagem
 ```
 
 ---
 
-## 🏗️ Decomposição em Tasks para Subagentes
+## 🏗️ Do Spec ao Plan (Superpowers)
 
-Após o spec aprovado, o agente principal decompõe em tasks. Cada task gera um bloco de contexto para o subagente.
+Após spec aprovado, o agente principal invoca `superpowers:writing-plans` passando:
 
-### Ordem obrigatória de decomposição
+### Input para o Superpowers
 
-1. **Schema/Types** (packages/shared) — sempre primeiro
-2. **API Endpoints** (apps/api) — depende dos schemas
-3. **Componentes** (apps/web) — depende da API estar implementada e testável
+1. **O spec aprovado** (`docs/specs/US-XX-nome.spec.md`) — como documento principal
+2. **Contexto de conhecimento** (injetado do workflow — ver `claude-subagents.md`):
+   - Stack rules relevantes (de `claude-stacks.md`)
+   - Design brief (`docs/design-system/design-brief.md`) — se tem componentes frontend
+   - Page override (`docs/design-system/pages/*.md`) — se página tem override
 
-### Formato de task para subagente
+### O que o Superpowers faz com o spec
 
-Cada task é descrita como um bloco que o agente principal monta ao invocar o subagente:
+1. **Decompõe** o spec em micro-tasks granulares (2-5 min cada)
+2. **Respeita ordem de dependência**: schema → api → componente
+3. **Distribui cenários de teste** do spec nas tasks correspondentes
+4. **Orienta cada task para TDD** (teste antes de código)
+5. **Inclui checkpoints de code review** entre tasks
+6. **Para tasks de frontend**: inclui design brief + visual checklist no contexto
 
-```
-TASK: [identificador]
-SPEC_SECTION: [seção relevante do spec — copiar literalmente]
-FILES_TO_READ: [paths de dependências do spec]
-FILES_TO_CREATE_OR_MODIFY: [paths de output]
-STACK_RULES: [regras relevantes do claude-stacks.md — copiar as aplicáveis]
-TDD_FLOW: Red → Green → Refactor (sem exceção)
-```
+### O que o workflow controla (não o Superpowers)
 
-### Regras de task
+- O **spec** é a fonte de verdade dos contratos — Superpowers não modifica contratos
+- Os **cenários de teste** vêm do spec — Superpowers distribui mas não inventa
+- O **design brief** é injetado pelo workflow — Superpowers não conhece o design system
+- O **backlog.md** é atualizado pelo workflow com as tasks do plan
 
-- **Uma task = um ciclo TDD completo** (Red → Green → Refactor)
-- **Uma task ≤ 1 arquivo de produção + 1 arquivo de teste** — se precisar de mais, quebrar
-- Task de schema não depende de task de API. Task de API depende de schema. Task de componente depende de API.
-- O subagente **nunca** modifica arquivos fora do escopo da task.
+### Regras
+
+- Uma task = um ciclo TDD completo
+- Uma task ≤ 1 arquivo de produção + 1 arquivo de teste
+- Se task precisa de mais → o spec está muito granular ou pouco granular
+- Task de schema não depende de API. API depende de schema. Componente depende de API.
 
 ---
 
 ## ✅ Validação pós-implementação
 
-Após todos os subagentes completarem suas tasks, o agente principal executa:
+Executada via `superpowers:verification-before-completion`:
 
 ```bash
-# 1. Testes passam
-bun test
-
-# 2. Cobertura ≥ 80%
-bun test --coverage
-
-# 3. Lint limpo
-bun run lint
-
-# 4. Types limpos
-bun run typecheck
-
-# 5. Cenários do spec cobertos
-# (verificação manual: cada cenário do spec tem teste correspondente)
+bun test                    # testes passam
+bun test --coverage         # cobertura ≥ 80%
+bun run lint                # lint limpo
+bun run typecheck           # types limpos
 ```
 
-Se qualquer check falhar, o agente principal identifica o problema e delega correção ao subagente responsável — passando apenas o erro e o spec section, não o codebase inteiro.
+Mais: verificação de que cada cenário do spec tem teste correspondente. Se frontend, visual checklist completo.
+
+Se qualquer check falhar: `superpowers:systematic-debugging` + personal skills da stack.
 
 ---
 
 ## 🔀 Spec Amendment (mudanças durante implementação)
 
-Se durante a implementação o subagente encontrar algo que exige mudança no spec:
+Se durante a implementação algo exige mudança no spec:
 
-1. **Subagente para** e reporta o conflito ao agente principal
-2. **Agente principal** gera um `amendment` no spec:
+1. **Superpowers/subagente para** e reporta o conflito
+2. **Agente principal** gera amendment:
    ```markdown
    ## Amendment #1 — [data]
    **Motivo**: [o que foi encontrado]
    **Mudança**: [o que muda no contrato]
    **Impacto**: [quais tasks são afetadas]
    ```
-3. **Usuário aprova** o amendment (ou rejeita)
-4. **Tasks afetadas** são re-executadas com o spec atualizado
+3. **Usuário aprova** o amendment
+4. **Tasks afetadas** são re-executadas com spec atualizado
 
 ---
 
 ## 📊 Métricas de eficiência
 
-Para avaliar se o SDD está funcionando, rastrear:
-
 | Métrica | Alvo |
 |---|---|
 | Specs rejeitados pelo usuário | < 20% |
 | Amendments por spec | ≤ 1 |
-| Tasks de subagente que falharam na validação | < 10% |
+| Tasks que falharam na validação | < 10% |
 | Retrabalho (task refeita) | < 5% |
 | Linhas de spec vs linhas de código | ratio ≤ 1:10 |
 
@@ -366,6 +354,7 @@ Para avaliar se o SDD está funcionando, rastrear:
 - ❌ Spec com código de produção (apenas types, interfaces, assinaturas)
 - ❌ Subagente lendo arquivos fora do escopo da task
 - ❌ Modificar spec sem amendment aprovado
-- ❌ Pular a fase de validação pelo agente principal
-- ❌ Fazer spec para tasks triviais (< 10 linhas de código, sem contrato novo)
+- ❌ Pular a fase de verificação
+- ❌ Fazer spec para tasks triviais (< 10 linhas, sem contrato novo)
 - ❌ Spec que repete o que já está em `claude-stacks.md` — referenciar, não copiar
+- ❌ Implementar sem passar pelo Superpowers plan (pular Step 2)

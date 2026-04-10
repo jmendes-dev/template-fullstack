@@ -1,177 +1,63 @@
-# claude-subagents.md — Orquestração de Subagentes
+# claude-subagents.md — Templates de Contexto para Subagentes
 
-> **Este arquivo define como o agente principal delega trabalho a subagentes no Claude Code.**
-> Subagentes são invocados via `Task` tool do Claude Code. Cada subagente recebe contexto mínimo
-> derivado do spec, executa uma task isolada com TDD e retorna o resultado.
+> **Este arquivo define os templates de CONHECIMENTO injetados nos subagentes.**
+> A EXECUÇÃO dos subagentes é dirigida pelo Superpowers (`subagent-driven-development`).
+> Este arquivo fornece o que o Superpowers não tem: regras de stack, design brief, cenários do spec.
 >
-> **Pré-requisito**: o spec da feature deve existir em `docs/specs/` e estar aprovado pelo usuário.
-> Sem spec, não há delegação. Ver `claude-sdd.md` para o fluxo completo.
+> **Quando ler**: ao preparar contexto para subagentes durante o Step 2 (PLAN) ou Step 3 (EXECUTE).
+>
+> **Pré-requisito**: spec aprovado em `docs/specs/`. Sem spec, sem contexto para injetar.
 
 ---
 
-## 🧠 Princípio: Contexto Mínimo Suficiente
+## 🧠 Princípio: Superpowers Executa, Workflow Injeta
 
-O maior gasto de tokens no Claude Code vem de:
-1. Ler arquivos desnecessários para entender o contexto
-2. Re-ler os mesmos arquivos em cada iteração
-3. Subagente "explorando" o codebase para descobrir o que fazer
+```
+Superpowers (execução):                Workflow (conhecimento):
+├── writing-plans (decompõe)           ├── claude-stacks.md (regras de stack)
+├── subagent-driven-development        ├── design-brief.md (tokens visuais)
+├── test-driven-development (TDD)      ├── pages/*.md (overrides de página)
+├── requesting-code-review             ├── specs/US-XX.spec.md (cenários)
+└── verification-before-completion     └── claude-design.md (regras UI)
+```
 
-**SDD resolve isso**: o spec já contém tudo que o subagente precisa saber. O agente principal monta o prompt do subagente com:
-
-- **O quê fazer** → seção do spec (copiada literalmente)
-- **Onde fazer** → paths exatos (FILES_TO_CREATE, FILES_TO_READ)
-- **Como fazer** → regras de stack aplicáveis (só as relevantes, não o arquivo inteiro)
-- **Como validar** → cenários de teste do spec
-- **Como parecer** → design brief + page override (apenas para component-agent)
-
-O subagente **nunca** precisa ler `CLAUDE.md`, `claude-stacks.md` ou `claude-stacks-refactor.md` inteiros. O agente principal extrai e injeta apenas as regras aplicáveis.
+O agente principal lê este arquivo para saber **qual contexto injetar** em cada tipo de task quando o Superpowers solicita. O Superpowers cuida de: ordem de execução, TDD gates, code review, verificação.
 
 ---
 
-## 🏷️ Tipos de Subagente
+## 🏷️ Tipos de Contexto por Task
 
-### 1. `schema-agent` — Schema & Types
+### Schema & Types (packages/shared)
 
-**Escopo**: criar/modificar schemas Drizzle + Zod em `packages/shared`
-
-**Contexto injetado**:
+**Contexto injetado no plan/subagente**:
 - Seção "Contratos — Schema" do spec
 - Regras: Drizzle config, Zod v4, barrel exports, naming conventions
 - Arquivo atual de `packages/shared/src/schemas/` (se existir)
-- `packages/shared/src/index.ts` (para adicionar re-export)
 
-**Output esperado**:
-- Arquivo de schema criado/modificado
-- Arquivo de teste `*.test.ts` com cenários do spec
-- `index.ts` atualizado com re-export
-- Migration gerada (`bun run db:generate`)
-
-**Validação**: `bun test [arquivo]` + `bun run typecheck` + `bun run db:generate` sem diff
-
----
-
-### 2. `api-agent` — API Endpoints
-
-**Escopo**: criar/modificar rotas Hono em `apps/api`
-
-**Contexto injetado**:
-- Seção "Contratos — API" do spec
-- Schemas Zod importáveis (output do schema-agent — nomes e paths)
-- Regras: response format `{ data }`, error handling, sValidator, auth middleware
-- Rotas existentes (se integrar com endpoint existente)
-
-**Output esperado**:
-- Arquivo de rota criado/modificado
-- Arquivo de teste `*.test.ts` com cenários do spec
-- Rota registrada no app principal (`index.ts`)
-- AppType atualizado (se nova rota)
-
-**Validação**: `bun test [arquivo]` + `bun run lint` + `bun run typecheck` + `curl` nos endpoints
-
----
-
-### 3. `component-agent` — React Components
-
-**Escopo**: criar/modificar componentes React em `apps/web`
-
-**Contexto injetado**:
-- Seção "Contratos — Componente" do spec
-- Types importáveis (output do schema-agent — nomes e paths)
-- API contract (endpoints que o componente consome — do spec, não da implementação)
-- Regras de stack: TanStack Query, React Hook Form, shadcn/ui, UI states, Sonner
-- **Design brief** (`docs/design-system/design-brief.md`) — resumo visual compacto (~800 tokens)
-- **Page override** (`docs/design-system/pages/*.md`) — se a página tiver override
-
-**Output esperado**:
-- Arquivo de componente criado/modificado com tokens visuais do design brief aplicados
-- Arquivo de teste `*.test.tsx` com cenários do spec
-- Integração na árvore de rotas (se for page component)
-
-**Validação**: `bun test [arquivo]` + `bun run lint` + `bun run typecheck` + visual checklist
-
----
-
-### 4. `fix-agent` — Correção de falhas
-
-**Escopo**: corrigir uma falha específica identificada na validação
-
-**Protocolo**: segue `claude-debug.md` — Fases 1-5 obrigatórias (reproduzir → isolar → diagnosticar → formular → corrigir). Nunca aplica fix sem diagnóstico completo.
-
-**Contexto injetado**:
-- Mensagem de erro exata + stack trace (output do test/lint/typecheck)
-- Contexto de reprodução (comando ou ação que causou o erro)
-- Seção do spec que a task deveria implementar
-- Arquivo(s) com o problema (paths exatos)
-- Regra de stack violada (se aplicável)
-- Tentativas anteriores de fix (se houver — para não repetir)
-
-**Output esperado**:
-- Diagnóstico com causa raiz em uma frase
-- Correção no(s) arquivo(s) identificado(s)
-- Testes passando + regressão verificada
-
-**Validação**: re-executar o check que falhou + `bun test` completo
-
-**Escalação**: se não resolver após 3 tentativas, retorna diagnóstico parcial ao agente principal (não continua tentando)
-
----
-
-## 📋 Prompt Templates para Subagentes
-
-### Template base (comum a todos)
-
+**Stack rules aplicáveis**:
 ```
-Você é um subagente de implementação. Siga estas regras:
-
-1. ESCOPO: implemente APENAS o que está descrito abaixo. Não leia nem modifique outros arquivos.
-2. TDD: escreva o teste PRIMEIRO (Red), depois o código mínimo (Green), depois refatore (Refactor).
-3. TESTES: use `bun test`. Nomenclatura: `*.test.ts`. Um assert por teste quando possível.
-4. LINT: o código deve passar em `bunx biome check .`.
-5. TYPES: o código deve passar em `bun run typecheck` (strict: true).
-
----
-TASK: {task_id}
-STORY: {story_id} — {story_title}
-
-{spec_section}
-
-FILES_TO_READ:
-{lista de paths}
-
-FILES_TO_CREATE_OR_MODIFY:
-{lista de paths}
-
-STACK_RULES:
-{regras extraídas do claude-stacks.md, apenas as aplicáveis}
-
-TEST_SCENARIOS:
-{cenários do spec}
-
-DONE_WHEN:
-- [ ] Todos os testes passam
-- [ ] `bun run lint` sem erros
-- [ ] `bun run typecheck` sem erros
-- [ ] Apenas os arquivos listados foram modificados
-```
-
-### Template: schema-agent
-
-```
-STACK_RULES:
-- Schemas vivem em packages/shared/src/schemas/ — kebab-case.ts
+- Schemas em packages/shared/src/schemas/ — kebab-case.ts
 - Exportar via barrel file: packages/shared/src/index.ts
 - Todo schema tem createdAt e updatedAt com defaults
 - IDs: uuid com defaultRandom() (padrão do projeto)
 - Zod schemas via drizzle-zod: createInsertSchema, createSelectSchema
 - Tipos: z.input<typeof insertSchema> para forms, z.infer<typeof selectSchema> para reads
 - Rodar `bun run db:generate` após criar o schema
-- Testar: validação Zod (campos obrigatórios, tipos, defaults)
 ```
 
-### Template: api-agent
+**Budget máximo de contexto**: ≤ 1500 tokens
 
+---
+
+### API Endpoints (apps/api)
+
+**Contexto injetado no plan/subagente**:
+- Seção "Contratos — API" do spec
+- Schemas Zod importáveis (nomes e paths)
+- Rotas existentes (se integrar com endpoint existente)
+
+**Stack rules aplicáveis**:
 ```
-STACK_RULES:
 - Framework: Hono. Validação: sValidator de @hono/standard-validator
 - Response sucesso: c.json({ data: ... })
 - Response lista: c.json({ data: [...], pagination: { page, limit, total, totalPages } })
@@ -182,201 +68,113 @@ STACK_RULES:
 - Arquivo de rota: apps/api/src/routes/kebab-case.ts
 - Registrar rota no apps/api/src/index.ts
 - Exportar tipo da rota para AppType
-- Testar: happy path, validação, auth, edge cases
 ```
 
-### Template: component-agent
+**Budget máximo de contexto**: ≤ 1500 tokens
 
+---
+
+### React Components (apps/web)
+
+**Contexto injetado no plan/subagente**:
+- Seção "Contratos — Componente" do spec
+- Types importáveis (nomes e paths)
+- API contract (endpoints que o componente consome)
+- **Design brief** (`docs/design-system/design-brief.md`) — colado literalmente
+- **Page override** (`docs/design-system/pages/*.md`) — se existir
+
+**Stack rules aplicáveis**:
 ```
-STACK_RULES:
 - React 19 + TypeScript strict
 - Data fetching: TanStack Query + Hono RPC client tipado
 - Forms: React Hook Form + standardSchemaResolver (Zod v4)
 - UI: shadcn/ui + Tailwind CSS v4 classes. Nunca CSS inline
-- States obrigatórios: loading (Skeleton), empty (ícone+mensagem+CTA), error (Alert+retry), success
+- States obrigatórios: loading (Skeleton), empty (ícone+msg+CTA), error (Alert+retry), success
 - Toasts: Sonner (nunca alert())
 - Estado: TanStack Query para server state, Zustand para client state
 - Um componente por arquivo, PascalCase.tsx
-- Container components gerenciam data fetching; presentational recebem props
-- Testar: renderização, interações, estados de loading/error/empty
+```
 
-DESIGN_RULES:
-{conteúdo de docs/design-system/design-brief.md — colado literalmente pelo agente principal}
+**Design rules** (do design-brief.md):
+```
+{conteúdo de docs/design-system/design-brief.md — colado literalmente}
+```
 
-PAGE_OVERRIDE:
+**Page override**:
+```
 {conteúdo de docs/design-system/pages/<nome>.md se existir, senão "Sem override. Seguir o brief."}
-
-VISUAL_CHECKLIST:
-- [ ] Cores usam tokens do design brief (sem hex hardcoded, sem cores default do shadcn)
-- [ ] Tipografia segue escala do brief (font family, weight, size por elemento)
-- [ ] Border-radius conforme brief (não usar defaults do shadcn)
-- [ ] Density e spacing conforme brief (padding, gap entre elementos)
-- [ ] Animações de entrada aplicadas conforme brief (ex: animate-fade-slide-up)
-- [ ] 4 estados implementados: loading (Skeleton), empty (icon+msg+CTA), error (Alert+retry), success
-- [ ] Responsivo: mobile stack → desktop grid (mínimo 2 breakpoints)
-- [ ] Hover e focus states com transição (transition-colors duration-150)
 ```
 
-### Template: fix-agent
-
+**Visual checklist**:
 ```
-PROTOCOLO: Seguir claude-debug.md — Fases 1-5. Sem atalhos.
-
-ERRO ENCONTRADO:
-{mensagem de erro exata — copiar literalmente, não resumir}
-
-STACK TRACE (se houver):
-{stack trace completo}
-
-CONTEXTO DE REPRODUÇÃO:
-{como o erro foi produzido: comando, ação do usuário, teste que falhou}
-
-ARQUIVO COM PROBLEMA:
-{path — baseado na stack trace ou no bisect do agente principal}
-
-SPEC SECTION:
-{seção do spec que define o comportamento esperado}
-
-REGRA VIOLADA:
-{regra do claude-stacks.md que se aplica, se houver}
-
-TENTATIVAS ANTERIORES (se houver):
-{lista de fixes já tentados e por que falharam — para não repetir}
-
-INSTRUÇÕES:
-1. REPRODUZIR: confirmar o erro executando o teste ou comando indicado
-2. ISOLAR: ler o arquivo na linha do erro, rastrear a cadeia de execução
-3. DIAGNOSTICAR: identificar causa raiz em uma frase
-4. FORMULAR: propor fix com máximo 3 ações + teste de validação
-5. CORRIGIR: aplicar fix + verificar regressão (bun test completo)
-
-Se não conseguir completar a Fase 3 (diagnosticar), PARAR e retornar:
-- O que sabe até agora
-- O que não sabe
-- Sugestão de próximo passo de investigação
-NÃO aplicar fix sem diagnóstico completo.
+- [ ] Cores usam tokens do design brief (sem hex hardcoded, sem defaults shadcn)
+- [ ] Tipografia segue escala do brief (font family, weight, size)
+- [ ] Border-radius conforme brief
+- [ ] Density e spacing conforme brief
+- [ ] Animações de entrada conforme brief
+- [ ] 4 estados: loading/empty/error/success
+- [ ] Responsivo: mobile stack → desktop grid
+- [ ] Hover/focus states com transition
 ```
+
+**Budget máximo de contexto**: ≤ 3500 tokens
+> **Nunca cortar design rules para caber** — cortar stack rules genéricas primeiro.
 
 ---
 
-## 🔀 Fluxo de Orquestração do Agente Principal
+### Fix / Debugging
 
-### Fase 1: Preparação (agente principal)
+**Contexto injetado no subagente de fix**:
+- Mensagem de erro exata + stack trace
+- Contexto de reprodução
+- Seção do spec que define o comportamento esperado
+- **Tentativas anteriores** (para não repetir)
+- Regra de stack violada (se aplicável)
 
-```
-1. Ler spec de docs/specs/US-XX.spec.md
-2. Verificar que o spec está aprovado
-3. Decompor em tasks na ordem: schema → api → component
-4. Para cada task, montar o prompt com:
-   a. Seção do spec (copiar literalmente)
-   b. Paths de input/output
-   c. Regras de stack aplicáveis (extrair, não copiar o arquivo inteiro)
-   d. Cenários de teste
-   e. (component-agent) Design brief + page override
-```
+**Protocolo**: seguir `claude-debug.md` + `superpowers:systematic-debugging`.
+Se não conseguir diagnosticar em 3 tentativas, PARAR e retornar diagnóstico parcial.
 
-### Fase 2: Execução (subagentes)
-
-```
-Para cada task, na ordem de dependência:
-
-1. Invocar subagente com o prompt montado
-2. Aguardar conclusão
-3. Executar validação:
-   - bun test [arquivo do teste]
-   - bun run lint
-   - bun run typecheck
-   - (component-agent) Verificar visual checklist
-4. Se falhou:
-   - Se é problema no código do subagente → invocar fix-agent
-   - Se é problema no spec → parar e gerar amendment
-   - Máximo 3 tentativas por task
-5. Se passou:
-   - Marcar task como concluída
-   - Prosseguir para a próxima task
-```
-
-### Fase 3: Integração (agente principal)
-
-```
-Após todas as tasks concluídas:
-
-1. Executar suite completa: bun test
-2. Verificar cobertura: bun test --coverage (≥ 80%)
-3. Lint global: bun run lint
-4. Typecheck global: bun run typecheck
-5. Se tudo verde:
-   - Commit com mensagem Conventional Commits
-   - Atualizar backlog.md (marcar tasks como done)
-6. Se algo falhou:
-   - Identificar task responsável
-   - Invocar fix-agent com contexto mínimo
-   - Repetir validação
-```
+**Budget máximo de contexto**: ≤ 1500 tokens
 
 ---
 
-## 💡 Otimizações de Token
+## 📊 Budget de Contexto — Resumo
 
-### O que o agente principal NÃO envia para subagentes
+| Tipo de task | Budget máx | Composição |
+|---|---|---|
+| Schema/Types | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
+| API Endpoints | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
+| React Components | ≤ 3500 tokens | spec (~600) + paths (~100) + stack rules (~500) + design brief (~800) + override (~300) + cenários (~400) + checklist (~200) |
+| Fix/Debug | ≤ 1500 tokens | erro (~300) + stack trace (~200) + arquivo (~300) + spec (~300) + tentativas (~200) + regra (~200) |
 
-- ❌ `CLAUDE.md` inteiro — subagente não precisa da metodologia, apenas das regras técnicas
-- ❌ `claude-stacks.md` inteiro — apenas regras da camada relevante (API, frontend, shared)
+---
+
+## 💡 O que NÃO enviar para subagentes
+
+- ❌ `CLAUDE.md` inteiro
+- ❌ `claude-stacks.md` inteiro — apenas regras da camada relevante
 - ❌ `claude-stacks-refactor.md` inteiro — apenas seções aplicáveis
-- ❌ `claude-design.md` inteiro — agente principal extrai regras estruturais aplicáveis
-- ❌ `docs/design-system/MASTER.md` inteiro — subagente recebe o `design-brief.md` (resumo compacto)
-- ❌ Código de outros módulos/features — apenas dependências listadas no spec
-- ❌ Histórico de conversa anterior — cada subagente é stateless
+- ❌ `claude-design.md` inteiro — apenas regras estruturais relevantes
+- ❌ `MASTER.md` inteiro — subagente recebe `design-brief.md` (resumo compacto)
+- ❌ Código de outros módulos/features
+- ❌ Histórico de conversa anterior
 
-### O que o agente principal SEMPRE envia
+## ✅ O que SEMPRE enviar
 
 - ✅ Seção exata do spec (copiada, não referenciada)
 - ✅ Paths de arquivos (input e output)
-- ✅ Regras de stack aplicáveis (extraídas e coladas)
+- ✅ Stack rules aplicáveis (extraídas e coladas)
 - ✅ Cenários de teste do spec
-- ✅ Checklist de conclusão
-- ✅ **Design brief** (`docs/design-system/design-brief.md`) — apenas para `component-agent`
-- ✅ **Page override** (`docs/design-system/pages/*.md`) — quando existir, apenas para `component-agent`
-
-### Budget de contexto por tipo de subagente
-
-> Cada tipo de subagente tem um budget proporcional à complexidade do contexto que precisa.
-> O component-agent tem budget maior porque inclui contexto visual (design brief + page override)
-> que os outros tipos não precisam.
-
-| Subagente | Budget máx | Composição |
-|---|---|---|
-| `schema-agent` | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
-| `api-agent` | ≤ 1500 tokens | spec (~600) + paths (~100) + stack rules (~400) + cenários (~400) |
-| `component-agent` | ≤ 3500 tokens | spec (~600) + paths (~100) + stack rules (~500) + design brief (~800) + page override (~300) + cenários (~400) + visual checklist (~200) |
-| `fix-agent` | ≤ 1500 tokens | erro (~300) + stack trace (~200) + arquivo (~300) + spec section (~300) + tentativas anteriores (~200) + regra (~200) |
-
-> Se o prompt ultrapassar o budget do tipo, **revisar e reduzir**.
-> Para `component-agent`: **nunca cortar a seção DESIGN_RULES para caber** — cortar stack rules genéricas primeiro.
-> O design é o que diferencia UI profissional de UI genérica.
-
----
-
-## 📊 Tabela de decisão: delegar ou fazer direto?
-
-| Situação | Decisão |
-|---|---|
-| Task com contrato claro no spec + ≥1 teste | **Delegar** para subagente |
-| Fix trivial (1-3 linhas, causa óbvia) | **Fazer direto** — overhead de delegar é maior |
-| Refactor que afeta múltiplos arquivos | **Fazer direto** — subagente tem escopo limitado |
-| Configuração (Docker, CI, biome) | **Fazer direto** — sem spec necessário |
-| Story inteira sem spec | **Parar** — gerar spec primeiro |
-| Exploração/protótipo (spike) | **Fazer direto** — spec vem depois |
+- ✅ Design brief — apenas para tasks de frontend
+- ✅ Page override — quando existir, apenas para frontend
+- ✅ Tentativas anteriores — apenas para fix (evitar loops)
 
 ---
 
 ## 🚫 Proibições
 
-- ❌ Subagente nunca executa `git commit` ou `git push` — apenas o agente principal
-- ❌ Subagente nunca modifica specs, backlog ou user stories
-- ❌ Subagente nunca instala dependências (`bun add`) — apenas o agente principal
-- ❌ Subagente nunca modifica `CLAUDE.md`, `claude-stacks.md` ou `claude-stacks-refactor.md`
-- ❌ Subagente nunca lê mais arquivos do que os listados na task
-- ❌ Agente principal nunca delega sem spec aprovado
-- ❌ Nunca mais que 3 retries no mesmo subagente — escalar para o agente principal
-- ❌ Nunca cortar design brief do prompt do component-agent para economizar tokens — cortar stack rules genéricas primeiro
+- ❌ Subagente nunca faz commit, push, install, ou modifica docs/specs
+- ❌ Nunca enviar mais que o budget de contexto do tipo
+- ❌ Nunca cortar design brief do contexto de componente
+- ❌ Nunca repetir fix que já falhou (ler tentativas anteriores)
+- ❌ Fix-agent que falha 3x deve parar e retornar diagnóstico, não continuar tentando

@@ -75,12 +75,31 @@ template-fullstack/
 │       ├── design-brief.md       ← Resumo ~800 tokens para subagentes de frontend
 │       └── pages/                ← Overrides por página
 │
+│  ── Agentes especializados ──
+├── .claude/
+│   ├── agents/                   ← 10 agentes por papel técnico (global — sincronizado)
+│   │   ├── backend-developer.md
+│   │   ├── frontend-developer.md
+│   │   ├── data-engineer-dba.md
+│   │   ├── qa-engineer.md
+│   │   ├── devops-sre-engineer.md
+│   │   ├── security-engineer.md
+│   │   ├── software-architect.md
+│   │   ├── ux-ui-designer.md
+│   │   ├── project-manager.md
+│   │   └── requirements-roadmap-builder.md
+│   └── agent-memory/             ← Memória persistente por agente (instanciado — versionado)
+│       ├── backend-developer/MEMORY.md
+│       ├── frontend-developer/MEMORY.md
+│       └── ...                   ← um diretório por agente
+│
 │  ── Ferramentas ──
 ├── adopt-workflow.sh             ← Adotar workflow em projeto existente
-├── sync-globals.sh               ← Template → projetos (distribuir atualizações)
+├── sync-globals.sh               ← Template → projetos (distribuir atualizações + agentes)
 ├── promote-learning.sh           ← Projetos → template (coletar aprendizados)
 │
 │  ── Git ──
+├── .gitattributes                ← Força LF nos .sh (evita falhas no Windows)
 ├── .githooks/post-commit         ← Avisa sobre candidatos pendentes de promoção
 ├── .gitignore
 └── README.md
@@ -92,8 +111,8 @@ template-fullstack/
 
 | Tipo | Arquivos | Comportamento |
 |---|---|---|
-| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
-| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, tudo em `docs/` | Específicos por projeto. Nunca sobrescritos pelo sync |
+| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, `.claude/agents/*.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
+| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
 
 ### Onde cada ferramenta vive
 
@@ -122,7 +141,15 @@ template-fullstack/
 **2. Configurar:**
 ```bash
 git config core.hooksPath .githooks
-# Editar sync-globals.sh linha 24: trocar SEU_USUARIO pelo seu username
+```
+
+Configurar a URL do template para sincronização (substitua pelo seu repositório):
+```bash
+# Opção A — variável de ambiente (sem editar o script)
+export TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main"
+
+# Opção B — editar o fallback no script (linha ~29 de sync-globals.sh)
+# GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main}"
 ```
 
 **3. Levantar requisitos** — no Claude Code:
@@ -166,16 +193,30 @@ Cada fase passa pelo ciclo completo: spec técnico → micro-tasks → testes �
 ./adopt-workflow.sh /path/to/seu-projeto
 ```
 
+O script copia automaticamente:
+- Arquivos globais (`claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `.gitattributes`, etc.)
+- `.claude/agents/` — todos os 10 agentes especializados
+- `.claude/agent-memory/` — estrutura de memória criada vazia para cada agente
+- `docs/` — estrutura com templates para user-stories, backlog e design system
+- `.githooks/post-commit` — hook de candidatos (com `core.hooksPath` configurado automaticamente)
+
 **2. Copiar scripts de sync para o projeto:**
 ```bash
 cp sync-globals.sh promote-learning.sh /path/to/seu-projeto/
 ```
 
-**3. Ajustar CLAUDE.md** ao projeto ou no Claude Code: `Adotar workflow SDD/TDD neste projeto`.
+**3. Configurar URL do template** no projeto (para sincronizações futuras):
+```bash
+cd /path/to/seu-projeto
+export TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main"
+# Ou edite sync-globals.sh linha ~29 com sua URL
+```
 
-**4. Gerar docs** — REQUIREMENTS.md (stories + backlog) e DESIGN_SYSTEM.md (design system).
+**4. Ajustar CLAUDE.md** ao projeto ou no Claude Code: `Adotar workflow SDD/TDD neste projeto`.
 
-**5. Commitar:**
+**5. Gerar docs** — REQUIREMENTS.md (stories + backlog) e DESIGN_SYSTEM.md (design system).
+
+**6. Commitar:**
 ```bash
 git add . && git commit -m "docs: adopt SDD/TDD workflow"
 ```
@@ -184,7 +225,7 @@ git add . && git commit -m "docs: adopt SDD/TDD workflow"
 
 ## Guia 3 — Sincronização: Template → Projetos
 
-> Quando: você atualizou um arquivo global no template e quer propagar para projetos.
+> Quando: você atualizou um arquivo global ou um agente no template e quer propagar para projetos.
 
 **1. Atualize e pushe o template:**
 ```bash
@@ -194,15 +235,25 @@ git add claude-design.md && git commit -m "docs: update" && git push
 
 **2. Em cada projeto, rode o sync:**
 ```bash
-cd /path/to/cotamar
-./sync-globals.sh                           # do GitHub
-./sync-globals.sh /path/to/template         # de cópia local
+cd /path/to/seu-projeto
+
+# Do GitHub (padrão)
+./sync-globals.sh
+
+# Com URL customizada via env var
+TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main" ./sync-globals.sh
+
+# De cópia local (sem internet)
+./sync-globals.sh /path/to/template-fullstack
 ```
 
 **3. O script mostra diff e pede confirmação:**
 ```
-~~~ ALTERADO: claude-design.md  (+12 -3 linhas)
+~~~ ALTERADO: claude-design.md           (+12 -3 linhas)
     sem alteração: claude-stacks.md
++++ NOVO: claude-debug.md
+~~~ ALTERADO: .claude/agents/backend-developer.md  (+5 -1 linhas)
+    sem alteração: .claude/agents/frontend-developer.md
     ...
   Aplicar alterações? (s/N)
 ```
@@ -212,7 +263,7 @@ cd /path/to/cotamar
 git add . && git commit -m "docs: sync from template"
 ```
 
-> O sync **nunca** toca em: CLAUDE.md, claude-sdd.md, claude-stacks-refactor.md, docs/*.
+> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`.
 
 ---
 
@@ -466,9 +517,11 @@ mkdir -p ~/.claude/skills/{hono-api-debugging,drizzle-database-debugging,react-t
 
 | Comando | Onde | O que faz |
 |---|---|---|
-| `./adopt-workflow.sh /path/projeto` | Template | Adotar workflow em projeto |
-| `./sync-globals.sh` | Projeto | Puxar atualizações do template |
-| `./sync-globals.sh /path/template` | Projeto | Puxar atualizações (local) |
+| `./adopt-workflow.sh /path/projeto` | Template | Adotar workflow: copia globais, agentes, cria agent-memory e docs/ |
+| `cp sync-globals.sh promote-learning.sh /path/projeto` | Template | Copiar scripts de manutenção para o projeto |
+| `./sync-globals.sh` | Projeto | Puxar globais + agentes do GitHub |
+| `TEMPLATE_REPO_URL="..." ./sync-globals.sh` | Projeto | Puxar com URL customizada |
+| `./sync-globals.sh /path/template` | Projeto | Puxar de cópia local |
 | `./promote-learning.sh /path/template` | Projeto | Enviar aprendizados para o template |
 
 ---

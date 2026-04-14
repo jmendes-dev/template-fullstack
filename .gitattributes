@@ -1,0 +1,18 @@
+# Forçar LF para scripts — evita "bad interpreter" por CRLF no Windows
+*.sh text eol=lf
+
+# Markdown e texto: normalizar para LF no repositório
+*.md text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binários: não tocar
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

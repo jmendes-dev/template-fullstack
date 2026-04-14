@@ -65,9 +65,11 @@ GLOBAL_FILES=(
   "claude-stacks.md"
   "claude-design.md"
   "claude-subagents.md"
+  "claude-debug.md"
   "start_project.md"
   "REQUIREMENTS.md"
   "DESIGN_SYSTEM.md"
+  ".gitattributes"
 )
 
 info "Copiando arquivos globais..."
@@ -77,6 +79,49 @@ for file in "${GLOBAL_FILES[@]}"; do
     ok "$file"
   else
     warn "$file não encontrado no template — pulando"
+  fi
+done
+
+# ── Agentes especializados ─────────────────────
+
+info "Copiando .claude/agents/..."
+mkdir -p "$TARGET_DIR/.claude/agents"
+if [ -d "$SCRIPT_DIR/.claude/agents" ]; then
+  cp "$SCRIPT_DIR/.claude/agents/"*.md "$TARGET_DIR/.claude/agents/" 2>/dev/null || true
+  AGENT_COUNT=$(ls "$TARGET_DIR/.claude/agents/"*.md 2>/dev/null | wc -l)
+  ok "$AGENT_COUNT agente(s) copiado(s)"
+else
+  warn ".claude/agents/ não encontrado no template — pulando"
+fi
+
+# ── Estrutura agent-memory ─────────────────────
+
+info "Criando .claude/agent-memory/..."
+AGENTS=(
+  "backend-developer"
+  "data-engineer-dba"
+  "devops-sre-engineer"
+  "frontend-developer"
+  "project-manager"
+  "qa-engineer"
+  "requirements-roadmap-builder"
+  "security-engineer"
+  "software-architect"
+  "ux-ui-designer"
+)
+for agent in "${AGENTS[@]}"; do
+  mkdir -p "$TARGET_DIR/.claude/agent-memory/$agent"
+  if [ ! -f "$TARGET_DIR/.claude/agent-memory/$agent/MEMORY.md" ]; then
+    cat > "$TARGET_DIR/.claude/agent-memory/$agent/MEMORY.md" << MEMEOF
+# MEMORY.md — $agent
+
+> Memória persistente do agente. Atualizada automaticamente durante o desenvolvimento.
+
+## Índice
+
+<!-- Entradas adicionadas pelo agente durante sessões -->
+MEMEOF
+    ok "agent-memory/$agent/MEMORY.md"
   fi
 done
 
@@ -262,9 +307,11 @@ echo "  1. Revisar o CLAUDE.md e ajustar ao seu projeto"
 if [ "$HAS_CLAUDE" = true ]; then
   echo "     (backup do anterior em CLAUDE.md.bak)"
 fi
-echo "  2. Rodar REQUIREMENTS.md para gerar stories e backlog"
-echo "  3. Rodar DESIGN_SYSTEM.md para gerar o design system"
-echo "  4. Commitar:"
+echo "  2. Ativar rastreamento GitHub Issues (requer gh autenticado):"
+echo "     ./setup-github-project.sh"
+echo "  3. Rodar REQUIREMENTS.md para gerar stories e backlog"
+echo "  4. Rodar DESIGN_SYSTEM.md para gerar o design system"
+echo "  5. Commitar:"
 echo "     git add . && git commit -m 'docs: adopt SDD/TDD workflow'"
 echo ""
 

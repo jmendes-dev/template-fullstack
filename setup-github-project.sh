@@ -24,7 +24,10 @@ if [[ -n "${1:-}" ]]; then
 else
   REMOTE_URL=$(git remote get-url origin 2>/dev/null) \
     || error "Sem git remote. Passe o repo como argumento: owner/repo"
-  REPO=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com[:/](.+?)(\.git)?$|\1|')
+  if [[ "$REMOTE_URL" != *"github.com"* ]]; then
+    error "Remote origin nao e GitHub: $REMOTE_URL. Passe o repo como argumento: owner/repo"
+  fi
+  REPO=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
 fi
 
 OWNER="${REPO%%/*}"
@@ -49,7 +52,7 @@ info "Criando labels..."
 create_label() {
   local name="$1" color="$2" description="$3"
   local existing
-  existing=$(gh label list --repo "$OWNER/$REPO_NAME" --json name \
+  existing=$(gh label list --repo "$OWNER/$REPO_NAME" --json name --limit 100 \
     --jq ".[] | select(.name == \"$name\") | .name" 2>/dev/null || echo "")
   if [[ -n "$existing" ]]; then
     warn "Label '$name' ja existe — pulando"
@@ -82,7 +85,7 @@ info "Criando milestones..."
 create_milestone() {
   local title="$1"
   local existing
-  existing=$(gh api "repos/$OWNER/$REPO_NAME/milestones" \
+  existing=$(gh api "repos/$OWNER/$REPO_NAME/milestones?state=all&per_page=100" \
     --jq ".[] | select(.title == \"$title\") | .title" 2>/dev/null || echo "")
   if [[ -n "$existing" ]]; then
     warn "Milestone '$title' ja existe — pulando"
@@ -106,8 +109,9 @@ REPO_DISPLAY=$(gh repo view "$OWNER/$REPO_NAME" --json name --jq '.name' 2>/dev/
   || echo "$REPO_NAME")
 PROJECT_TITLE="${REPO_DISPLAY} — Backlog"
 
-EXISTING_PROJECT=$(gh project list --owner "$OWNER" --format json \
-  --jq ".projects[] | select(.title == \"$PROJECT_TITLE\") | .number" 2>/dev/null || echo "")
+EXISTING_PROJECT=$(gh project list --owner "$OWNER" --format json --limit 100 \
+  --jq ".projects[] | select(.title == \"$PROJECT_TITLE\") | .number" 2>/dev/null \
+  | head -1 || echo "")
 
 if [[ -n "$EXISTING_PROJECT" ]]; then
   warn "Project '$PROJECT_TITLE' ja existe (numero: $EXISTING_PROJECT) — reutilizando"
@@ -120,10 +124,11 @@ else
     || error "Falha ao criar project. Verifique permissoes (scope: project)."
   ok "Project criado: $PROJECT_TITLE (numero: $PROJECT_NUMBER)"
 fi
+[[ "$PROJECT_NUMBER" =~ ^[0-9]+$ ]] || error "Numero de project invalido: '$PROJECT_NUMBER'"
 
 # ── Save project config ──────────────────────────
 mkdir -p "$SCRIPT_DIR/.github"
-printf '%s/%s/%s' "$OWNER" "$REPO_NAME" "$PROJECT_NUMBER" > "$SCRIPT_DIR/.github/project-id"
+printf '%s/%s/%s\n' "$OWNER" "$REPO_NAME" "$PROJECT_NUMBER" > "$SCRIPT_DIR/.github/project-id"
 ok ".github/project-id salvo"
 
 # ── Summary ─────────────────────────────────────
@@ -132,7 +137,13 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Setup concluido!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-info "Board:  https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+ACCOUNT_TYPE=$(gh api "users/$OWNER" --jq '.type' 2>/dev/null || echo "User")
+if [[ "$ACCOUNT_TYPE" == "Organization" ]]; then
+  BOARD_URL="https://github.com/orgs/$OWNER/projects/$PROJECT_NUMBER"
+else
+  BOARD_URL="https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+fi
+info "Board:  $BOARD_URL"
 info "Issues: https://github.com/$OWNER/$REPO_NAME/issues"
 echo ""
 echo "  Proximos passos:"

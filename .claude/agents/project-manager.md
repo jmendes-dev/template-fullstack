@@ -108,6 +108,39 @@ Before performing ANY task, you MUST execute these steps in order:
 
 ---
 
+## GITHUB ISSUES SYNC
+
+After ANY operation that creates or updates `docs/backlog.md`, execute these steps automatically as the final step:
+
+**1 — Check if board is configured:**
+```bash
+test -f .github/project-id
+```
+
+**2a — If `.github/project-id` exists**, run the sync:
+```bash
+bash sync-github-issues.sh
+```
+
+**2b — If `.github/project-id` does NOT exist**, show this message to the user:
+
+> "Board GitHub ainda não configurado para este projeto. Para ativar rastreamento automático de Issues, rode:
+> `./setup-github-project.sh`
+> Requer `gh` autenticado com permissões `repo` e `project`."
+
+**3 — After successful sync**, include in your output:
+```
+🔗 GitHub Issues sincronizadas — X criadas, Y atualizadas
+   https://github.com/OWNER/REPO/issues
+```
+
+**Rules:**
+- Sync is ALWAYS the last step — never blocks backlog generation
+- If sync fails, warn the user but do not fail the task
+- Never run sync without a `.github/project-id` file present
+
+---
+
 ## UPDATE AGENT MEMORY
 
 As you work across conversations, update your agent memory with project management insights you discover:

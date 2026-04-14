@@ -10,9 +10,15 @@
 
 ## Arquitetura
 
-O sistema funciona em **3 camadas**:
+O sistema funciona em **4 camadas**:
 
 ```
+┌─────────────────────────────────────────────────────────┐
+│              REQUISITOS (PRD + fases)                     │
+│  novo-prd · prd-planejamento · plans/<feature>.md        │
+└───────────────────────┬─────────────────────────────────┘
+                        │ alimenta o spec
+                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │              SEU WORKFLOW (conhecimento)                  │
 │  Specs SDD · Design Brief · Stack Rules · Backlog P1/P2/P3  │
@@ -53,6 +59,11 @@ template-fullstack/
 │
 │  ── Bootstrap ──
 ├── start_project.md              ← 5 fases: planejamento → scaffold → deps/banco → app → CI/CD
+│
+│  ── Artefatos por feature ──
+├── plans/                        ← PRDs e planos faseados gerados pelo Claude
+│   ├── <feature>.md              ← PRD (problema, stories, API, MVP, escopo)
+│   └── <feature>-plano.md        ← Plano faseado com tracer bullets
 │
 │  ── Docs vivos (por projeto) ──
 ├── docs/
@@ -114,9 +125,19 @@ git config core.hooksPath .githooks
 # Editar sync-globals.sh linha 24: trocar SEU_USUARIO pelo seu username
 ```
 
-**3. Levantar requisitos** — colar o conteúdo de `REQUIREMENTS.md` no Claude (chat ou Code). Gera `docs/user-stories.md` + `docs/backlog.md`.
+**3. Levantar requisitos** — no Claude Code:
+```
+/novo-prd
+```
+Claude conduz uma entrevista guiada e gera `plans/<projeto>.md` com problema, stories, modelo de dados, fluxos, contrato de API e escopo do MVP.
 
-**4. Gerar design system** (requer [ui-ux-pro-max](#pré-requisitos)):
+**4. Criar plano faseado** — no Claude Code:
+```
+/prd-planejamento
+```
+Claude analisa o PRD e gera `plans/<projeto>-plano.md` com fases ordenadas por dependência (Fase 0: fundação → banco + tipos + rotas vazias; Fases 1+: features verticais completas).
+
+**5. Gerar design system** (requer [ui-ux-pro-max](#pré-requisitos)):
 ```bash
 # Passo 1: engine gera a base
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py \
@@ -127,9 +148,14 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py \
 # Passo 3: design-brief.md gerado automaticamente
 ```
 
-**5. Bootstrap** — no Claude Code: `Iniciar projeto novo` (5 fases automáticas).
+**6. Bootstrap** — no Claude Code: `Iniciar projeto novo` (5 fases automáticas).
 
-**6. Implementar** — no Claude Code: `Continuar o backlog` (pega próxima task P1).
+**7. Implementar fase por fase** — no Claude Code:
+```
+Implementar a Fase 0 do plano
+Implementar a Fase 1 do plano
+```
+Cada fase passa pelo ciclo completo: spec técnico → micro-tasks → testes → revisão → merge.
 
 ---
 
@@ -231,42 +257,154 @@ Claude descobre algo → auto-atualiza refactor.md → marca Pendente
 
 ---
 
-## Fluxo completo de uma feature
+## Fluxos de desenvolvimento
+
+> Diga ao Claude Code exatamente os comandos indicados. Ele orquestra o resto automaticamente.
+
+---
+
+### Novo projeto
+
+**O que produz:** PRD + plano faseado + projeto rodando + features implementadas com testes.
 
 ```
-1. REQUISITOS        REQUIREMENTS.md → entrevista → user-stories + backlog (P1/P2/P3)
+1. /novo-prd
+   → Claude entrevista você e gera plans/<projeto>.md
+     (problema, usuários, fluxos, modelo de dados, API, MVP, fora de escopo)
 
-2. DESIGN            DESIGN_SYSTEM.md → ui-ux-pro-max → MASTER.md + design-brief.md
+2. /prd-planejamento
+   → Claude analisa o PRD e gera plans/<projeto>-plano.md
+     (Fase 0: fundação — banco + tipos + rotas vazias
+      Fase 1+: features verticais completas, cada uma demonstrável)
 
-3. BOOTSTRAP         start_project.md → 5 fases → projeto rodando com CI verde
+3. Iniciar projeto novo
+   → Claude faz o bootstrap (scaffold, deps, banco, app, CI/CD)
 
-4. IMPLEMENTAÇÃO
-   │
-   ├── Spec (SDD)           define O QUÊ (contratos, cenários)
-   │     └── claude-sdd.md
-   │
-   ├── Plan (Superpowers)   define COMO (micro-tasks, ordem, TDD)
-   │     └── superpowers:writing-plans
-   │
-   ├── Execute (Superpowers) subagentes + TDD hard gates + code review
-   │     ├── superpowers:subagent-driven-development
-   │     ├── superpowers:test-driven-development
-   │     └── Contexto injetado: stack rules + design-brief + cenários do spec
-   │
-   ├── Verify (Superpowers)  testes + lint + typecheck + visual checklist
-   │     └── superpowers:verification-before-completion
-   │
-   └── Finish (Superpowers)  merge/PR + backlog atualizado
-         └── superpowers:finishing-a-development-branch
+4. Implementar a Fase 0 do plano
+   Implementar a Fase 1 do plano
+   ...
+   → Cada fase: spec técnico → testes → código → revisão → merge
+```
 
-5. DEBUGGING         claude-debug.md orquestra:
-   │                 ├── superpowers:systematic-debugging (metodologia)
-   │                 └── Personal skills (Hono, Drizzle, React, escalação)
-   │
-6. APRENDIZADO       Auto-atualização contínua:
-                     ├── claude-stacks-refactor.md (erros técnicos)
-                     ├── claude-design.md / MASTER.md (padrões visuais)
-                     └── candidatos → hook → promote → sync
+---
+
+### Nova feature (projeto existente)
+
+**O que produz:** PRD da feature + plano faseado + feature implementada com testes e revisão.
+
+```
+1. /novo-prd
+   → Claude entrevista você e gera plans/<feature>.md
+
+2. /prd-planejamento
+   → Claude gera plans/<feature>-plano.md com fases ordenadas
+
+3. Implementar a Fase 0 do plano
+   Implementar a Fase 1 do plano
+   ...
+   → Cada fase: spec técnico → micro-tasks → testes → revisão → merge
+
+4. Finalizar branch
+   → Claude sugere merge ou PR, atualiza o backlog
+```
+
+---
+
+### Correção de bug
+
+**O que produz:** bug corrigido com teste que previne regressão.
+
+```
+1. Corrigir [descrição do bug]
+   → Claude investiga sistematicamente: reproduz, isola a causa, formula hipóteses
+
+2. Claude escreve o teste que falha (reproduz o bug)
+   → Você aprova
+
+3. Claude implementa o fix mínimo para o teste passar
+   → Sem alterar comportamento de outras áreas
+
+4. Claude verifica: testes, lint, typecheck, cobertura
+   → Apresenta resultado antes de commitar
+```
+
+---
+
+### Refatoração de backend
+
+**O que produz:** módulo refatorado com cobertura de testes mantida, sem funcionalidades novas.
+
+```
+1. Refatorar [módulo/camada] no backend
+   → Claude confirma: sem contrato novo → decompõe em micro-tasks de refactor
+
+2. Nenhuma task adiciona funcionalidade nova (YAGNI enforced)
+
+3. Para cada task:
+   Red: teste que cobre o comportamento atual
+   Green: código refatorado
+   → Comportamento externo não muda
+
+4. Claude verifica: testes ≥ 80%, lint, typecheck
+   → Finaliza branch
+```
+
+---
+
+### Refatoração estrutural
+
+**O que produz:** decisão arquitetural registrada + refactor executado em micro-tasks com testes.
+
+```
+1. Refatorar a estrutura de [módulo/sistema]
+   → Claude explora alternativas com você antes de propor qualquer mudança
+
+2. Claude apresenta 2–3 abordagens com trade-offs
+   → Você escolhe
+
+3. Decisão registrada em docs/ como ADR
+   → Claude decompõe em micro-tasks
+
+4. Para cada task:
+   Red → Green → Refactor
+   → Sem misturar refactor com novas funcionalidades
+
+5. Claude verifica e finaliza branch
+```
+
+---
+
+### Refatoração de frontend e UX/UI
+
+**O que produz:** componentes/páginas refatorados com checklist visual completo (4 estados, responsivo, animações, acessibilidade).
+
+```
+1. Refatorar [componente/página] no frontend
+   → Claude explora o design com você antes de qualquer mudança
+
+2. Se houver mudança no design system:
+   → Claude atualiza design-brief.md e/ou MASTER.md antes de implementar
+
+3. Claude decompõe em micro-tasks de componentes
+   → Cada componente tem 4 estados obrigatórios:
+      default · hover/focus · loading · empty/error
+
+4. Para cada componente:
+   Teste → implementação → checklist visual
+   → Cores, tipografia e espaçamentos do design brief (sem hardcode)
+
+5. Claude verifica: testes, lint, typecheck, checklist visual completo
+   → Finaliza branch
+```
+
+---
+
+### Aprendizado contínuo
+
+```
+Claude descobre algo → auto-atualiza claude-stacks-refactor.md → marca Pendente
+  → hook avisa → promote-learning.sh → template atualizado
+    → sync-globals.sh → todos os projetos atualizados
 ```
 
 ---
@@ -314,6 +452,8 @@ mkdir -p ~/.claude/skills/{hono-api-debugging,drizzle-database-debugging,react-t
 
 | Comando | O que faz |
 |---|---|
+| `/novo-prd` | Entrevista guiada → PRD em `plans/<feature>.md` |
+| `/prd-planejamento` | PRD → plano faseado em `plans/<feature>-plano.md` |
 | `Iniciar projeto novo` | Bootstrap completo (5 fases) |
 | `Adotar workflow SDD/TDD neste projeto` | Retrofit em projeto existente |
 | `Continuar o backlog` | Próxima task P1 pendente |

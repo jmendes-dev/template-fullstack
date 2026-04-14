@@ -18,6 +18,8 @@
 > | `docs/user-stories.md` | O usuário referenciar uma story ou pedir para criar feature |
 > | `docs/backlog.md` | O usuário pedir para continuar, executar task ou verificar progresso |
 > | `docs/specs/US-XX-nome.spec.md` | Implementar uma story que já tem spec gerado |
+> | `.claude/agents/*.md` | Verificar capabilities de agente antes de invocá-lo |
+> | `.claude/agent-memory/[agent]/MEMORY.md` | Consultar memória de agente especializado |
 >
 > **Nunca abrir todos os arquivos preventivamente.** Ler apenas o necessário para a ação atual.
 >
@@ -45,6 +47,7 @@ Este projeto segue **XP (Extreme Programming)** com:
 - **KISS**: soluções simples e legíveis antes de soluções "elegantes".
 - **DRY**: eliminar duplicação, mas somente após o Green — nunca durante o Red.
 - **Evidence over claims**: verificar que tudo funciona antes de declarar pronto (`superpowers:verification-before-completion`).
+- **Baseline sempre verde**: bugs pré-existentes encontrados durante qualquer ciclo TDD ou verificação **devem ser corrigidos antes de continuar** — nunca ignorar com "é pré-existente". Ver política completa em `claude-debug.md → Bugs pré-existentes`.
 
 ### Superpowers — skills disponíveis
 
@@ -66,6 +69,44 @@ O plugin Superpowers está instalado e fornece enforcement automático:
 
 ---
 
+## 🤖 Agentes Especializados (.claude/agents/)
+
+Agentes especializados por papel técnico, com memória persistente em `.claude/agent-memory/`.
+Eles **complementam** o Superpowers: o Superpowers dirige execução (TDD, code review, verification), os agentes executam com conhecimento de domínio específico.
+
+| Agente | Quando usar |
+|---|---|
+| `requirements-roadmap-builder` | Iniciar projeto novo ou planejar feature maior → gera user-stories.md + backlog.md |
+| `project-manager` | Gestão de backlog, sprint tracking, templates de issues/PRs, DoD |
+| `software-architect` | Decisões de arquitetura, ADRs, C4 diagrams, review estrutural, biome.json |
+| `backend-developer` | API Hono, rotas, serviços, repositórios Drizzle, auth Clerk |
+| `frontend-developer` | Componentes React 19, pages, hooks TanStack Query, forms, design system |
+| `ux-ui-designer` | Design system (MASTER.md + design-brief.md), specs de componentes |
+| `data-engineer-dba` | Schemas Drizzle, migrations, seeds, otimização de queries |
+| `qa-engineer` | Test plans, coverage analysis, bug reports, relatórios de qualidade |
+| `devops-sre-engineer` | CI/CD GitHub Actions, Dockerfiles, docker-compose, runbooks |
+| `security-engineer` | Security review, OWASP checklist, dependency audit |
+
+### Mapeamento ao fluxo SDD → Superpowers
+
+| Step | Agente(s) complementares |
+|---|---|
+| **Iniciar projeto** | `requirements-roadmap-builder` → user-stories + backlog |
+| **Step 0 (TRIAGE)** | `project-manager` informa contexto do backlog |
+| **Step 1 (SPEC)** | `software-architect` valida contratos; `data-engineer-dba` valida schema |
+| **Step 2 (PLAN)** | `superpowers:writing-plans` decompõe — agentes fornecem contexto técnico |
+| **Step 3 (EXECUTE)** | `backend-developer`, `frontend-developer`, `data-engineer-dba` como subagentes |
+| **Step 4 (VERIFY)** | `qa-engineer` + `security-engineer` como gates de qualidade |
+| **Step 5 (FINISH)** | `devops-sre-engineer` valida CI antes do merge |
+
+### Memória dos agentes
+
+- Cada agente tem memória em `.claude/agent-memory/[agent-name]/MEMORY.md`
+- **Memória usa paths relativos** — portável ao copiar o template para novos projetos
+- Memória é **versionada no repositório** — compartilhada entre sessões e contribuidores
+
+---
+
 ## 📁 Estrutura de orquestração
 
 ```
@@ -77,6 +118,22 @@ O plugin Superpowers está instalado e fornece enforcement automático:
 ├── claude-stacks-refactor.md ← extensões e aprendizados
 ├── claude-design.md          ← regras estruturais de UI/UX
 ├── claude-debug.md           ← orquestração de debugging
+├── .claude/
+│   ├── agents/               ← agentes especializados por papel (10 agentes)
+│   │   ├── backend-developer.md
+│   │   ├── frontend-developer.md
+│   │   ├── data-engineer-dba.md
+│   │   ├── qa-engineer.md
+│   │   ├── devops-sre-engineer.md
+│   │   ├── security-engineer.md
+│   │   ├── software-architect.md
+│   │   ├── ux-ui-designer.md
+│   │   ├── project-manager.md
+│   │   └── requirements-roadmap-builder.md
+│   └── agent-memory/         ← memória persistente por agente (versionada no repo)
+│       ├── backend-developer/MEMORY.md
+│       ├── frontend-developer/MEMORY.md
+│       └── ...               ← um diretório por agente
 ├── docs/
 │   ├── user-stories.md       ← histórias de usuário + critérios de aceite
 │   ├── backlog.md            ← backlog XP Kanban P1/P2/P3
@@ -96,6 +153,12 @@ O plugin Superpowers está instalado e fornece enforcement automático:
 
 ### Adotar workflow em projeto existente
 `Adotar workflow SDD/TDD neste projeto` → verificar estrutura → adaptar → criar docs/.
+
+### Criar PRD de feature
+`/novo-prd` → entrevista guiada → PRD em `plans/<feature>.md` → aprovação → `/prd-planejamento`.
+
+### Transformar PRD em plano faseado
+`/prd-planejamento` → lê PRD em `plans/` → plano faseado com tracer bullets em `plans/<feature>-plano.md` → executar fase por fase.
 
 ### Implementar feature (story existe)
 `Implementar a US-03` → triage → spec (se necessário) → plan (Superpowers) → execute → review → verify → finish.

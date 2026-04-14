@@ -307,7 +307,7 @@ echo "  1. Revisar o CLAUDE.md e ajustar ao seu projeto"
 if [ "$HAS_CLAUDE" = true ]; then
   echo "     (backup do anterior em CLAUDE.md.bak)"
 fi
-echo "  2. Ativar rastreamento GitHub Issues (requer gh autenticado):"
+echo "  2. (opcional) Ativar rastreamento GitHub Issues (requer gh autenticado):"
 echo "     ./setup-github-project.sh"
 echo "  3. Rodar REQUIREMENTS.md para gerar stories e backlog"
 echo "  4. Rodar DESIGN_SYSTEM.md para gerar o design system"

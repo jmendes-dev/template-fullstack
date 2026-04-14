@@ -117,7 +117,7 @@ After ANY operation that creates or updates `docs/backlog.md`, execute these ste
 test -f .github/project-id
 ```
 
-**2a — If `.github/project-id` exists**, run the sync:
+**2a — If `.github/project-id` exists**, run the sync using the Bash tool:
 ```bash
 bash sync-github-issues.sh
 ```
@@ -128,7 +128,7 @@ bash sync-github-issues.sh
 > `./setup-github-project.sh`
 > Requer `gh` autenticado com permissões `repo` e `project`."
 
-**3 — After successful sync**, include in your output:
+**3 — After successful sync**, parse the script output and include in your response (substituting real values for X, Y, OWNER, REPO):
 ```
 🔗 GitHub Issues sincronizadas — X criadas, Y atualizadas
    https://github.com/OWNER/REPO/issues
@@ -138,6 +138,7 @@ bash sync-github-issues.sh
 - Sync is ALWAYS the last step — never blocks backlog generation
 - If sync fails, warn the user but do not fail the task
 - Never run sync without a `.github/project-id` file present
+- If `sync-github-issues.sh` is not found, show the same message as 2b (board not configured)
 
 ---
 

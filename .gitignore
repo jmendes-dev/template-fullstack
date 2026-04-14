@@ -7,3 +7,4 @@ bun.lockb
 coverage/
 .DS_Store
 *.bak
+.claude/settings.local.json

@@ -10,6 +10,18 @@
 
 ## Regras descobertas
 
+### Bugs pré-existentes devem ser corrigidos, não ignorados
+
+**Regra**: Quando `bun test`, `bunx biome check`, ou `tsc` encontrar erros pré-existentes durante qualquer ciclo de desenvolvimento, eles devem ser corrigidos antes de continuar — nunca classificar como "pré-existente" e prosseguir.
+
+**Por quê**: Ignorar bugs pré-existentes cria bola de neve: cada feature nova adiciona complexidade sobre um baseline quebrado, torna o fix mais difícil e pode criar falsos verdes nos testes novos.
+
+**Como aplicar**:
+- Escopo pequeno (≤ 30 min): corrigir imediatamente com commit separado — `fix: corrigir [descrição] pré-existente`
+- Escopo grande: criar P1 no backlog e bloquear qualquer nova feature até resolver
+
+Ver política completa em `claude-debug.md → Bugs pré-existentes`.
+
 <!-- Adicionadas automaticamente pelo Claude durante o desenvolvimento -->
 
 ---

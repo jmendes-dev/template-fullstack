@@ -12,6 +12,42 @@
 
 ---
 
+## Bugs pré-existentes — Política obrigatória
+
+Quando `bun test`, `bunx biome check`, ou `tsc` encontrar erros que **não foram causados pela task atual**:
+
+### Decisão obrigatória (não é opcional)
+
+```
+Bug pré-existente encontrado
+│
+├── Escopo pequeno (≤ 30 min para corrigir)?
+│     └── ✅ CORRIGIR AGORA, antes de continuar a task atual
+│           Commit separado: "fix: corrigir [descrição] pré-existente"
+│
+└── Escopo grande (> 30 min)?
+      └── ✅ PARAR task atual → criar item P1 no backlog → corrigir ANTES de qualquer nova feature
+            Nunca desenvolver nova funcionalidade sobre baseline quebrada
+```
+
+### O que NUNCA fazer
+
+- ❌ **Nunca classificar como "pré-existente" e continuar** — isso cria bola de neve de débito técnico
+- ❌ **Nunca usar `git stash` para "verificar se era pré-existente" e depois ignorar** — se existe, é bug
+- ❌ **Nunca mencionar bugs pré-existentes em relatório sem resolver ou criar P1** — citar não é resolver
+
+### Por que esta regra existe
+
+Toda feature nova desenvolvida sobre um baseline com bugs:
+1. Mascara causa raiz dos bugs originais
+2. Adiciona complexidade que dificulta o fix posterior
+3. Pode fazer testes novos passarem por razões erradas (falsos verdes)
+4. Transforma bugs pontuais em problemas sistêmicos
+
+**Baseline verde é pré-condição para qualquer desenvolvimento**, não um bônus.
+
+---
+
 ## Regra Zero — Checkpoint antes de tudo
 
 **ANTES de qualquer investigação ou correção**, criar checkpoint git:
@@ -136,3 +172,5 @@ Se a lição é reutilizável entre projetos, adicionar na tabela de "Candidatos
 - ❌ **Nunca refatorar durante debugging.** Fix first, refactor later
 - ❌ **Nunca debugar mais de 1 bug ao mesmo tempo.** Um, commit, próximo
 - ❌ **Nunca continuar após 5 tentativas sem escalar.** Ir para Nível 2/3/4
+- ❌ **Nunca ignorar bugs pré-existentes.** "Não foi eu que causei" não é justificativa — ver política em `Bugs pré-existentes`
+- ❌ **Nunca desenvolver nova funcionalidade com testes falhando, lint com erros, ou typecheck com erros.** Baseline verde primeiro

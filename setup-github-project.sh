@@ -74,6 +74,7 @@ create_label "feature"       "7057ff" "Nova funcionalidade"
 create_label "bug"           "e11d48" "Correcao de defeito"
 create_label "refactor"      "6b7280" "Refatoracao sem mudanca de comportamento"
 create_label "docs"          "0e8a16" "Documentacao"
+# Os labels abaixo são aplicados manualmente ou pelo agente project-manager — não pelo sync script
 # Estado
 create_label "spec-pendente" "bfd4f2" "Spec ainda nao aprovada"
 create_label "spec-aprovada" "c2e0c6" "Spec aprovada, pronto para implementar"

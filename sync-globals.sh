@@ -25,7 +25,7 @@ error() { echo -e "${RED}✗${NC}  $1"; exit 1; }
 # ── Configuração ───────────────────────────────
 
 # IMPORTANTE: ajuste esta URL para o seu repo
-GITHUB_RAW_BASE="https://raw.githubusercontent.com/jmendes-dev/template-fullstack/main"
+GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/jmendes-dev/template-fullstack/main}"
 
 # Arquivos globais — APENAS estes são sincronizados.
 # Arquivos instanciados (CLAUDE.md, claude-stacks-refactor.md, docs/*) NUNCA são sobrescritos.
@@ -33,9 +33,26 @@ GLOBAL_FILES=(
   "claude-stacks.md"
   "claude-design.md"
   "claude-subagents.md"
+  "claude-debug.md"
   "start_project.md"
   "REQUIREMENTS.md"
   "DESIGN_SYSTEM.md"
+  "setup-github-project.sh"
+  "sync-github-issues.sh"
+)
+
+# Agentes — sincronizados junto com os globais
+AGENT_FILES=(
+  "backend-developer.md"
+  "data-engineer-dba.md"
+  "devops-sre-engineer.md"
+  "frontend-developer.md"
+  "project-manager.md"
+  "qa-engineer.md"
+  "requirements-roadmap-builder.md"
+  "security-engineer.md"
+  "software-architect.md"
+  "ux-ui-designer.md"
 )
 
 SOURCE="${1:-remote}"
@@ -50,6 +67,8 @@ echo ""
 
 # ── Baixar/Copiar arquivos globais ─────────────
 
+mkdir -p "$TEMP_DIR/.claude/agents"
+
 if [ "$SOURCE" = "remote" ]; then
   info "Fonte: GitHub ($GITHUB_RAW_BASE)"
   echo ""
@@ -59,6 +78,14 @@ if [ "$SOURCE" = "remote" ]; then
       ok "Baixado: $file"
     else
       warn "Falha ao baixar: $file — pulando"
+    fi
+  done
+
+  for agent in "${AGENT_FILES[@]}"; do
+    if curl -sfL "$GITHUB_RAW_BASE/.claude/agents/$agent" -o "$TEMP_DIR/.claude/agents/$agent"; then
+      ok "Baixado: .claude/agents/$agent"
+    else
+      warn "Falha ao baixar: .claude/agents/$agent — pulando"
     fi
   done
 else
@@ -77,9 +104,18 @@ else
       warn "Não encontrado: $SOURCE/$file — pulando"
     fi
   done
+
+  for agent in "${AGENT_FILES[@]}"; do
+    if [ -f "$SOURCE/.claude/agents/$agent" ]; then
+      cp "$SOURCE/.claude/agents/$agent" "$TEMP_DIR/.claude/agents/$agent"
+      ok "Copiado: .claude/agents/$agent"
+    else
+      warn "Não encontrado: $SOURCE/.claude/agents/$agent — pulando"
+    fi
+  done
 fi
 
-# ── Comparar e aplicar ────────────────────────
+# ── Comparar arquivos globais ─────────────────
 
 echo ""
 info "Comparando com arquivos locais..."
@@ -87,6 +123,7 @@ echo ""
 
 CHANGES=0
 CHANGED_FILES=()
+CHANGED_AGENTS=()
 
 for file in "${GLOBAL_FILES[@]}"; do
   if [ ! -f "$TEMP_DIR/$file" ]; then
@@ -94,12 +131,10 @@ for file in "${GLOBAL_FILES[@]}"; do
   fi
 
   if [ ! -f "./$file" ]; then
-    # Arquivo não existe localmente — criar
     echo -e "${GREEN}+++ NOVO${NC}: $file"
     CHANGES=$((CHANGES + 1))
     CHANGED_FILES+=("$file")
   elif ! diff -q "./$file" "$TEMP_DIR/$file" > /dev/null 2>&1; then
-    # Arquivo existe e é diferente — mostrar diff resumido
     ADDED=$(diff "./$file" "$TEMP_DIR/$file" | grep -c "^>" || true)
     REMOVED=$(diff "./$file" "$TEMP_DIR/$file" | grep -c "^<" || true)
     echo -e "${YELLOW}~~~ ALTERADO${NC}: $file  (+${ADDED} -${REMOVED} linhas)"
@@ -107,6 +142,27 @@ for file in "${GLOBAL_FILES[@]}"; do
     CHANGED_FILES+=("$file")
   else
     echo -e "    sem alteração: $file"
+  fi
+done
+
+mkdir -p "./.claude/agents"
+for agent in "${AGENT_FILES[@]}"; do
+  if [ ! -f "$TEMP_DIR/.claude/agents/$agent" ]; then
+    continue
+  fi
+
+  if [ ! -f "./.claude/agents/$agent" ]; then
+    echo -e "${GREEN}+++ NOVO${NC}: .claude/agents/$agent"
+    CHANGES=$((CHANGES + 1))
+    CHANGED_AGENTS+=("$agent")
+  elif ! diff -q "./.claude/agents/$agent" "$TEMP_DIR/.claude/agents/$agent" > /dev/null 2>&1; then
+    ADDED=$(diff "./.claude/agents/$agent" "$TEMP_DIR/.claude/agents/$agent" | grep -c "^>" || true)
+    REMOVED=$(diff "./.claude/agents/$agent" "$TEMP_DIR/.claude/agents/$agent" | grep -c "^<" || true)
+    echo -e "${YELLOW}~~~ ALTERADO${NC}: .claude/agents/$agent  (+${ADDED} -${REMOVED} linhas)"
+    CHANGES=$((CHANGES + 1))
+    CHANGED_AGENTS+=("$agent")
+  else
+    echo -e "    sem alteração: .claude/agents/$agent"
   fi
 done
 
@@ -125,6 +181,9 @@ echo "  Arquivos que serão atualizados:"
 for f in "${CHANGED_FILES[@]}"; do
   echo "    • $f"
 done
+for a in "${CHANGED_AGENTS[@]}"; do
+  echo "    • .claude/agents/$a"
+done
 echo ""
 
 read -p "  Aplicar alterações? (s/N) " -n 1 -r
@@ -142,6 +201,10 @@ for file in "${CHANGED_FILES[@]}"; do
   cp "$TEMP_DIR/$file" "./$file"
   ok "Atualizado: $file"
 done
+for agent in "${CHANGED_AGENTS[@]}"; do
+  cp "$TEMP_DIR/.claude/agents/$agent" "./.claude/agents/$agent"
+  ok "Atualizado: .claude/agents/$agent"
+done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -149,7 +212,9 @@ echo "  ✅ $CHANGES arquivo(s) sincronizado(s)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  Para commitar:"
-echo "  git add ${CHANGED_FILES[*]}"
+FILES_TO_COMMIT=("${CHANGED_FILES[@]}")
+for a in "${CHANGED_AGENTS[@]}"; do FILES_TO_COMMIT+=(".claude/agents/$a"); done
+echo "  git add ${FILES_TO_COMMIT[*]}"
 echo "  git commit -m 'docs: sync global configs from template'"
 echo ""
 

@@ -70,6 +70,8 @@ GLOBAL_FILES=(
   "REQUIREMENTS.md"
   "DESIGN_SYSTEM.md"
   ".gitattributes"
+  "setup-github-project.sh"
+  "sync-github-issues.sh"
 )
 
 info "Copiando arquivos globais..."

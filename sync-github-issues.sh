@@ -47,6 +47,17 @@ else
   OWNER="dry-run"; REPO_NAME="dry-run"; PROJECT_NUMBER="0"
 fi
 
+# Determine board URL (org vs user account)
+BOARD_URL=""
+if [[ "$DRY_RUN" == false ]]; then
+  ACCOUNT_TYPE=$(gh api "users/$OWNER" --jq '.type' 2>/dev/null || echo "User")
+  if [[ "$ACCOUNT_TYPE" == "Organization" ]]; then
+    BOARD_URL="https://github.com/orgs/$OWNER/projects/$PROJECT_NUMBER"
+  else
+    BOARD_URL="https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+  fi
+fi
+
 [[ ! -f "$BACKLOG_FILE" ]] && error "Backlog nao encontrado: $BACKLOG_FILE"
 
 echo ""
@@ -79,7 +90,11 @@ process_us() {
   local priority_label
   priority_label=$(priority_to_label "$priority")
   local full_body
-  full_body="$(printf '## Tasks\n\n%b' "$tasks_body")"
+  if [[ -n "$tasks_body" ]]; then
+    full_body="$(printf '## Tasks\n\n%b' "$tasks_body")"
+  else
+    full_body=""
+  fi
 
   if [[ "$DRY_RUN" == true ]]; then
     echo "  Would create/update: $issue_title"
@@ -99,7 +114,8 @@ process_us() {
     --search "in:title \"$issue_title\"" \
     --state all \
     --json number,title \
-    --jq ".[] | select(.title == \"$issue_title\") | .number" 2>/dev/null \
+    --jq --arg title "$issue_title" \
+    '.[] | select(.title == $title) | .number' 2>/dev/null \
     | head -1 || echo "")
 
   if [[ -z "$existing_number" ]]; then
@@ -195,7 +211,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
 done < "$BACKLOG_FILE"
 
-flush_us  # process last US
+flush_us  # process last US (safe to call even if already flushed — process_us guards on empty us/title)
 
 # ── Summary ──────────────────────────────────────
 echo ""
@@ -208,7 +224,7 @@ else
   echo "   Criadas:     $CREATED"
   echo "   Atualizadas: $UPDATED"
   echo ""
-  echo "   Board:  https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+  echo "   Board:  $BOARD_URL"
   echo "   Issues: https://github.com/$OWNER/$REPO_NAME/issues"
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

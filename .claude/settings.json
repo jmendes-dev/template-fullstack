@@ -9,7 +9,7 @@
         "matcher": "Write",
         "hooks": [{
           "type": "command",
-          "command": "bash .claude/hooks/pre-tool-use.sh",
+          "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/pre-tool-use.sh\"'",
           "async": false
         }]
       },
@@ -17,7 +17,7 @@
         "matcher": "Edit",
         "hooks": [{
           "type": "command",
-          "command": "bash .claude/hooks/pre-tool-use.sh",
+          "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/pre-tool-use.sh\"'",
           "async": false
         }]
       }
@@ -25,7 +25,7 @@
     "UserPromptSubmit": [{
       "hooks": [{
         "type": "command",
-        "command": "bash .claude/hooks/inject-context.sh",
+        "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/inject-context.sh\"'",
         "async": false
       }]
     }],
@@ -40,7 +40,7 @@
       "matcher": "Bash",
       "hooks": [{
         "type": "command",
-        "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"bun test\" && [ -f check-quality.sh ] && bash check-quality.sh 2>/dev/null || true'",
+        "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/post-tool-use.sh\"'",
         "async": true
       }]
     }]

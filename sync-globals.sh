@@ -45,8 +45,10 @@ GLOBAL_FILES=(
   "check-quality.sh"
   "TEMPLATE_VERSION"
   ".claude/settings.local.example.json"
+  ".claude/settings.example.json"
   ".claude/hooks/pre-tool-use.sh"
   ".claude/hooks/inject-context.sh"
+  ".claude/hooks/post-tool-use.sh"
 )
 
 # Agentes — sincronizados junto com os globais

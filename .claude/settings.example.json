@@ -1,0 +1,48 @@
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [{
+          "type": "command",
+          "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/pre-tool-use.sh\"'",
+          "async": false
+        }]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/pre-tool-use.sh\"'",
+          "async": false
+        }]
+      }
+    ],
+    "UserPromptSubmit": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/inject-context.sh\"'",
+        "async": false
+      }]
+    }],
+    "Stop": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'mkdir -p docs; if [ ! -f docs/session-state.md ]; then cat > docs/session-state.md << \"EOF\"\n# Session State\n_Atualizado pelo Claude antes de cada notificação ntfy._\n\n## Contexto Ativo\n- **Story:** --\n- **Task:** --\n- **Fase TDD:** Red | Green | Refactor\n\n## Último Passo Executado\n--\n\n## Próximo Passo Esperado\n--\n\n## Questões Abertas\n--\n\n## Agentes Envolvidos\n--\nEOF\necho \"docs/session-state.md criado. Preencha as seções antes de enviar notificação ntfy.\"; fi'",
+        "async": true
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/post-tool-use.sh\"'",
+        "async": true
+      }]
+    }]
+  }
+}

@@ -39,6 +39,12 @@ GLOBAL_FILES=(
   "DESIGN_SYSTEM.md"
   "setup-github-project.sh"
   "sync-github-issues.sh"
+  "sync-globals.sh"
+  "promote-learning.sh"
+  "check-health.sh"
+  "check-quality.sh"
+  "TEMPLATE_VERSION"
+  ".claude/settings.local.example.json"
 )
 
 # Agentes — sincronizados junto com os globais
@@ -63,6 +69,31 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  sync-globals.sh — Template → Projeto"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# ── Comparação de versões ──────────────────────────────────────
+LOCAL_VER="desconhecida"
+REMOTE_VER="desconhecida"
+
+if [ -f ".template-version" ]; then
+  LOCAL_VER=$(cat .template-version | tr -d '[:space:]')
+fi
+
+if [ "$SOURCE" != "remote" ] && [ -f "$SOURCE/TEMPLATE_VERSION" ]; then
+  REMOTE_VER=$(cat "$SOURCE/TEMPLATE_VERSION" | tr -d '[:space:]')
+elif [ "$SOURCE" = "remote" ]; then
+  REMOTE_VER=$(curl -sfL "$GITHUB_RAW_BASE/TEMPLATE_VERSION" 2>/dev/null | tr -d '[:space:]' || echo "desconhecida")
+fi
+
+if [ "$LOCAL_VER" != "desconhecida" ] && [ "$REMOTE_VER" != "desconhecida" ]; then
+  if [ "$LOCAL_VER" = "$REMOTE_VER" ]; then
+    info "Versão: v$LOCAL_VER (atualizado)"
+  else
+    warn "Atualização disponível: v$LOCAL_VER → v$REMOTE_VER"
+  fi
+else
+  info "Versão local: ${LOCAL_VER} | Template: ${REMOTE_VER}"
+fi
 echo ""
 
 # ── Baixar/Copiar arquivos globais ─────────────

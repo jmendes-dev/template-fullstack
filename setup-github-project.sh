@@ -147,6 +147,24 @@ fi
 info "Board:  $BOARD_URL"
 info "Issues: https://github.com/$OWNER/$REPO_NAME/issues"
 echo ""
+
+# ── Branch Protection (main) ────────────────────────────────
+info "Configurando branch protection em main..."
+gh api \
+  --method PUT \
+  "repos/$OWNER/$REPO_NAME/branches/main/protection" \
+  --field required_status_checks='{"strict":true,"contexts":[]}' \
+  --field enforce_admins=false \
+  --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true}' \
+  --field restrictions=null \
+  --field required_linear_history=false \
+  --field allow_force_pushes=false \
+  --field allow_deletions=false \
+  > /dev/null 2>&1 \
+  && ok "Branch protection em main: require PR + 1 review + no force push" \
+  || warn "Branch protection não configurada (requer GitHub Pro/Team ou repo público) — configurar manualmente se necessário"
+
+echo ""
 echo "  Proximos passos:"
 echo "  1. Commitar .github/project-id:"
 echo "     git add .github/project-id && git commit -m 'chore: add github project id'"

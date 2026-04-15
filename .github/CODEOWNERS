@@ -1,0 +1,16 @@
+# CODEOWNERS
+# Arquivos de arquitetura e orquestração exigem review do owner.
+# Formato: [path] @owner-github-handle
+# Substitua @owner pelo handle GitHub do responsável técnico.
+
+# Arquivos de orquestração do Claude
+CLAUDE.md @owner
+claude-sdd.md @owner
+claude-stacks.md @owner
+claude-subagents.md @owner
+
+# Agentes especializados
+.claude/agents/ @owner
+
+# Configuração de CI/CD
+.github/workflows/ @owner

@@ -318,6 +318,12 @@ if [ ! -f "$TARGET_DIR/.claude/settings.local.json" ] && [ -f "$TARGET_DIR/.clau
   ok ".claude/settings.local.json criado a partir do exemplo"
 fi
 
+# Criar .template-version no projeto alvo
+if [ -f "$SCRIPT_DIR/TEMPLATE_VERSION" ]; then
+  cp "$SCRIPT_DIR/TEMPLATE_VERSION" "$TARGET_DIR/.template-version"
+  ok ".template-version ($(cat "$SCRIPT_DIR/TEMPLATE_VERSION" | tr -d '[:space:]'))"
+fi
+
 # ── Git hook (post-commit) ─────────────────────
 
 info "Instalando git hook..."

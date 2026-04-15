@@ -5,6 +5,32 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.1.0] — 2026-04-15
+
+### Added — Harness Engineering
+- **PreToolUse hooks** (`.claude/hooks/pre-tool-use.sh`)
+  - Hard blocks writes to `.github/workflows/` — requer devops-sre-engineer
+  - Soft warning para arquivos globais do template (claude-stacks.md etc.)
+- **Structured agent output protocol** (todos os 10 agentes)
+  - Bloco obrigatório: STATUS / ARTEFATOS / PRÓXIMO / CONCERNS
+  - Status: DONE | BLOCKED | NEEDS_CONTEXT | DONE_WITH_CONCERNS
+  - Permite ao orquestrador processar respostas mecanicamente
+- **Context budget condicional** (`.claude/hooks/inject-context.sh`)
+  - `session-state.md` sempre injetado
+  - `quality.md` injetado apenas se prompt menciona testes/bugs/qualidade
+  - `backlog.md` injetado apenas se prompt menciona tasks/stories/implementação
+  - Reduz ~2000 tokens/turno em contexto irrelevante
+- **`check-health.sh --assert` mode**
+  - Exit code 1 se verificações críticas falham (para CI pipelines)
+  - Exit code 0 se tudo passa
+  - Warnings não contam como falha crítica
+
+### Changed
+- `settings.json`: hooks agora referenciam scripts externos (mais limpo que bash inline)
+- `adopt-workflow.sh` e `sync-globals.sh`: incluem `.claude/hooks/` nos arquivos globais
+
+---
+
 ## [1.0.0] — 2026-04-15
 
 ### Breaking Changes

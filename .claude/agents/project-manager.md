@@ -173,3 +173,26 @@ What NOT to save: session-specific context, in-progress work, information that d
 ## MEMORY.md
 
 Read `.claude/agent-memory/project-manager/MEMORY.md` at the start of each session.
+
+
+---
+
+## Protocolo de Output Obrigatório
+
+Ao concluir **qualquer task delegada**, terminar SEMPRE com este bloco exato:
+
+```
+STATUS: [DONE | BLOCKED | NEEDS_CONTEXT | DONE_WITH_CONCERNS]
+ARTEFATOS: [lista de arquivos criados/modificados, um por linha]
+PRÓXIMO: [próxima ação esperada do orquestrador]
+CONCERNS: [se DONE_WITH_CONCERNS: descrever | se BLOCKED: descrever bloqueio | caso contrário: --]
+```
+
+**Significado dos status:**
+- `DONE` — task completa, testes passando, código commitado
+- `DONE_WITH_CONCERNS` — task completa mas há ressalvas (dívida técnica, decisão questionável)
+- `NEEDS_CONTEXT` — informação necessária não foi fornecida — aguardar antes de continuar
+- `BLOCKED` — impedimento técnico ou de dependência que impede conclusão
+
+> Este protocolo permite ao orquestrador processar respostas mecanicamente.
+> Nunca omitir o bloco — mesmo para tasks simples.

@@ -330,14 +330,12 @@ cat > "$TARGET_DIR/.githooks/post-commit" << 'HOOK_EOF'
 
 # ── 1. Candidatos de promoção pendentes ───────────────────────
 REFACTOR_FILE="claude-stacks-refactor.md"
-if [ -f "$REFACTOR_FILE" ]; then
-  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || echo 0)
-  if [ "$COUNT" -gt 0 ]; then
-    echo ""
-    echo ">>> $COUNT candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
-    echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
-    echo ""
-  fi
+if [ -f "$REFACTOR_FILE" ] && grep -q "Pendente" "$REFACTOR_FILE" 2>/dev/null; then
+  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null | tr -d '[:space:]')
+  echo ""
+  echo ">>> ${COUNT} candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
+  echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+  echo ""
 fi
 
 # ── 2. Backlog atualizado → sugerir sync GitHub Issues ────────

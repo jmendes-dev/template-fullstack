@@ -3,22 +3,19 @@
 
 # ── 1. Candidatos de promoção pendentes ───────────────────────
 REFACTOR_FILE="claude-stacks-refactor.md"
-if [ -f "$REFACTOR_FILE" ]; then
-  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || echo 0)
-  if [ "$COUNT" -gt 0 ]; then
-    echo ""
-    echo ">>> $COUNT candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
-    echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
-    echo ""
-  fi
+if [ -f "$REFACTOR_FILE" ] && grep -q "Pendente" "$REFACTOR_FILE" 2>/dev/null; then
+  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null | tr -d '[:space:]')
+  echo ""
+  echo ">>> ${COUNT} candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
+  echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+  echo ""
 fi
 
 # ── 2. Backlog atualizado → sugerir sync GitHub Issues ────────
 if git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q "docs/backlog.md"; then
   echo ""
   echo ">>> docs/backlog.md foi atualizado neste commit."
-  echo "    Sincronize com GitHub Issues:"
-  echo "    ./sync-github-issues.sh"
+  echo "    Sincronize com GitHub Issues: ./sync-github-issues.sh"
   echo ""
 fi
 

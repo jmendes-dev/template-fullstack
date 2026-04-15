@@ -267,11 +267,189 @@ BRIEF_EOF
   ok "docs/design-system/design-brief.md (template)"
 fi
 
+# session-state.md (criar template se não existe)
+if [ ! -f "$TARGET_DIR/docs/session-state.md" ]; then
+  cat > "$TARGET_DIR/docs/session-state.md" << 'SESSION_EOF'
+# Session State
+
+> Atualizado pelo Claude antes de cada notificação ntfy (ao aguardar input do usuário).
+> Injetado automaticamente no contexto via hook `UserPromptSubmit`.
+> **OBRIGATÓRIO:** Preencher todas as seções antes de enviar a notificação ntfy.
+
+---
+
+## Contexto Ativo
+
+- **Story:** --
+- **Task:** --
+- **Fase TDD:** Red | Green | Refactor
+
+---
+
+## Último Passo Executado
+
+--
+
+---
+
+## Próximo Passo Esperado
+
+--
+
+---
+
+## Questões Abertas
+
+--
+
+---
+
+## Agentes Envolvidos nesta Sessão
+
+--
+
+---
+
+_Última atualização: --_
+SESSION_EOF
+  ok "docs/session-state.md (template)"
+fi
+
+# quality.md (criar placeholder — gerado por check-quality.sh)
+if [ ! -f "$TARGET_DIR/docs/quality.md" ]; then
+  cat > "$TARGET_DIR/docs/quality.md" << 'QUALITY_EOF'
+# Quality Dashboard
+
+> Atualizado automaticamente após cada `bun test` via hook PostToolUse.
+> Fonte de verdade para o estado de qualidade do projeto.
+
+---
+
+## Status Geral
+
+| Métrica | Valor | Status |
+|---------|-------|--------|
+| Cobertura geral | --% | ⏳ |
+| Lint (Biome) | -- | ⏳ |
+| Typecheck | -- | ⏳ |
+| Última execução | -- | -- |
+
+---
+
+## Cobertura por Módulo
+
+| Módulo | Stmts | Branch | Funcs | Lines | Status |
+|--------|-------|--------|-------|-------|--------|
+| -- | --% | --% | --% | --% | ⏳ |
+
+---
+
+## Gates do DoD
+
+- [ ] `bun test` passa com cobertura ≥ 80%
+- [ ] `bunx biome check` zero erros
+- [ ] `tsc --noEmit` zero erros
+- [ ] Cenários do spec ativos cobertos (ver Spec Coverage abaixo)
+- [ ] Code review aprovado (`superpowers:requesting-code-review`)
+
+---
+
+## Spec Coverage
+
+| Spec | Cenário | Teste | Status |
+|------|---------|-------|--------|
+| -- | -- | -- | ⏳ |
+
+---
+
+## Bugs Abertos
+
+| ID | Descrição | Severidade | Status |
+|----|-----------|------------|--------|
+| -- | -- | -- | -- |
+
+---
+
+_Gerado por `check-quality.sh` · Última atualização: --_
+QUALITY_EOF
+  ok "docs/quality.md (placeholder)"
+fi
+
+# contracts/README.md (criar template se não existe)
+mkdir -p "$TARGET_DIR/docs/contracts"
+if [ ! -f "$TARGET_DIR/docs/contracts/README.md" ]; then
+  cp "$SCRIPT_DIR/docs/contracts/README.md" "$TARGET_DIR/docs/contracts/README.md" 2>/dev/null || \
+  cat > "$TARGET_DIR/docs/contracts/README.md" << 'CONTRACTS_EOF'
+# Contract Registry
+
+> Contratos versionados entre backend e frontend.
+> **Criado por:** `backend-developer` após criar/modificar endpoints.
+> **Lido por:** `frontend-developer` antes de implementar data fetching.
+> **Validado por:** `qa-engineer` na cobertura de testes.
+
+---
+
+## Como usar
+
+Após criar ou modificar qualquer endpoint, criar/atualizar `docs/contracts/[domínio].contract.md`.
+Antes de implementar qualquer hook TanStack Query, verificar se o contrato existe.
+
+---
+
+<!-- Nenhum contrato ainda — backend-developer deve criar ao implementar endpoints -->
+CONTRACTS_EOF
+  ok "docs/contracts/README.md (template)"
+fi
+
 # .gitkeep em pastas vazias
 touch "$TARGET_DIR/docs/specs/.gitkeep" 2>/dev/null || true
 touch "$TARGET_DIR/docs/design-system/pages/.gitkeep" 2>/dev/null || true
 
 ok "Estrutura docs/ completa"
+
+# ── GitHub templates ──────────────────────────
+
+info "Configurando .github/..."
+mkdir -p "$TARGET_DIR/.github"
+
+if [ ! -f "$TARGET_DIR/.github/pull_request_template.md" ]; then
+  cp "$SCRIPT_DIR/.github/pull_request_template.md" "$TARGET_DIR/.github/pull_request_template.md" 2>/dev/null || \
+  cat > "$TARGET_DIR/.github/pull_request_template.md" << 'PR_EOF'
+## O que essa PR faz?
+
+<!-- Descreva em 1-3 frases o que foi implementado -->
+
+---
+
+## Story / Task
+
+<!-- US-XX — Task X.Y — Título da task -->
+
+---
+
+## Definition of Done
+
+- [ ] `bun test` passa (zero falhas)
+- [ ] Cobertura de testes ≥ 80% (`docs/quality.md` atualizado)
+- [ ] `bunx biome check` zero erros
+- [ ] `tsc --noEmit` zero erros
+- [ ] Todos os cenários do spec cobertos
+- [ ] Code review aprovado (`superpowers:requesting-code-review`)
+- [ ] `docs/backlog.md` atualizado com status da task
+- [ ] `docs/contracts/` atualizado (se endpoints foram criados/modificados)
+- [ ] Sem código hardcoded (cores, fontes, URLs de API, credenciais)
+
+---
+
+## Tipo de mudança
+
+- [ ] Bug fix
+- [ ] Nova feature
+- [ ] Refatoração
+- [ ] Docs / configuração
+PR_EOF
+  ok ".github/pull_request_template.md"
+fi
 
 # ── Configuração .claude/ ─────────────────────
 
@@ -279,39 +457,14 @@ info "Configurando .claude/settings.json..."
 mkdir -p "$TARGET_DIR/.claude"
 
 if [ ! -f "$TARGET_DIR/.claude/settings.json" ]; then
-  cat > "$TARGET_DIR/.claude/settings.json" << 'SETTINGS_EOF'
-{
-  "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "hooks": {
-    "UserPromptSubmit": [{
-      "hooks": [{
-        "type": "command",
-        "command": "bash -c 'out=\"\"; [ -f docs/session-state.md ] && out=\"$(cat docs/session-state.md)\"; [ -f docs/quality.md ] && out=\"$out\n---\n$(cat docs/quality.md)\"; [ -f docs/backlog.md ] && out=\"$out\n---\n### BACKLOG ATUAL\\n$(head -50 docs/backlog.md)\"; [ -n \"$out\" ] && echo \"$out\" || true'",
-        "async": false
-      }]
-    }],
-    "Stop": [{
-      "hooks": [{
-        "type": "command",
-        "command": "bash -c 'mkdir -p docs; if [ ! -f docs/session-state.md ]; then cat > docs/session-state.md << \"EOF\"\n# Session State\n_Atualizado pelo Claude antes de cada notificação ntfy._\n\n## Contexto Ativo\n- **Story:** --\n- **Task:** --\n- **Fase TDD:** Red | Green | Refactor\n\n## Último Passo Executado\n--\n\n## Próximo Passo Esperado\n--\n\n## Questões Abertas\n--\n\n## Agentes Envolvidos\n--\nEOF\necho \"docs/session-state.md criado. Preencha as seções antes de enviar notificação ntfy.\"; fi'",
-        "async": true
-      }]
-    }],
-    "PostToolUse": [{
-      "matcher": "Bash",
-      "hooks": [{
-        "type": "command",
-        "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"bun test\" && [ -f check-quality.sh ] && bash check-quality.sh 2>/dev/null || true'",
-        "async": true
-      }]
-    }]
-  }
-}
-SETTINGS_EOF
-  ok ".claude/settings.json (com hooks de enforcement)"
+  if [ -f "$SCRIPT_DIR/.claude/settings.example.json" ]; then
+    cp "$SCRIPT_DIR/.claude/settings.example.json" "$TARGET_DIR/.claude/settings.json"
+    ok ".claude/settings.json criado a partir de settings.example.json"
+    warn "Edite .claude/settings.json para ajustar os plugins instalados na sua conta"
+  else
+    warn ".claude/settings.example.json não encontrado — settings.json não criado"
+    warn "Copie manualmente: cp .claude/settings.example.json .claude/settings.json"
+  fi
 else
   warn ".claude/settings.json já existe — mantendo (verifique se tem os hooks de enforcement)"
 fi

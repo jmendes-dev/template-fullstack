@@ -2,5 +2,29 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'out=\"\"; [ -f docs/session-state.md ] && out=\"$(cat docs/session-state.md)\"; [ -f docs/quality.md ] && out=\"$out\n---\n$(cat docs/quality.md)\"; [ -f docs/backlog.md ] && out=\"$out\n---\n### BACKLOG ATUAL\\n$(head -50 docs/backlog.md)\"; [ -n \"$out\" ] && echo \"$out\" || true'",
+        "async": false
+      }]
+    }],
+    "Stop": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'mkdir -p docs; [ ! -f docs/session-state.md ] && cat > docs/session-state.md << \"SSEOF\"\n# Session State\n_Atualizado pelo Claude antes de cada notificação ntfy._\n\n## Contexto Ativo\n- **Story:** --\n- **Task:** --\n- **Fase TDD:** Red | Green | Refactor\n\n## Último Passo Executado\n--\n\n## Próximo Passo Esperado\n--\n\n## Questões Abertas\n--\n\n## Agentes Envolvidos\n--\nSSEOF\ntrue'",
+        "async": true
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"bun test\" && [ -f check-quality.sh ] && bash check-quality.sh 2>/dev/null || true'",
+        "async": true
+      }]
+    }]
   }
 }

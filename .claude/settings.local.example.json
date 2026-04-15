@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun install:*)",
+      "Bash(bun run*)",
+      "Bash(bun test*)",
+      "Bash(bunx biome*)",
+      "Bash(./sync-github-issues.sh*)",
+      "Bash(./setup-github-project.sh*)",
+      "Bash(./promote-learning.sh*)",
+      "Bash(./sync-globals.sh*)",
+      "Bash(./check-health.sh*)",
+      "Bash(./check-quality.sh*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git status*)",
+      "Bash(git diff*)"
+    ]
+  }
+}

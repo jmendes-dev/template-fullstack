@@ -72,6 +72,11 @@ GLOBAL_FILES=(
   ".gitattributes"
   "setup-github-project.sh"
   "sync-github-issues.sh"
+  "sync-globals.sh"
+  "promote-learning.sh"
+  "check-health.sh"
+  "check-quality.sh"
+  ".claude/settings.local.example.json"
 )
 
 info "Copiando arquivos globais..."
@@ -265,6 +270,54 @@ touch "$TARGET_DIR/docs/design-system/pages/.gitkeep" 2>/dev/null || true
 
 ok "Estrutura docs/ completa"
 
+# ── Configuração .claude/ ─────────────────────
+
+info "Configurando .claude/settings.json..."
+mkdir -p "$TARGET_DIR/.claude"
+
+if [ ! -f "$TARGET_DIR/.claude/settings.json" ]; then
+  cat > "$TARGET_DIR/.claude/settings.json" << 'SETTINGS_EOF'
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'out=\"\"; [ -f docs/session-state.md ] && out=\"$(cat docs/session-state.md)\"; [ -f docs/quality.md ] && out=\"$out\n---\n$(cat docs/quality.md)\"; [ -f docs/backlog.md ] && out=\"$out\n---\n### BACKLOG ATUAL\\n$(head -50 docs/backlog.md)\"; [ -n \"$out\" ] && echo \"$out\" || true'",
+        "async": false
+      }]
+    }],
+    "Stop": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'mkdir -p docs; if [ ! -f docs/session-state.md ]; then cat > docs/session-state.md << \"EOF\"\n# Session State\n_Atualizado pelo Claude antes de cada notificação ntfy._\n\n## Contexto Ativo\n- **Story:** --\n- **Task:** --\n- **Fase TDD:** Red | Green | Refactor\n\n## Último Passo Executado\n--\n\n## Próximo Passo Esperado\n--\n\n## Questões Abertas\n--\n\n## Agentes Envolvidos\n--\nEOF\necho \"docs/session-state.md criado. Preencha as seções antes de enviar notificação ntfy.\"; fi'",
+        "async": true
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"bun test\" && [ -f check-quality.sh ] && bash check-quality.sh 2>/dev/null || true'",
+        "async": true
+      }]
+    }]
+  }
+}
+SETTINGS_EOF
+  ok ".claude/settings.json (com hooks de enforcement)"
+else
+  warn ".claude/settings.json já existe — mantendo (verifique se tem os hooks de enforcement)"
+fi
+
+if [ ! -f "$TARGET_DIR/.claude/settings.local.json" ] && [ -f "$TARGET_DIR/.claude/settings.local.example.json" ]; then
+  cp "$TARGET_DIR/.claude/settings.local.example.json" "$TARGET_DIR/.claude/settings.local.json"
+  ok ".claude/settings.local.json criado a partir do exemplo"
+fi
+
 # ── Git hook (post-commit) ─────────────────────
 
 info "Instalando git hook..."
@@ -273,13 +326,34 @@ mkdir -p "$TARGET_DIR/.githooks"
 
 cat > "$TARGET_DIR/.githooks/post-commit" << 'HOOK_EOF'
 #!/usr/bin/env bash
+# post-commit — Avisos automáticos após commit
+
+# ── 1. Candidatos de promoção pendentes ───────────────────────
 REFACTOR_FILE="claude-stacks-refactor.md"
-[ ! -f "$REFACTOR_FILE" ] && exit 0
-COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || true)
-if [ "$COUNT" -gt 0 ]; then
+if [ -f "$REFACTOR_FILE" ]; then
+  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || echo 0)
+  if [ "$COUNT" -gt 0 ]; then
+    echo ""
+    echo ">>> $COUNT candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
+    echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+    echo ""
+  fi
+fi
+
+# ── 2. Backlog atualizado → sugerir sync GitHub Issues ────────
+if git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q "docs/backlog.md"; then
   echo ""
-  echo ">>> $COUNT candidato(s) pendente(s) de promocao no claude-stacks-refactor.md"
-  echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+  echo ">>> docs/backlog.md foi atualizado neste commit."
+  echo "    Sincronize com GitHub Issues: ./sync-github-issues.sh"
+  echo ""
+fi
+
+# ── 3. MASTER.md atualizado → design brief desatualizado ──────
+if git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q "docs/design-system/MASTER.md"; then
+  echo ""
+  echo ">>> docs/design-system/MASTER.md foi atualizado neste commit."
+  echo "    Regenere o design brief (via ux-ui-designer):"
+  echo "    'Regenerar design-brief.md a partir do MASTER.md atualizado'"
   echo ""
 fi
 HOOK_EOF

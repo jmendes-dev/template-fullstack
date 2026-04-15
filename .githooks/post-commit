@@ -1,10 +1,32 @@
 #!/usr/bin/env bash
+# post-commit — Avisos automáticos após commit
+
+# ── 1. Candidatos de promoção pendentes ───────────────────────
 REFACTOR_FILE="claude-stacks-refactor.md"
-[ ! -f "$REFACTOR_FILE" ] && exit 0
-COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || true)
-if [ "$COUNT" -gt 0 ]; then
+if [ -f "$REFACTOR_FILE" ]; then
+  COUNT=$(grep -c "Pendente" "$REFACTOR_FILE" 2>/dev/null || echo 0)
+  if [ "$COUNT" -gt 0 ]; then
+    echo ""
+    echo ">>> $COUNT candidato(s) pendente(s) de promoção em claude-stacks-refactor.md"
+    echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+    echo ""
+  fi
+fi
+
+# ── 2. Backlog atualizado → sugerir sync GitHub Issues ────────
+if git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q "docs/backlog.md"; then
   echo ""
-  echo ">>> $COUNT candidato(s) pendente(s) de promocao no claude-stacks-refactor.md"
-  echo "    Rode: ./promote-learning.sh /path/to/template-fullstack"
+  echo ">>> docs/backlog.md foi atualizado neste commit."
+  echo "    Sincronize com GitHub Issues:"
+  echo "    ./sync-github-issues.sh"
+  echo ""
+fi
+
+# ── 3. MASTER.md atualizado → design brief desatualizado ──────
+if git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q "docs/design-system/MASTER.md"; then
+  echo ""
+  echo ">>> docs/design-system/MASTER.md foi atualizado neste commit."
+  echo "    Regenere o design brief (via ux-ui-designer):"
+  echo "    'Regenerar design-brief.md a partir do MASTER.md atualizado'"
   echo ""
 fi

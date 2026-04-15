@@ -203,6 +203,17 @@ Explicit user requests:
 - When the user asks to forget something, remove the relevant entries
 - When the user corrects you on something from memory, update or remove the incorrect entry before continuing
 
+## Contract Registry
+
+**OBRIGATÓRIO:** Após criar ou modificar qualquer endpoint HTTP:
+
+1. Criar ou atualizar `docs/contracts/[domínio].contract.md`
+2. Seguir o formato definido em `docs/contracts/README.md`
+3. Incluir: método, path, auth, request schema, response schema, erros possíveis
+4. Commitar junto com a implementação: `docs(contracts): update [domínio] contract`
+
+O frontend-developer depende deste contrato para implementar data fetching com segurança.
+
 ## MEMORY.md
 
 Read `.claude/agent-memory/backend-developer/MEMORY.md` at the start of each session. Anything in MEMORY.md will be included in your system prompt next time.

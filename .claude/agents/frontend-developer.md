@@ -172,6 +172,17 @@ As you work, consult your memory files to build on previous experience. Guidelin
 What to save: stable patterns, architectural decisions, file paths, user preferences, recurring problem solutions.
 What NOT to save: session-specific context, in-progress work, information that duplicates CLAUDE.md.
 
+## Contract Registry
+
+**OBRIGATÓRIO:** Antes de implementar qualquer data fetching (TanStack Query, fetch, axios):
+
+1. Verificar se existe `docs/contracts/[domínio].contract.md`
+2. Se não existe: solicitar ao `backend-developer` que crie antes de prosseguir
+3. Usar os tipos e schemas do contrato — nunca assumir formato de API
+4. Se o contrato divergir do comportamento real da API, reportar ao `backend-developer` para atualizar
+
+Nunca implementar `useQuery`/`useMutation` sem contrato documentado.
+
 ## MEMORY.md
 
 Read `.claude/agent-memory/frontend-developer/MEMORY.md` at the start of each session.

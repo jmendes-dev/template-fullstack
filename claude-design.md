@@ -72,6 +72,25 @@ O `docs/design-system/design-brief.md` é o resumo compacto (~800 tokens) do MAS
 
 O agente principal injeta o design-brief.md no prompt do component-agent (ver `claude-subagents.md` → Template: component-agent). O subagente aplica esses valores diretamente no código.
 
+### Geração e Manutenção do Design Brief
+
+> **OBRIGATÓRIO**: Sempre que `docs/design-system/MASTER.md` for criado ou atualizado:
+
+1. Lançar `ux-ui-designer` com a task: _"Regenerar design-brief.md a partir do MASTER.md atualizado"_
+2. O design-brief.md deve ter exatamente ~800 tokens (±10%)
+3. Estrutura obrigatória do brief: Paleta → Tipografia → Spacing/Radius → Componentes principais → Tom e Voz → Anti-patterns
+4. Commitar após regeneração: `docs(design): regenerate design-brief from MASTER.md`
+
+**Sinais de que o brief está desatualizado:**
+- O hook `post-commit` avisou que MASTER.md foi modificado
+- Novo projeto (brief é template vazio)
+- Componente frontend diverge visualmente do MASTER.md
+
+**Nunca:**
+- ❌ Cortar o design-brief do contexto de subagente para economizar tokens (usar stack rules primeiro)
+- ❌ Referenciar design-brief sem verificar se está sincronizado com MASTER.md
+- ❌ Criar page override sem antes verificar se o MASTER.md base está completo
+
 ---
 
 ## 📐 Layout: Sidebar + Top Bar

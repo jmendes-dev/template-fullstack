@@ -10,6 +10,29 @@
 
 ---
 
+## Sequência Obrigatória de Agentes — Projeto Novo
+
+> Execute **nesta ordem** com handoff explícito entre agentes.
+> Cada agente DEVE LER os artefatos gerados pelo anterior antes de começar.
+> **Aguardar aprovação do usuário** nos gates marcados com ⏸️.
+
+| Passo | Agente | Input | Output | Gate |
+|-------|--------|-------|--------|------|
+| 1 | `requirements-roadmap-builder` | Conversa com usuário | `docs/user-stories.md` + `docs/backlog.md` | ⏸️ Aprovação do backlog |
+| 2 | `software-architect` | backlog.md + stacks | `docs/adr/ADR-001-stack-selection.md` | — |
+| 3 | `ux-ui-designer` | user-stories.md | `docs/design-system/MASTER.md` | ⏸️ Aprovação do design system |
+| 4 | `ux-ui-designer` | MASTER.md aprovado | `docs/design-system/design-brief.md` | — |
+| 5 | `data-engineer-dba` | user-stories.md + ADRs | Schema inicial em `packages/shared/src/schemas/` | — |
+| 6 | `devops-sre-engineer` | stacks + deploy target | CI/CD + docker-compose + `.github/workflows/` | — |
+| 7 | — (humano) | repo configurado | `./setup-github-project.sh` | — |
+
+**Handoff explícito:** Ao lançar cada agente, incluir no prompt:
+- Artefatos gerados pelos agentes anteriores (caminhos dos arquivos)
+- Deploy target confirmado (Railway vs Portainer)
+- Fase atual do projeto
+
+---
+
 ## Fase 0 — Carregar contexto
 
 **Ação**: ler `CLAUDE.md` e `claude-stacks.md` na raiz do repositório por completo.

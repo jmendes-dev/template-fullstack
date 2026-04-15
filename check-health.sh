@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # check-health.sh — Diagnóstico rápido do estado do template no projeto
-# Uso: ./check-health.sh
+# Uso: ./check-health.sh           # diagnóstico visual
+#      ./check-health.sh --assert  # exit 1 se falhas críticas (para CI)
 
 set -euo pipefail
+
+ASSERT_MODE=false
+[[ "${1:-}" == "--assert" ]] && ASSERT_MODE=true
+
+FAILURES=0  # contador de falhas críticas (apenas no modo --assert)
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,7 +18,7 @@ NC='\033[0m'
 
 ok()   { echo -e "${GREEN}✅${NC}  $1"; }
 warn() { echo -e "${YELLOW}⚠️ ${NC}  $1"; }
-err()  { echo -e "${RED}❌${NC}  $1"; }
+err()  { echo -e "${RED}❌${NC}  $1"; [ "$ASSERT_MODE" = true ] && FAILURES=$((FAILURES + 1)); }
 info() { echo -e "${CYAN}ℹ${NC}  $1"; }
 
 echo ""
@@ -155,3 +161,17 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Para corrigir problemas: ./adopt-workflow.sh ."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+
+# ── Assert mode: exit 1 se há falhas críticas ─────────────────
+if [ "$ASSERT_MODE" = true ]; then
+  if [ "$FAILURES" -gt 0 ]; then
+    echo -e "${RED}❌ Assert mode: $FAILURES verificação(ões) crítica(s) falharam${NC}"
+    echo "   Corrija os problemas acima antes de prosseguir."
+    echo ""
+    exit 1
+  else
+    echo -e "${GREEN}✅ Assert mode: todas as verificações críticas passaram${NC}"
+    echo ""
+    exit 0
+  fi
+fi

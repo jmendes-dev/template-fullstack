@@ -65,7 +65,7 @@ template-fullstack/
 ├── DESIGN_SYSTEM.md              ← ui-ux-pro-max → entrevista → MASTER.md + design-brief.md
 │
 │  ── Bootstrap ──
-├── start_project.md              ← Sequência obrigatória de 7 agentes para projeto novo
+├── start_project.md              ← Bootstrap: 8 fases de inicialização de projeto novo
 │
 │  ── Artefatos por feature ──
 ├── plans/                        ← PRDs e planos faseados gerados pelo Claude
@@ -103,10 +103,14 @@ template-fullstack/
 │   │   ├── backend-developer/MEMORY.md
 │   │   ├── frontend-developer/MEMORY.md
 │   │   └── ...                   ← um diretório por agente
-│   ├── hooks/                    ← Hook scripts (PreToolUse, UserPromptSubmit)
+│   ├── hooks/                    ← Hook scripts (PreToolUse, UserPromptSubmit, PostToolUse)
 │   │   ├── pre-tool-use.sh       ← Bloqueia .github/workflows/, avisa sobre globais
-│   │   └── inject-context.sh     ← Injeção condicional de contexto por palavras-chave
-│   └── settings.json             ← Hooks de enforcement (PreToolUse, Stop, PostToolUse)
+│   │   ├── inject-context.sh     ← Injeção condicional de contexto por palavras-chave
+│   │   └── post-tool-use.sh      ← Aciona check-quality.sh automaticamente após bun test
+│   ├── settings.example.json     ← Template de settings com plugins + hooks (copiar para settings.json)
+│   ├── settings.json             ← Configuração pessoal ativa — gitignored, não versionado
+│   ├── settings.local.example.json ← Template de permissões (copiar para settings.local.json)
+│   └── settings.local.json       ← Permissões pessoais ativas — gitignored, não versionado
 │
 │  ── GitHub ──
 ├── .github/
@@ -139,8 +143,9 @@ template-fullstack/
 
 | Tipo | Arquivos | Comportamento |
 |---|---|---|
-| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.local.example.json` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
-| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `.claude/settings.json`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
+| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.example.json`, `.claude/settings.local.example.json` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
+| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
+| **Gitignored** | `.claude/settings.json`, `.claude/settings.local.json` | Configuração pessoal ativa — nunca commitado |
 
 ### Scripts disponíveis por contexto
 
@@ -160,7 +165,7 @@ template-fullstack/
 |---|---|---|
 | `PreToolUse` hook | `.claude/hooks/pre-tool-use.sh` | Bloqueia writes em `.github/workflows/`; avisa sobre arquivos globais |
 | `UserPromptSubmit` hook | `.claude/hooks/inject-context.sh` | Injeta session-state sempre; quality.md e backlog só quando relevante |
-| `PostToolUse` hook | `settings.json` | Aciona `check-quality.sh` automaticamente após `bun test` |
+| `PostToolUse` hook | `.claude/hooks/post-tool-use.sh` | Aciona `check-quality.sh` automaticamente após `bun test` |
 | `Stop` hook | `settings.json` | Cria `docs/session-state.md` se não existe |
 | Structured agent output | Todos os 10 agentes | Protocolo STATUS/ARTEFATOS/PRÓXIMO/CONCERNS ao fim de cada task |
 
@@ -182,7 +187,11 @@ template-fullstack/
 **2. Configurar:**
 ```bash
 git config core.hooksPath .githooks
+cp .claude/settings.example.json .claude/settings.json
+cp .claude/settings.local.example.json .claude/settings.local.json
 ```
+
+Edite `.claude/settings.json` para ajustar os plugins instalados na sua conta Claude Code.
 
 Configurar a URL do template para sincronização (substitua pelo seu repositório):
 ```bash
@@ -226,7 +235,7 @@ O script copia automaticamente:
 - `.claude/agents/` — todos os 10 agentes especializados
 - `.claude/hooks/` — hook scripts (pre-tool-use, inject-context)
 - `.claude/agent-memory/` — estrutura de memória criada vazia para cada agente
-- `.claude/settings.json` — com hooks de enforcement pré-configurados
+- `.claude/settings.example.json` → copiar para `.claude/settings.json` (ajustar plugins)
 - `docs/` — estrutura com templates para user-stories, backlog, quality, session-state, contracts
 - `.githooks/post-commit` — hook com `core.hooksPath` configurado automaticamente
 - `.template-version` — versão instalada para rastreamento de updates
@@ -286,7 +295,7 @@ O sync exibe a versão atual vs template antes de mostrar o diff:
 git add . && git commit -m "docs: sync from template v1.1.0"
 ```
 
-> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings.json`.
+> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings.json`, `.claude/settings.local.json`.
 
 ---
 

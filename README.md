@@ -1,6 +1,7 @@
 # template-fullstack
 
 > Template de projeto fullstack com workflow SDD/TDD + Superpowers para Claude Code.
+> Versão atual: **v1.1.0** — [CHANGELOG](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui
 
@@ -10,7 +11,7 @@
 
 ## Arquitetura
 
-O sistema funciona em **4 camadas**:
+O sistema funciona em **5 camadas**:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -34,6 +35,12 @@ O sistema funciona em **4 camadas**:
 ┌─────────────────────────────────────────────────────────┐
 │            PERSONAL SKILLS (debugging da stack)           │
 │  Hono · Drizzle · React/TanStack · Escalação             │
+└───────────────────────┬─────────────────────────────────┘
+                        │ guardrails mecânicos
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│            HARNESS ENGINEERING (enforcement automático)   │
+│  PreToolUse hooks · Structured agent output · Hooks CI   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -45,12 +52,12 @@ O sistema funciona em **4 camadas**:
 template-fullstack/
 │
 │  ── Orquestração ──
-├── CLAUDE.md                     ← Ponto de entrada. 9 prompts reconhecidos
+├── CLAUDE.md                     ← Protocolo executável. Routing mandatório de agentes.
 ├── claude-sdd.md                 ← Specs: define O QUÊ implementar (contratos, cenários)
 ├── claude-subagents.md           ← Templates de contexto para subagentes (conhecimento injetado)
 ├── claude-stacks.md              ← Stack técnica: regras, padrões, anti-patterns
-├── claude-stacks-refactor.md     ← Aprendizados (começa vazio, cresce com o projeto)
-├── claude-design.md              ← Regras estruturais de UI/UX reutilizáveis
+├── claude-stacks-refactor.md     ← Aprendizados e extensões (começa vazio, cresce com o projeto)
+├── claude-design.md              ← Regras estruturais de UI/UX + pipeline design brief
 ├── claude-debug.md               ← Orquestração de debugging (Superpowers + personal skills)
 │
 │  ── Pipelines de geração ──
@@ -58,7 +65,7 @@ template-fullstack/
 ├── DESIGN_SYSTEM.md              ← ui-ux-pro-max → entrevista → MASTER.md + design-brief.md
 │
 │  ── Bootstrap ──
-├── start_project.md              ← 5 fases: planejamento → scaffold → deps/banco → app → CI/CD
+├── start_project.md              ← Sequência obrigatória de 7 agentes para projeto novo
 │
 │  ── Artefatos por feature ──
 ├── plans/                        ← PRDs e planos faseados gerados pelo Claude
@@ -69,6 +76,10 @@ template-fullstack/
 ├── docs/
 │   ├── user-stories.md           ← Stories com critérios de aceite
 │   ├── backlog.md                ← Kanban P1/P2/P3 com tasks
+│   ├── quality.md                ← Quality Dashboard (atualizado automaticamente)
+│   ├── session-state.md          ← Estado da sessão para continuidade entre sessões
+│   ├── contracts/                ← Contratos versionados API ↔ Frontend
+│   │   └── README.md             ← Schema e instruções do Contract Registry
 │   ├── specs/                    ← Specs SDD por story
 │   └── design-system/
 │       ├── MASTER.md             ← Fonte de verdade visual do projeto
@@ -88,19 +99,36 @@ template-fullstack/
 │   │   ├── ux-ui-designer.md
 │   │   ├── project-manager.md
 │   │   └── requirements-roadmap-builder.md
-│   └── agent-memory/             ← Memória persistente por agente (instanciado — versionado)
-│       ├── backend-developer/MEMORY.md
-│       ├── frontend-developer/MEMORY.md
-│       └── ...                   ← um diretório por agente
+│   ├── agent-memory/             ← Memória persistente por agente (instanciado — versionado)
+│   │   ├── backend-developer/MEMORY.md
+│   │   ├── frontend-developer/MEMORY.md
+│   │   └── ...                   ← um diretório por agente
+│   ├── hooks/                    ← Hook scripts (PreToolUse, UserPromptSubmit)
+│   │   ├── pre-tool-use.sh       ← Bloqueia .github/workflows/, avisa sobre globais
+│   │   └── inject-context.sh     ← Injeção condicional de contexto por palavras-chave
+│   └── settings.json             ← Hooks de enforcement (PreToolUse, Stop, PostToolUse)
 │
-│  ── Ferramentas ──
+│  ── GitHub ──
+├── .github/
+│   ├── pull_request_template.md  ← Checklist DoD em todo PR
+│   └── CODEOWNERS                ← Proteção de arquivos de arquitetura
+│
+│  ── Scripts ──
 ├── adopt-workflow.sh             ← Adotar workflow em projeto existente
-├── sync-globals.sh               ← Template → projetos (distribuir atualizações + agentes)
+├── sync-globals.sh               ← Template → projetos (globais + agentes + hooks)
 ├── promote-learning.sh           ← Projetos → template (coletar aprendizados)
+├── setup-github-project.sh       ← Criar GitHub Project board, labels, milestones, branch protection
+├── sync-github-issues.sh         ← Sincronizar backlog.md com GitHub Issues
+├── check-health.sh               ← Diagnóstico do estado do template no projeto
+├── check-quality.sh              ← Atualiza docs/quality.md com resultados de bun test
+│
+│  ── Versionamento ──
+├── TEMPLATE_VERSION              ← Versão semver atual (ex: 1.1.0)
+├── CHANGELOG.md                  ← Histórico de mudanças por versão
 │
 │  ── Git ──
 ├── .gitattributes                ← Força LF nos .sh (evita falhas no Windows)
-├── .githooks/post-commit         ← Avisa sobre candidatos pendentes de promoção
+├── .githooks/post-commit         ← Avisa sobre candidatos, backlog atualizado, MASTER.md mudado
 ├── .gitignore
 └── README.md
 ```
@@ -111,17 +139,30 @@ template-fullstack/
 
 | Tipo | Arquivos | Comportamento |
 |---|---|---|
-| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, `.claude/agents/*.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
-| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
+| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.local.example.json` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
+| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `.claude/settings.json`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
 
-### Onde cada ferramenta vive
+### Scripts disponíveis por contexto
 
-| Arquivo | Template | Projetos |
+| Script | Template | Projetos | O que faz |
+|---|---|---|---|
+| `adopt-workflow.sh` | ✅ | ❌ | Adoção inicial — copia tudo para o projeto |
+| `sync-globals.sh` | ✅ | ✅ | Puxar atualizações do template |
+| `promote-learning.sh` | ✅ | ✅ | Enviar aprendizados para o template |
+| `setup-github-project.sh` | ✅ | ✅ | Criar Project board + labels + branch protection |
+| `sync-github-issues.sh` | ✅ | ✅ | Sincronizar backlog.md → GitHub Issues |
+| `check-health.sh` | ✅ | ✅ | Diagnóstico do template + modo `--assert` para CI |
+| `check-quality.sh` | ✅ | ✅ | Atualizar quality.md após bun test |
+
+### Harness Engineering — guardrails automáticos
+
+| Mecanismo | Onde | O que faz |
 |---|---|---|
-| `adopt-workflow.sh` | ✅ | ❌ (roda uma vez, do template para o projeto) |
-| `sync-globals.sh` | ✅ | ✅ (roda nos projetos para puxar atualizações) |
-| `promote-learning.sh` | ✅ | ✅ (roda nos projetos para enviar aprendizados) |
-| `.githooks/post-commit` | ✅ | ✅ (avisa sobre candidatos pendentes) |
+| `PreToolUse` hook | `.claude/hooks/pre-tool-use.sh` | Bloqueia writes em `.github/workflows/`; avisa sobre arquivos globais |
+| `UserPromptSubmit` hook | `.claude/hooks/inject-context.sh` | Injeta session-state sempre; quality.md e backlog só quando relevante |
+| `PostToolUse` hook | `settings.json` | Aciona `check-quality.sh` automaticamente após `bun test` |
+| `Stop` hook | `settings.json` | Cria `docs/session-state.md` se não existe |
+| Structured agent output | Todos os 10 agentes | Protocolo STATUS/ARTEFATOS/PRÓXIMO/CONCERNS ao fim de cada task |
 
 ### Personal skills (globais, em ~/.claude/skills/)
 
@@ -152,37 +193,24 @@ export TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template
 # GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main}"
 ```
 
-**3. Levantar requisitos** — no Claude Code:
-```
-/novo-prd
-```
-Claude conduz uma entrevista guiada e gera `plans/<projeto>.md` com problema, stories, modelo de dados, fluxos, contrato de API e escopo do MVP.
-
-**4. Criar plano faseado** — no Claude Code:
-```
-/prd-planejamento
-```
-Claude analisa o PRD e gera `plans/<projeto>-plano.md` com fases ordenadas por dependência (Fase 0: fundação → banco + tipos + rotas vazias; Fases 1+: features verticais completas).
-
-**5. Gerar design system** (requer [ui-ux-pro-max](#pré-requisitos)):
+**3. (Opcional) Configurar GitHub Project board:**
 ```bash
-# Passo 1: engine gera a base
-python3 .claude/skills/ui-ux-pro-max/scripts/search.py \
-  "[indústria]" --design-system --persist -p "[NomeProjeto]"
-
-# Passo 2: colar prompt do DESIGN_SYSTEM.md no Claude para refinar
-
-# Passo 3: design-brief.md gerado automaticamente
+./setup-github-project.sh
 ```
+Cria labels, milestones, Project board kanban e branch protection no repositório.
 
-**6. Bootstrap** — no Claude Code: `Iniciar projeto novo` (5 fases automáticas).
+**4. Levantar requisitos** — no Claude Code:
+```
+Iniciar projeto novo
+```
+Claude segue a sequência obrigatória de 7 agentes: requirements-roadmap-builder → software-architect → ux-ui-designer → data-engineer-dba → devops-sre-engineer → setup-github-project.sh.
 
-**7. Implementar fase por fase** — no Claude Code:
+**5. Implementar fase por fase** — no Claude Code:
 ```
-Implementar a Fase 0 do plano
-Implementar a Fase 1 do plano
+Implementar a US-01
+Implementar a US-02
 ```
-Cada fase passa pelo ciclo completo: spec técnico → micro-tasks → testes → revisão → merge.
+Cada story passa pelo ciclo completo: triage → spec → plan → execute → verify → finish.
 
 ---
 
@@ -194,29 +222,26 @@ Cada fase passa pelo ciclo completo: spec técnico → micro-tasks → testes �
 ```
 
 O script copia automaticamente:
-- Arquivos globais (`claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `.gitattributes`, etc.)
+- Arquivos globais (`claude-stacks.md`, `claude-design.md`, scripts `.sh`, etc.)
 - `.claude/agents/` — todos os 10 agentes especializados
+- `.claude/hooks/` — hook scripts (pre-tool-use, inject-context)
 - `.claude/agent-memory/` — estrutura de memória criada vazia para cada agente
-- `docs/` — estrutura com templates para user-stories, backlog e design system
-- `.githooks/post-commit` — hook de candidatos (com `core.hooksPath` configurado automaticamente)
+- `.claude/settings.json` — com hooks de enforcement pré-configurados
+- `docs/` — estrutura com templates para user-stories, backlog, quality, session-state, contracts
+- `.githooks/post-commit` — hook com `core.hooksPath` configurado automaticamente
+- `.template-version` — versão instalada para rastreamento de updates
 
-**2. Copiar scripts de sync para o projeto:**
-```bash
-cp sync-globals.sh promote-learning.sh /path/to/seu-projeto/
-```
-
-**3. Configurar URL do template** no projeto (para sincronizações futuras):
+**2. (Opcional) Configurar GitHub:**
 ```bash
 cd /path/to/seu-projeto
-export TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template-fullstack/main"
-# Ou edite sync-globals.sh linha ~29 com sua URL
+./setup-github-project.sh
 ```
 
-**4. Ajustar CLAUDE.md** ao projeto ou no Claude Code: `Adotar workflow SDD/TDD neste projeto`.
+**3. Ajustar CLAUDE.md** ao projeto ou no Claude Code: `Adotar workflow SDD/TDD neste projeto`.
 
-**5. Gerar docs** — REQUIREMENTS.md (stories + backlog) e DESIGN_SYSTEM.md (design system).
+**4. Gerar docs** — REQUIREMENTS.md (stories + backlog) e DESIGN_SYSTEM.md (design system).
 
-**6. Commitar:**
+**5. Commitar:**
 ```bash
 git add . && git commit -m "docs: adopt SDD/TDD workflow"
 ```
@@ -230,7 +255,7 @@ git add . && git commit -m "docs: adopt SDD/TDD workflow"
 **1. Atualize e pushe o template:**
 ```bash
 cd /path/to/template-fullstack
-git add claude-design.md && git commit -m "docs: update" && git push
+git add . && git commit -m "docs: update" && git push
 ```
 
 **2. Em cada projeto, rode o sync:**
@@ -247,23 +272,21 @@ TEMPLATE_REPO_URL="https://raw.githubusercontent.com/SEU_USUARIO/template-fullst
 ./sync-globals.sh /path/to/template-fullstack
 ```
 
-**3. O script mostra diff e pede confirmação:**
+O sync exibe a versão atual vs template antes de mostrar o diff:
 ```
+⚠  Atualização disponível: v1.0.0 → v1.1.0
 ~~~ ALTERADO: claude-design.md           (+12 -3 linhas)
     sem alteração: claude-stacks.md
-+++ NOVO: claude-debug.md
-~~~ ALTERADO: .claude/agents/backend-developer.md  (+5 -1 linhas)
-    sem alteração: .claude/agents/frontend-developer.md
-    ...
++++ NOVO: .claude/hooks/inject-context.sh
   Aplicar alterações? (s/N)
 ```
 
-**4. Confirme e commite:**
+**3. Confirme e commite:**
 ```bash
-git add . && git commit -m "docs: sync from template"
+git add . && git commit -m "docs: sync from template v1.1.0"
 ```
 
-> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`.
+> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings.json`.
 
 ---
 
@@ -293,7 +316,7 @@ git add claude-stacks-refactor.md && git commit -m "docs: review candidates"
 
 # Template
 cd /path/to/template-fullstack
-git add . && git commit -m "docs: promote learnings from cotamar" && git push
+git add . && git commit -m "docs: promote learnings from projeto-x" && git push
 ```
 
 **4. Propague** para outros projetos via `sync-globals.sh`.
@@ -308,147 +331,81 @@ Claude descobre algo → auto-atualiza refactor.md → marca Pendente
 
 ---
 
+## Guia 5 — Qualidade e saúde do projeto
+
+### Quality Dashboard
+
+O `docs/quality.md` é atualizado automaticamente via hook toda vez que `bun test` roda:
+
+```bash
+# Verificar manualmente
+./check-quality.sh
+
+# Saída: docs/quality.md atualizado com:
+# - Cobertura geral e por módulo
+# - Gates do DoD (≥80% cobertura, lint, typecheck)
+# - Spec Coverage (cenários do spec vs testes existentes)
+```
+
+### Health Check
+
+```bash
+# Diagnóstico visual
+./check-health.sh
+
+# Modo CI — exit 1 se falhas críticas
+./check-health.sh --assert
+```
+
+Verifica: versão instalada, agentes (10/10), arquivos críticos, scripts executáveis, GitHub integration, candidatos pendentes, git hooks.
+
+---
+
 ## Fluxos de desenvolvimento
 
 > Diga ao Claude Code exatamente os comandos indicados. Ele orquestra o resto automaticamente.
 
----
-
-### Novo projeto
-
-**O que produz:** PRD + plano faseado + projeto rodando + features implementadas com testes.
+### Projeto novo
 
 ```
-1. /novo-prd
-   → Claude entrevista você e gera plans/<projeto>.md
-     (problema, usuários, fluxos, modelo de dados, API, MVP, fora de escopo)
+1. Iniciar projeto novo
+   → Claude segue a sequência de 7 agentes com handoff explícito
 
-2. /prd-planejamento
-   → Claude analisa o PRD e gera plans/<projeto>-plano.md
-     (Fase 0: fundação — banco + tipos + rotas vazias
-      Fase 1+: features verticais completas, cada uma demonstrável)
-
-3. Iniciar projeto novo
-   → Claude faz o bootstrap (scaffold, deps, banco, app, CI/CD)
-
-4. Implementar a Fase 0 do plano
-   Implementar a Fase 1 do plano
-   ...
-   → Cada fase: spec técnico → testes → código → revisão → merge
+2. Implementar a US-01
+   Implementar a US-02
+   → Cada story: spec → plan → execute → verify → finish
 ```
-
----
 
 ### Nova feature (projeto existente)
 
-**O que produz:** PRD da feature + plano faseado + feature implementada com testes e revisão.
-
 ```
-1. /novo-prd
-   → Claude entrevista você e gera plans/<feature>.md
+1. Implementar a US-XX
+   → triage → spec (se contrato novo) → plan → execute → verify → finish
 
-2. /prd-planejamento
-   → Claude gera plans/<feature>-plano.md com fases ordenadas
-
-3. Implementar a Fase 0 do plano
-   Implementar a Fase 1 do plano
-   ...
-   → Cada fase: spec técnico → micro-tasks → testes → revisão → merge
-
-4. Finalizar branch
-   → Claude sugere merge ou PR, atualiza o backlog
+2. Ou: /novo-prd → /prd-planejamento → Implementar a Fase 0
 ```
-
----
 
 ### Correção de bug
 
-**O que produz:** bug corrigido com teste que previne regressão.
-
 ```
 1. Corrigir [descrição do bug]
-   → Claude investiga sistematicamente: reproduz, isola a causa, formula hipóteses
+   → Claude investiga, reproduz, isola causa
 
-2. Claude escreve o teste que falha (reproduz o bug)
-   → Você aprova
-
-3. Claude implementa o fix mínimo para o teste passar
-   → Sem alterar comportamento de outras áreas
-
-4. Claude verifica: testes, lint, typecheck, cobertura
-   → Apresenta resultado antes de commitar
+2. Red: teste que falha (reproduz o bug)
+3. Green: fix mínimo
+4. Verify: testes, lint, typecheck, cobertura
 ```
 
----
-
-### Refatoração de backend
-
-**O que produz:** módulo refatorado com cobertura de testes mantida, sem funcionalidades novas.
+### Refatoração
 
 ```
-1. Refatorar [módulo/camada] no backend
-   → Claude confirma: sem contrato novo → decompõe em micro-tasks de refactor
+1. Refatorar [módulo/camada]
+   → triage: sem contrato novo → TDD direto
 
-2. Nenhuma task adiciona funcionalidade nova (YAGNI enforced)
-
-3. Para cada task:
-   Red: teste que cobre o comportamento atual
-   Green: código refatorado
-   → Comportamento externo não muda
-
-4. Claude verifica: testes ≥ 80%, lint, typecheck
-   → Finaliza branch
-```
-
----
-
-### Refatoração estrutural
-
-**O que produz:** decisão arquitetural registrada + refactor executado em micro-tasks com testes.
-
-```
-1. Refatorar a estrutura de [módulo/sistema]
-   → Claude explora alternativas com você antes de propor qualquer mudança
-
-2. Claude apresenta 2–3 abordagens com trade-offs
-   → Você escolhe
-
-3. Decisão registrada em docs/ como ADR
-   → Claude decompõe em micro-tasks
-
-4. Para cada task:
+2. Para cada task:
    Red → Green → Refactor
-   → Sem misturar refactor com novas funcionalidades
-
-5. Claude verifica e finaliza branch
+   → Comportamento externo não muda
 ```
-
----
-
-### Refatoração de frontend e UX/UI
-
-**O que produz:** componentes/páginas refatorados com checklist visual completo (4 estados, responsivo, animações, acessibilidade).
-
-```
-1. Refatorar [componente/página] no frontend
-   → Claude explora o design com você antes de qualquer mudança
-
-2. Se houver mudança no design system:
-   → Claude atualiza design-brief.md e/ou MASTER.md antes de implementar
-
-3. Claude decompõe em micro-tasks de componentes
-   → Cada componente tem 4 estados obrigatórios:
-      default · hover/focus · loading · empty/error
-
-4. Para cada componente:
-   Teste → implementação → checklist visual
-   → Cores, tipografia e espaçamentos do design brief (sem hardcode)
-
-5. Claude verifica: testes, lint, typecheck, checklist visual completo
-   → Finaliza branch
-```
-
----
 
 ### Aprendizado contínuo
 
@@ -469,6 +426,7 @@ Claude descobre algo → auto-atualiza claude-stacks-refactor.md → marca Pende
 | [Docker](https://docker.com) + Compose | — | Dev environment |
 | [Node](https://nodejs.org) | ≥ 20.19 ou ≥ 22.12 | Tooling (Vite 8, TypeScript) |
 | [Python](https://python.org) | 3.x | ui-ux-pro-max scripts |
+| [gh CLI](https://cli.github.com) | — | GitHub Issues sync + Project board |
 | Git | — | Versionamento + hooks |
 
 ### Plugins (instalar no Claude Code)
@@ -484,8 +442,6 @@ Claude descobre algo → auto-atualiza claude-stacks-refactor.md → marca Pende
 /plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
 /plugin install ui-ux-pro-max@ui-ux-pro-max-skill
 ```
-
-Ou via CLI: `npm install -g uipro-cli && uipro init --ai claude`
 
 ### Personal skills de debugging
 
@@ -503,26 +459,30 @@ mkdir -p ~/.claude/skills/{hono-api-debugging,drizzle-database-debugging,react-t
 
 | Comando | O que faz |
 |---|---|
-| `/novo-prd` | Entrevista guiada → PRD em `plans/<feature>.md` |
-| `/prd-planejamento` | PRD → plano faseado em `plans/<feature>-plano.md` |
-| `Iniciar projeto novo` | Bootstrap completo (5 fases) |
+| `Iniciar projeto novo` | Sequência de 7 agentes com handoff explícito |
 | `Adotar workflow SDD/TDD neste projeto` | Retrofit em projeto existente |
+| `Implementar a US-03` | Story completa: triage → spec → plan → execute → verify → finish |
 | `Continuar o backlog` | Próxima task P1 pendente |
 | `Continuar o backlog da US-03` | Próxima task da story |
-| `Implementar a US-03` | Story completa: spec → plan → execute |
 | `Executar a task 3.2 do backlog` | Task específica |
 | `Corrigir o erro 500 ao criar evento` | Bug fix com debugging protocol |
+| `/novo-prd` | Entrevista guiada → PRD em `plans/<feature>.md` |
+| `/prd-planejamento` | PRD → plano faseado em `plans/<feature>-plano.md` |
 
 ### Terminal
 
 | Comando | Onde | O que faz |
 |---|---|---|
-| `./adopt-workflow.sh /path/projeto` | Template | Adotar workflow: copia globais, agentes, cria agent-memory e docs/ |
-| `cp sync-globals.sh promote-learning.sh /path/projeto` | Template | Copiar scripts de manutenção para o projeto |
-| `./sync-globals.sh` | Projeto | Puxar globais + agentes do GitHub |
-| `TEMPLATE_REPO_URL="..." ./sync-globals.sh` | Projeto | Puxar com URL customizada |
+| `./adopt-workflow.sh /path/projeto` | Template | Adotar workflow: copia tudo, cria estrutura completa |
+| `./sync-globals.sh` | Projeto | Puxar globais + agentes + hooks do GitHub |
 | `./sync-globals.sh /path/template` | Projeto | Puxar de cópia local |
+| `TEMPLATE_REPO_URL="..." ./sync-globals.sh` | Projeto | Puxar com URL customizada |
 | `./promote-learning.sh /path/template` | Projeto | Enviar aprendizados para o template |
+| `./setup-github-project.sh` | Projeto | Criar Project board, labels, milestones, branch protection |
+| `./sync-github-issues.sh` | Projeto | Sincronizar backlog.md → GitHub Issues |
+| `./check-health.sh` | Projeto | Diagnóstico visual do template |
+| `./check-health.sh --assert` | Projeto/CI | Diagnóstico + exit 1 se falhas críticas |
+| `./check-quality.sh` | Projeto | Atualizar docs/quality.md manualmente |
 
 ---
 

@@ -51,6 +51,11 @@ Um **spec** é um documento Markdown compacto que descreve **o quê** será impl
 ## Cenários de teste
 [Lista numerada de cenários no formato: DADO x, QUANDO y, ENTÃO z]
 
+> **Nomenclatura obrigatória para testes** (rastreabilidade spec→teste):
+> Cada cenário deve ter um teste com nome exato `it('Cenário X.Y: deve [comportamento] quando [condição]', ...)`
+> Exemplo: `it('Cenário 3.1: deve rejeitar evento sem título quando campo vazio', ...)`
+> O `check-quality.sh` usa esses nomes para verificar cobertura por cenário.
+
 ## Critério de conclusão
 [Checklist binário — cada item é verificável por automação ou inspeção]
 ```
@@ -165,7 +170,7 @@ Aprova este spec para iniciar a implementação?
 (Responda "sim" para prosseguir, ou indique os ajustes desejados)
 ```
 
-S� prosseguir após "sim" explícito.
+S� prosseguir após "sim" explícito.
 
 ---
 

@@ -64,27 +64,42 @@ else
 fi
 DOD_LINT="- [ ] \`bunx biome check\` zero erros"
 DOD_TYPE="- [ ] \`tsc --noEmit\` zero erros"
+DOD_SPEC=""  # será definido na seção Spec Coverage abaixo
 
 # ── Spec Coverage ─────────────────────────────────────────────
-SPEC_TABLE="| Spec | Cenário | Teste | Status |\n|------|---------|-------|--------|"
+# Convenção obrigatória: it('Cenário X.Y: deve [comportamento] quando [condição]', ...)
+SPEC_TABLE="| Spec | Cenário | Status |\n|------|---------|--------|"
+SPEC_COVERED=0
+SPEC_TOTAL=0
+
 if [ -d "$SPECS_DIR" ] && ls "$SPECS_DIR"/*.spec.md 2>/dev/null | head -1 > /dev/null; then
   for spec_file in "$SPECS_DIR"/*.spec.md; do
     spec_name=$(basename "$spec_file" .spec.md)
-    # Extrair cenários (linhas como "### Cenário X.Y:" ou "- Cenário X.Y:")
+    # Extrair cenários numerados do spec (formato: "Cenário X.Y" ou "Cenário X.Y:")
     while IFS= read -r scenario_line; do
-      scenario=$(echo "$scenario_line" | sed 's/.*Cenário /Cenário /' | sed 's/:.*//')
-      # Verificar se existe teste com esse cenário
-      test_found="--"
-      if grep -r "Cenário" . --include="*.test.ts" --include="*.test.tsx" -l 2>/dev/null | head -1 > /dev/null; then
-        if grep -r "$scenario" . --include="*.test.ts" --include="*.test.tsx" -q 2>/dev/null; then
-          test_found="✅"
-        else
-          test_found="❌ Não encontrado"
-        fi
+      scenario=$(echo "$scenario_line" | grep -oE "Cenário [0-9]+\.[0-9]+" | head -1)
+      [ -z "$scenario" ] && continue
+      SPEC_TOTAL=$((SPEC_TOTAL + 1))
+      # Verificar se existe teste com nomenclatura exata: it('Cenário X.Y:
+      if grep -r "it(.*$scenario:" . --include="*.test.ts" --include="*.test.tsx" -q 2>/dev/null; then
+        SPEC_COVERED=$((SPEC_COVERED + 1))
+        SPEC_TABLE="$SPEC_TABLE\n| $spec_name | $scenario | ✅ Coberto |"
+      else
+        SPEC_TABLE="$SPEC_TABLE\n| $spec_name | $scenario | ❌ Sem teste |"
       fi
-      SPEC_TABLE="$SPEC_TABLE\n| $spec_name | $scenario | $test_found | -- |"
-    done < <(grep -E "Cenário [0-9]" "$spec_file" 2>/dev/null || true)
+    done < <(grep -E "Cenário [0-9]+\.[0-9]+" "$spec_file" 2>/dev/null || true)
   done
+fi
+
+# Gate: todos os cenários cobertos?
+if [ "$SPEC_TOTAL" -gt 0 ]; then
+  if [ "$SPEC_COVERED" -eq "$SPEC_TOTAL" ]; then
+    DOD_SPEC="- [x] Cenários do spec cobertos ($SPEC_COVERED/$SPEC_TOTAL)"
+  else
+    DOD_SPEC="- [ ] Cenários do spec cobertos ($SPEC_COVERED/$SPEC_TOTAL) ← **FALTAM $((SPEC_TOTAL - SPEC_COVERED))**"
+  fi
+else
+  DOD_SPEC="- [ ] Cenários do spec cobertos (nenhum spec encontrado em docs/specs/)"
 fi
 
 # ── Escrever quality.md ────────────────────────────────────────
@@ -117,7 +132,7 @@ $(echo -e "$MODULE_TABLE")
 ${DOD_TEST}
 ${DOD_LINT}
 ${DOD_TYPE}
-- [ ] Cenários do spec ativos cobertos (ver Spec Coverage abaixo)
+${DOD_SPEC}
 - [ ] Code review aprovado (\`superpowers:requesting-code-review\`)
 
 ---

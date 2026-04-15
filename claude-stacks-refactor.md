@@ -26,6 +26,24 @@ Ver política completa em `claude-debug.md → Bugs pré-existentes`.
 
 ---
 
+## Bug Journal
+
+> Preenchido automaticamente via skill `escalation-and-bug-journal` para bugs com > 30 min de investigação.
+> **Como preencher**: Após resolver bug de escopo grande, adicionar uma entrada abaixo.
+
+<!-- Template de entrada:
+### Bug: [descrição curta] — [data]
+- **Sintoma**: O que estava acontecendo
+- **Causa raiz**: O que causou o problema
+- **Correção**: Como foi resolvido
+- **Tempo investido**: Xh Ymin
+- **Nível de escalação**: 1-4
+- **Lição aprendida**: O que evitar no futuro
+- **Candidato a promoção?**: Sim / Não
+-->
+
+---
+
 ## Candidatos a promoção
 
 > Regras que podem beneficiar todos os projetos. Revisar periodicamente e promover para os arquivos globais.

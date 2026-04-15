@@ -77,9 +77,12 @@ GLOBAL_FILES=(
   "check-health.sh"
   "check-quality.sh"
   ".claude/settings.local.example.json"
+  ".claude/hooks/pre-tool-use.sh"
+  ".claude/hooks/inject-context.sh"
 )
 
 info "Copiando arquivos globais..."
+mkdir -p "$TARGET_DIR/.claude/hooks"
 for file in "${GLOBAL_FILES[@]}"; do
   if [ -f "$SCRIPT_DIR/$file" ]; then
     cp "$SCRIPT_DIR/$file" "$TARGET_DIR/$file"

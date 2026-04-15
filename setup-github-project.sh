@@ -27,7 +27,7 @@ else
   if [[ "$REMOTE_URL" != *"github.com"* ]]; then
     error "Remote origin nao e GitHub: $REMOTE_URL. Passe o repo como argumento: owner/repo"
   fi
-  REPO=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+  REPO=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com(:[0-9]+)?[:/]||; s|\.git$||')
 fi
 
 OWNER="${REPO%%/*}"

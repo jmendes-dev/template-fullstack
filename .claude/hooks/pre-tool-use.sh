@@ -9,8 +9,17 @@
 
 FILE=$(echo "${CLAUDE_TOOL_INPUT:-}" | grep -o '"file_path" *: *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' | head -1)
 
+# Se CLAUDE_TOOL_INPUT não estava disponível, tentar stdin (Claude Code envia JSON via stdin)
+if [ -z "$FILE" ] && [ ! -t 0 ]; then
+  STDIN=$(cat 2>/dev/null)
+  FILE=$(echo "${STDIN}" | grep -o '"file_path" *: *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' | head -1)
+fi
+
 # Sem file_path → não é Write/Edit ou não há path — deixar passar
 [ -z "$FILE" ] && exit 0
+
+# Normalizar backslashes para forward slashes (paths Windows absolutos)
+FILE=$(echo "$FILE" | tr '\\' '/')
 
 # ── Hard block: .github/workflows/ ───────────────────────────────
 # Mudanças de CI/CD têm alto impacto e devem passar pelo devops-sre-engineer

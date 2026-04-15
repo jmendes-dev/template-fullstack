@@ -8,7 +8,13 @@
 #   - quality.md        → APENAS se prompt menciona testes/qualidade/bugs
 #   - backlog.md        → APENAS se prompt menciona tasks/stories/progresso
 
+# Claude Code passa dados do hook via stdin como JSON — CLAUDE_USER_PROMPT pode não ser setado
 PROMPT="${CLAUDE_USER_PROMPT:-}"
+if [ -z "$PROMPT" ] && [ ! -t 0 ]; then
+  _STDIN=$(cat 2>/dev/null)
+  # Extrai o campo "prompt" do JSON: {"prompt":"..."} ou {"prompt": "..."}
+  PROMPT=$(echo "$_STDIN" | grep -o '"prompt" *: *"[^"]*"' | head -1 | sed 's/"prompt" *: *"//;s/"$//')
+fi
 out=""
 
 # ── Session state — sempre ────────────────────────────────────────

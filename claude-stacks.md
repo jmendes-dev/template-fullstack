@@ -97,9 +97,18 @@ S3_SECRET_KEY=         # secret key do bucket
 S3_REGION=             # região S3 (default: us-east-1)
 S3_BUCKET=             # nome do bucket (default: uploads)
 S3_FORCE_PATH_STYLE=   # "true" para S3-compatible (MinIO, etc.)
+MINIO_ROOT_USER=       # usuário admin do MinIO local (dev)
+MINIO_ROOT_PASSWORD=   # senha admin do MinIO local (dev)
+MINIO_PORT=            # porta API S3 do MinIO local (default: 9000, dev only)
+MINIO_CONSOLE_PORT=    # porta console web do MinIO local (default: 9001, dev only)
+REGISTRY=              # endereço do registry Docker privado (ex: 10.10.254.66:5000)
+APP_NAME=              # nome do app (prefixo das imagens: APP_NAME-api, APP_NAME-web)
+S3_BACKUP_BUCKET=      # bucket de backup do banco (ex: backup-app-name-db)
+BACKUP_RETENTION_DAYS= # dias de retenção dos backups (default: 30 PRD, 7 UAT/dev)
+BACKUP_INTERVAL=       # intervalo entre backups em segundos (default: 86400 = 24h)
 ```
 
-Arquivos: `.env.development`, `.env.staging`, `.env.production`. Nunca commitar secrets.
+Arquivos: `.env` (dev local apenas), `.env.example`. **UAT e PRD**: variáveis configuradas exclusivamente na UI do Portainer — nunca via arquivo `.env` (Portainer Stacks não processam `.env` files, quebrando o deploy). Compose de UAT/PRD usam sintaxe `${VARIAVEL}` e os valores são definidos na UI do Portainer. Nunca commitar secrets.
 
 ## Regras de estado (nunca misture)
 
@@ -176,17 +185,46 @@ Toda rota usa `c.json({ data: ... })`. Nunca array/objeto solto. Frontend acessa
 - **Migrations**: rodar como [pre-deploy command](https://docs.railway.com/guides/pre-deploy-command) → `bun run db:migrate`
 
 ### Portainer (on-premises)
-- Deploy via **Portainer Stacks** (docker-compose.yml na UI)
+- Deploy via **Portainer Stacks** — cada ambiente (UAT, PRD) é uma stack separada com seu próprio compose
 - PostgreSQL como container na mesma stack
-- Reverse proxy: **Traefik** (labels no compose)
+- Imagens pré-buildadas pelo CD e pushadas para registry interno
 - Migrations: via entrypoint script (`bun run db:migrate && bun run start`)
 - Volumes nomeados para dados persistentes (postgres data)
+- Webhook Portainer dispara redeploy após push da imagem
+
+**Três compose files**:
+
+| Arquivo | Uso | Imagens |
+|---|---|---|
+| `docker-compose.yml` | Dev local | Build local (Dockerfile) |
+| `docker-compose-uat.yml` | Homologação (Portainer) | `${REGISTRY}/${APP_NAME}-{service}:uat-latest` |
+| `docker-compose-prd.yml` | Produção (Portainer) | `${REGISTRY}/${APP_NAME}-{service}:latest` |
+
+**Diferenças entre ambientes**:
+- **Dev**: build local, portas mapeadas no host, volumes bind-mount, sem resource limits
+- **UAT**: imagens do registry com tag `uat-latest`, resource limits moderados, `restart: unless-stopped`
+- **PRD**: imagens do registry com tag `latest`, resource limits maiores, `restart: unless-stopped`
+
+**UAT e PRD não fazem build** — usam `image:` apontando para o registry interno. O CD faz build e push; o webhook Portainer faz pull e redeploy.
+
+### Web serving — nginx reverse proxy
+
+O container `web` em produção/UAT usa **nginx** para servir o SPA e fazer proxy reverso para a API:
+
+- `/` → serve `index.html` (SPA catch-all via `try_files`)
+- `/api/*` → proxy para `http://api:3000` (backend)
+- `/uploads/*` → proxy para `http://api:3000` (se houver uploads servidos pela API)
+- Assets estáticos (`.js`, `.css`, `.woff2`, etc.) → cache 1 ano com `immutable`
+- Security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`
+- `VITE_API_URL` deve ser `""` (vazio) — frontend faz requests same-origin, nginx roteia
+
+Criar `apps/web/nginx.conf` com esta configuração. O Dockerfile do web copia o nginx.conf para `/etc/nginx/conf.d/default.conf`.
 
 ### Storage (S3-compatible — serviço externo)
 
 Código da aplicação usa `@aws-sdk/client-s3` apontando para `S3_ENDPOINT`. Nunca usar filesystem local para uploads em prod. **Caveat**: SDK v3.729+ envia checksums que S3-compatible pode rejeitar — usar `requestChecksumCalculation: "WHEN_REQUIRED"` no client config.
 
-S3 é sempre um **serviço externo** — nunca criar container S3/MinIO no compose do projeto. Conexão via variáveis de ambiente seguindo o mesmo padrão do registry Docker:
+**Em dev**: MinIO roda como container local no compose para desenvolvimento (service `minio`). **Em UAT/PRD**: MinIO é serviço externo centralizado no servidor de monitoramento, conexão via env vars do Portainer. Conexão via variáveis de ambiente seguindo o mesmo padrão do registry Docker:
 
 ```env
 S3_ENDPOINT=           # URL do serviço S3 (ex: http://minio-host:9000)
@@ -202,12 +240,14 @@ Compose para Portainer — ver regras detalhadas em `START_PROJECT.md` Fase 4. R
 | Regra | Aplica a |
 |---|---|
 | `restart: unless-stopped` | todos |
-| `mem_limit: 256m` | api, web |
-| Traefik labels (`traefik.enable`, `routers`, `services`) | api, web |
-| `healthcheck` | todos |
-| `depends_on: condition: service_healthy` | api, web |
-| Portas via env var com default (`${PORT:-3000}`) | todos |
-| Volumes nomeados | postgres |
+| `deploy.resources.limits.memory` | todos (variar por ambiente: UAT menor, PRD maior) |
+| `healthcheck` | postgres, redis (se houver) |
+| `depends_on: condition: service_healthy` | api → postgres/redis, web → api |
+| Portas via env var com default (`${API_PORT:-3000}`, `${WEB_PORT:-80}`) | todos |
+| Volumes nomeados | postgres, redis (se houver) |
+| `image: ${REGISTRY}/${APP_NAME}-{service}:{tag}` | api, web (UAT/PRD — nunca build local) |
+| Service `backup` com `${REGISTRY}/backup-postgres:latest` | UAT/PRD (backup automático do PostgreSQL para MinIO) |
+| Service `minio` (container local) | apenas dev (UAT/PRD usam MinIO central via env vars) |
 
 ## Production-readiness (obrigatório)
 
@@ -215,6 +255,27 @@ Compose para Portainer — ver regras detalhadas em `START_PROJECT.md` Fase 4. R
 - **Graceful shutdown**: capturar SIGTERM, fechar conexões DB
 - **Logs**: JSON stdout via `pino` com `requestId`. Nunca `console.log` em prod
 - **CORS**: origins explícitas via `APP_CORS_ORIGINS`. Nunca `origin: '*'` em prod
+
+## Backup PostgreSQL (obrigatório)
+
+Todo projeto on-premises deve ter backup automático do PostgreSQL com envio para MinIO.
+
+**Imagem**: `${REGISTRY}/backup-postgres:latest` — container sidecar que roda `pg_dump | gzip | mc pipe` em loop, enviando diretamente para o MinIO sem uso de disco local.
+
+**Compose**: service `backup` obrigatório em todos os compose files (dev, UAT, PRD). Ver `START_PROJECT.md` Fase 4 para configuração completa.
+
+| Ambiente | S3_ENDPOINT | Bucket | Retenção |
+|---|---|---|---|
+| Dev | `http://minio:9000` (container local, credenciais via `.env`) | `backup-${APP_NAME}-db` | via `.env` |
+| UAT | `${S3_ENDPOINT}` (MinIO central, via Portainer UI) | `${S3_BACKUP_BUCKET}` (via Portainer UI) | via Portainer UI |
+| PRD | `${S3_ENDPOINT}` (MinIO central, via Portainer UI) | `${S3_BACKUP_BUCKET}` (via Portainer UI) | via Portainer UI |
+
+**Restore**: o mesmo container suporta restore via variáveis de ambiente:
+- Listar backups: `docker compose run --rm -e MODE=restore backup`
+- Restaurar: `docker compose run --rm -e MODE=restore -e RESTORE_FILE=<arquivo> backup`
+- Antes de restaurar, parar services `api` e `web` para evitar escrita durante o restore
+
+**MinIO em dev**: o compose de dev inclui um container MinIO local (`minio/minio:latest`) com credenciais via `.env` (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`), acessível em `http://localhost:${MINIO_PORT:-9000}` (API S3) e `http://localhost:${MINIO_CONSOLE_PORT:-9001}` (console web). Nunca hardcodar credenciais nos compose files, usar sempre `${VARIAVEL}` com valores definidos no `.env` (dev) ou Portainer UI (UAT/PRD).
 
 ## Background jobs (escala progressiva)
 
@@ -240,16 +301,24 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 
 ## Dev workflow (Docker-first)
 
-- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose -f docker-compose.dev.yml up`
+- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose up` (Portainer: usa `docker-compose.yml`) ou `docker compose -f docker-compose.dev.yml up` (Railway ou hot-reload com Dockerfile.dev)
 - Bind-mount do código para hot reload. `bun install` dentro do container
 - Lint, typecheck, test, build: `docker compose exec <service> <comando>`
-- Portas via env var com defaults (`PORT`, `WEB_PORT`, `PGPORT`). Se ocupada, incrementar +1
+- Portas via env var com defaults (`API_PORT`, `WEB_PORT`, `POSTGRES_PORT`). Se ocupada, incrementar +1
+- **UAT/PRD**: deploy automático via CD → webhook Portainer. Nunca fazer deploy manual
 
 ## Git workflow
 
-- **Branch strategy**: trunk-based — `main` sempre deployável, feature branches curtas (`feat/`, `fix/`, `chore/`)
+- **Branch strategy**: trunk-based com staging — `main` (produção), `uat` (homologação), feature branches curtas (`feat/`, `fix/`, `chore/`)
+- **Fluxo**: feature branch → PR para `uat` → teste em UAT → merge para `main` → deploy PRD
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`)
-- **PRs**: squash merge para main. CI deve passar antes de merge
+- **PRs**: squash merge. CI deve passar antes de merge
+
+| Branch | CI | CD | Ambiente |
+|---|---|---|---|
+| `main` | push + PR target | `cd-prd.yml` (após CI verde) | Produção |
+| `uat` | push | `cd-uat.yml` (após CI verde) | Homologação |
+| `feat/*` | PR para main/uat | nenhum | — |
 
 ## Testes
 
@@ -262,13 +331,13 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 
 ### CI (`ci.yml`)
 
-Roda em push para `main` e em PRs para `main`.
+Roda em push para `main` e `uat`, e em PRs para `main`.
 
 ```yaml
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, uat]
   pull_request:
     branches: [main]
 
@@ -288,16 +357,82 @@ jobs:
         env: { SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}" }
 ```
 
-### CD — Railway
-
-Railway faz deploy automático ao detectar push no branch configurado. O CD é gerenciado pelo próprio Railway (não por GitHub Actions). Configurar no Railway dashboard:
-- **Auto-deploy**: ativado para branch `main`
-- **Pre-deploy command**: `bun run db:migrate`
-- **Build**: Railway detecta Dockerfile automaticamente
-
-**Importante**: Railway deploya automaticamente em push para `main`, mas o CI (GitHub Actions) deve passar antes do merge. Configurar branch protection rules no GitHub para exigir CI verde antes de merge em `main`.
-
 **SonarQube**: `sonar-project.properties` na raiz. Quality gate: coverage >= 80%.
+
+### CD — Deploy Portainer (`cd-uat.yml` / `cd-prd.yml`)
+
+CD **nunca** roda diretamente em push — é acionado via `workflow_run` após CI verde. Isso garante que código quebrado jamais chegue a UAT ou PRD.
+
+**Mecanismo**: `workflow_run` com `types: [completed]` + guard `if: github.event.workflow_run.conclusion == 'success'`.
+
+```yaml
+# cd-uat.yml — deploy para homologação
+name: Deploy UAT
+on:
+  workflow_run:
+    workflows: ['CI']
+    branches: [uat]
+    types: [completed]
+
+jobs:
+  deploy-api:
+    if: github.event.workflow_run.conclusion == 'success'
+    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
+    with:
+      app_name: ${{ vars.APP_NAME }}-api
+      registry: ${{ vars.INTERNAL_REGISTRY }}
+      dockerfile: apps/api/Dockerfile
+      skip_deploy: true           # build + push, mas NÃO dispara webhook ainda
+    secrets:
+      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
+
+  deploy-web:
+    needs: deploy-api               # web só deploya após API estar no registry
+    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
+    with:
+      app_name: ${{ vars.APP_NAME }}-web
+      registry: ${{ vars.INTERNAL_REGISTRY }}
+      dockerfile: apps/web/Dockerfile
+    secrets:
+      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
+      BUILD_SECRETS: |
+        VITE_CLERK_PUBLISHABLE_KEY=${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+```
+
+```yaml
+# cd-prd.yml — deploy para produção (mesmo padrão, branch main)
+name: Deploy PRD
+on:
+  workflow_run:
+    workflows: ['CI']
+    branches: [main]
+    types: [completed]
+# ... mesma estrutura, usando deploy-prd.yml e PORTAINER_WEBHOOK_PRD
+```
+
+**Regras obrigatórias do CD**:
+
+| Regra | Detalhe |
+|---|---|
+| CD só roda após CI verde | `workflow_run` + `conclusion == 'success'` — nunca trigger direto em push |
+| Branches permitidas | `uat` → `cd-uat.yml`, `main` → `cd-prd.yml`. Nenhum outro branch dispara CD |
+| Ordem de deploy | API primeiro (`skip_deploy: true` = build+push sem webhook), depois Web (dispara webhook que atualiza a stack inteira) |
+| Reusable workflows | Usar workflows do org repo (`masterboiteam/.github`) para padronizar build/push/webhook |
+| Image tags | UAT: `{REGISTRY}/{APP_NAME}-{service}:uat-latest`. PRD: `{REGISTRY}/{APP_NAME}-{service}:latest` |
+| Build secrets (Web) | `VITE_*` injetadas via `BUILD_SECRETS` como build args do Docker — embutidas no bundle JS em build time |
+| Webhook Portainer | Após push da imagem, o reusable workflow chama o webhook para Portainer redeployar a stack |
+
+**Secrets e vars obrigatórias no GitHub**:
+
+| Tipo | Nome | Descrição |
+|---|---|---|
+| var | `APP_NAME` | Nome do app (prefixo das imagens: `{APP_NAME}-api`, `{APP_NAME}-web`) |
+| secret | `SONAR_TOKEN` | Token SonarCloud/SonarQube |
+| secret | `PORTAINER_WEBHOOK_UAT` | URL do webhook Portainer para stack UAT |
+| secret | `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer para stack PRD |
+| secret | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (injetada no build do frontend) |
+
+**Nota**: `INTERNAL_REGISTRY` é uma var da **organização** — já está disponível em todos os repos, não precisa ser configurada por repo.
 
 **Segurança em workflows**: nunca interpolar `${{ github.event.* }}` diretamente em `run:` (command injection). Usar `env:` + variável shell. Ver regra 35.
 
@@ -316,12 +451,12 @@ Scripts obrigatórios no root `package.json`:
 Após cada push, verificar GitHub Actions. Máximo **7 tentativas** até CI verde.
 
 1. Push → aguardar CI
-2. Passou → concluído (Railway deploya automaticamente)
+2. Passou → concluído (CD dispara automaticamente via `workflow_run`)
 3. Falhou → identificar step quebrado → logar `step → causa → correção` → fix → push
 4. Repetir até verde ou 7 tentativas
 5. Se 7 tentativas: parar, reportar resumo das tentativas + erro persistente + próximos passos
 
-Nunca considerar tarefa finalizada com CI vermelho.
+Nunca considerar tarefa finalizada com CI vermelho. CD bloqueado automaticamente quando CI falha.
 
 ## Planejamento
 
@@ -343,7 +478,7 @@ Projeto novo → seguir `START_PROJECT.md`. Feature nova ou dependência desconh
 12. **Nunca `sql.raw()` com input externo** — usar placeholders parametrizados. Em `sql` tagged templates, converter `Date` com `.toISOString()` antes de interpolar
 13. **API response format**: seguir rigorosamente a seção "API response format". Nunca retornar sem envelope `{ data }`
 14. Commits seguem Conventional Commits. Branches seguem o padrão `feat/`/`fix/`/`chore/`
-15. **Storage sempre via S3 SDK** (`@aws-sdk/client-s3` + `S3_ENDPOINT` env var). Nunca salvar uploads no filesystem local em prod. S3 é serviço externo — nunca criar container S3/MinIO no compose
+15. **Storage sempre via S3 SDK** (`@aws-sdk/client-s3` + `S3_ENDPOINT` env var). Nunca salvar uploads no filesystem local em prod. **Em dev**: MinIO roda como container local no compose (service `minio`) — credenciais via `.env`, nunca hardcoded. **Em UAT/PRD**: MinIO é serviço externo centralizado — conexão via env vars do Portainer, nunca container no compose de produção
 16. **Projeto novo**: se o repositório não contém `apps/` ou `packages/shared/`, considerar projeto novo. Ler e executar `START_PROJECT.md` **antes de qualquer outra ação**
 17. **Nullable fields**: colunas Drizzle sem `.notNull()` produzem `T | null` no TypeScript. Frontend **deve** tratar nulls explicitamente (ex: `user.firstName || ""`, `user.avatarUrl ?? undefined`)
 18. **shadcn/ui — verificar antes de usar**: conferir o código real em `src/components/ui/<componente>.tsx` antes de passar props. Variantes não-padrão não existem — usar `className`
@@ -365,3 +500,13 @@ Projeto novo → seguir `START_PROJECT.md`. Feature nova ou dependência desconh
 34. **Diagnosticar antes de corrigir**: ao encontrar um erro de build/typecheck/runtime, **ler o arquivo e a linha exata do erro** antes de tentar qualquer fix. Rastrear a cadeia de tipos/imports até a causa raiz. Nunca adivinhar a causa pelo texto do erro e mexer em arquivos não relacionados (ex: erro de tipo `unknown` no RPC client → ler o arquivo do hook e o setup do client, não mexer em `tsconfig.json` ou `vite-env.d.ts`)
 35. **GitHub Actions — segurança obrigatória**: nunca usar input não-confiável (`github.event.issue.title`, `github.event.pull_request.body`, `github.event.comment.body`, commit messages) diretamente em `run:`. Passar via `env:` com quoting. Padrão seguro: `env: TITLE: ${{ github.event.issue.title }}` → `run: echo "$TITLE"`. Ref: https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
 36. **Context7 MCP — escopo de confiança**: context7 é confiável para documentação de API, sintaxe, exemplos de uso e breaking changes. **Não é confiável para versão latest** de pacotes — pode reportar versões defasadas. Para verificar versão atual: `bun info <pacote>` (requer `package.json` no diretório; fallback: `npm view <pacote> version`). Para documentação/como usar: context7 MCP. Para fallback de ambos: docs oficiais via web
+37. **CD nunca roda direto em push** — sempre via `workflow_run` após CI verde. Guard obrigatório: `if: github.event.workflow_run.conclusion == 'success'`. CD sem este guard é deploy cego
+38. **CD só em `uat` e `main`** — `cd-uat.yml` escuta branch `uat`, `cd-prd.yml` escuta branch `main`. Nenhum outro branch dispara CD
+39. **Deploy order**: API primeiro com `skip_deploy: true` (build+push sem webhook), depois Web (dispara webhook que atualiza a stack). Nunca inverter — frontend pode depender da nova API
+40. **Image tags por ambiente**: UAT usa `uat-latest`, PRD usa `latest`. Nunca misturar tags entre ambientes
+41. **Build secrets do frontend**: `VITE_*` são variáveis de build (embutidas no bundle pelo Vite). Passar via `BUILD_SECRETS` no CD, não como env var runtime. nginx não tem acesso a env vars
+42. **Três compose files**: `docker-compose.yml` (dev, build local), `docker-compose-uat.yml` (imagens do registry com tag `uat-latest`), `docker-compose-prd.yml` (imagens do registry com tag `latest`). UAT/PRD nunca fazem build local
+43. **nginx reverse proxy**: Web em UAT/PRD usa nginx. `VITE_API_URL` deve ser `""` (vazio) — frontend faz requests same-origin, nginx roteia `/api/*` para o container `api`. Criar `apps/web/nginx.conf`
+44. **Compose UAT/PRD: nunca `.env` file** — Portainer Stacks não processam arquivos `.env`, quebrando o deploy. Compose de UAT e PRD devem usar `${VARIAVEL}` com valores configurados na UI do Portainer. `.env` é permitido apenas no compose de dev local
+45. **Service backup obrigatório** em todos os compose files (dev, UAT, PRD). Imagem: `${REGISTRY}/backup-postgres:latest`. Em dev, MinIO roda como container local (service `minio`). Em UAT/PRD, MinIO é serviço externo via env vars do Portainer. Nunca hardcodar credenciais nos compose files — usar sempre `${VARIAVEL}` com valores definidos no `.env` (dev) ou Portainer UI (UAT/PRD)
+46. **Credenciais nunca hardcoded** em compose files. Mesmo em dev, usar `${MINIO_ROOT_USER}`, `${MINIO_ROOT_PASSWORD}`, etc. com valores no `.env`. O `.env.example` deve listar todas as variáveis com valores de exemplo

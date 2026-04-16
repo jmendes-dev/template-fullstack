@@ -106,6 +106,7 @@ echo ""
 # ── Baixar/Copiar arquivos globais ─────────────
 
 mkdir -p "$TEMP_DIR/.claude/agents"
+mkdir -p "$TEMP_DIR/.claude/hooks"
 mkdir -p "$TEMP_DIR/.superpowers"
 
 if [ "$SOURCE" = "remote" ]; then
@@ -113,6 +114,7 @@ if [ "$SOURCE" = "remote" ]; then
   echo ""
 
   for file in "${GLOBAL_FILES[@]}"; do
+    mkdir -p "$(dirname "$TEMP_DIR/$file")"
     if curl -sfL "$GITHUB_RAW_BASE/$file" -o "$TEMP_DIR/$file"; then
       ok "Baixado: $file"
     else
@@ -137,6 +139,7 @@ else
 
   for file in "${GLOBAL_FILES[@]}"; do
     if [ -f "$SOURCE/$file" ]; then
+      mkdir -p "$(dirname "$TEMP_DIR/$file")"
       cp "$SOURCE/$file" "$TEMP_DIR/$file"
       ok "Copiado: $file"
     else
@@ -238,6 +241,7 @@ fi
 
 echo ""
 for file in "${CHANGED_FILES[@]}"; do
+  mkdir -p "$(dirname "./$file")"
   cp "$TEMP_DIR/$file" "./$file"
   ok "Atualizado: $file"
 done

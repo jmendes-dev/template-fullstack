@@ -22,6 +22,14 @@
 
 Ver política completa em `claude-debug.md → Bugs pré-existentes`.
 
+### Dev server frontend — usar `bunx vite` no Windows
+
+**Regra**: Em `apps/web`, o script `dev` deve ser `bunx vite`, não `vite` direto.
+
+**Por quê**: Bun 1.3.12 + Vite 8.x no Windows causa segfault quando Bun tenta rodar `vite.js` em modo Node emulation (`args: "node" "vite.js"`). `bunx vite` invoca o binário diretamente contornando o problema.
+
+**Como aplicar**: `package.json` de `apps/web` já corrigido. Se atualizar Vite ou Bun, testar `bun dev` antes de `bunx vite` — pode ser que versões futuras corrijam o segfault.
+
 <!-- Adicionadas automaticamente pelo Claude durante o desenvolvimento -->
 
 ---

@@ -5,6 +5,43 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.2.0] — 2026-04-16
+
+### Added
+- **Agent Memory Bootstrap** (`.superpowers/agent-memory-bootstrap.md`)
+  - Guia para pré-popular memórias dos 10 agentes em projetos novos
+  - Elimina o período de "cold start" onde agentes não têm contexto acumulado
+  - Checklist de coleta de informações (stack, rotas, schemas, stories, perfis)
+  - Template de MEMORY.md + conteúdo mínimo por agente
+  - Regras sobre o que colocar (e não colocar) na memória
+- **Fase 9 no `start_project.md`** — Bootstrap de memória dos agentes após app base
+
+### Changed
+- **`.claude/settings.json`**: hooks simplificados
+  - `PreToolUse`: Write + Edit unificados em um único matcher `Write|Edit`
+  - `UserPromptSubmit` e `PreToolUse`: comandos com path direto (`bash .claude/hooks/...`) em vez de resolução dinâmica via `git rev-parse`
+  - `PostToolUse`: substituído de `post-tool-use.sh` externo para comando inline que aciona `check-quality.sh` diretamente após `bun test`
+- **`check-quality.sh`**: parsing de cobertura por módulo refatorado
+  - Usa arquivo temporário (`mktemp`) em vez de string concatenation com `echo -e`
+  - Evita interpretação incorreta de `\a`, `\n` etc. em paths do Windows
+  - Adaptado ao formato real de output do `bun test --coverage` (colunas Funcs | Lines, não Stmts | Branch | Funcs | Lines)
+- **`sync-github-issues.sh`**: melhorias significativas
+  - Rastreamento de tasks concluídas (`done_count` / `total_count`) por story
+  - Output de dry-run diferencia `[CRIAR]` vs `[ATUALIZAR #N]` com status da issue
+  - Auto-fecha issues quando todas as tasks estão concluídas; reabre se tasks pendentes surgem
+  - Suporte ao formato `**US-XX: Título**` além do formato `### US-XX — Título`
+  - Dry-run usa credenciais gh disponíveis para lookup real de issues existentes
+- **`.github/pull_request_template.md`**: reestruturado
+  - "Story / Contexto" como primeiro campo com referência a US-XX
+  - Seção "Spec" para link do spec SDD
+  - DoD com itens específicos: 4 estados de componente, atualização de contracts
+  - Seção "Testes notáveis" e footer "Generated with Claude Code"
+- **`.gitignore`**: expandido de 11 para 24 entradas organizadas por categoria
+- **`claude-stacks-refactor.md`**: adicionado workaround Vite/Windows
+  - `bunx vite` em vez de `vite` direto em `apps/web` para evitar segfault (Bun 1.3.12 + Vite 8.x + Windows)
+
+---
+
 ## [1.1.0] — 2026-04-15
 
 ### Added — Harness Engineering

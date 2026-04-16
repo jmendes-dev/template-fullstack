@@ -1,46 +1,33 @@
-## O que essa PR faz?
+## Story / Contexto
 
-<!-- Descreva em 1-3 frases o que foi implementado -->
-
----
-
-## Story / Task
-
-<!-- US-XX — Task X.Y — Título da task -->
-
----
-
-## Definition of Done
-
-- [ ] `bun test` passa (zero falhas)
-- [ ] Cobertura de testes ≥ 80% (`docs/quality.md` atualizado)
-- [ ] `bunx biome check` zero erros
-- [ ] `tsc --noEmit` zero erros
-- [ ] Todos os cenários do spec cobertos (nomenclatura `Cenário X.Y:`)
-- [ ] Code review aprovado (`superpowers:requesting-code-review`)
-- [ ] `docs/backlog.md` atualizado com status da task
-- [ ] `docs/contracts/` atualizado (se endpoints foram criados/modificados)
-- [ ] Sem código hardcoded (cores, fontes, URLs de API, credenciais)
-
----
+<!-- US-XX: Nome da story ou descrição resumida do que foi feito -->
 
 ## Tipo de mudança
 
 - [ ] Bug fix
-- [ ] Nova feature
-- [ ] Refatoração
-- [ ] Docs / configuração
+- [ ] Feature nova (US mapeada no backlog)
+- [ ] Refactor (sem mudança de contrato)
+- [ ] Config / infra / CI
+
+## Spec
+
+<!-- Link para docs/specs/US-XX-nome.spec.md ou "N/A - sem contrato novo" -->
+
+## Checklist DoD
+
+- [ ] `bun test` passa com cobertura ≥ 80%
+- [ ] `bunx biome check` zero erros
+- [ ] `tsc --noEmit` zero erros
+- [ ] Todos os cenários do spec têm teste correspondente
+- [ ] Componentes com 4 estados (Loading, Empty, Error, Success) — se frontend
+- [ ] `docs/contracts/README.md` atualizado — se novo endpoint/schema/componente
+- [ ] `docs/backlog.md` atualizado (tasks concluídas marcadas)
+- [ ] Code review via `superpowers:requesting-code-review` executado
+
+## Testes notáveis
+
+<!-- Cenários críticos cobertos por testes — opcional mas útil para o revisor -->
 
 ---
 
-## Screenshots (se frontend)
-
-| Antes | Depois |
-|-------|--------|
-| -- | -- |
-
----
-
-## Notas adicionais
-
-<!-- Dívidas técnicas, dependências, próximos passos -->
+🤖 Generated with [Claude Code](https://claude.ai/claude-code)

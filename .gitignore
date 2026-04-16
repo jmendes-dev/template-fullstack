@@ -1,12 +1,43 @@
+# Dependencies
 node_modules/
+.bun/
+
+# Build output
 dist/
+build/
+.next/
+
+# Environment variables
 .env
-.env.*
-!.env.example
-bun.lockb
-coverage/
+.env.local
+.env.*.local
+
+# Database
+# drizzle/ migrations are version-controlled
+
+# Logs
+*.log
+bun.lock.bak
+
+# OS
 .DS_Store
-*.bak
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Git worktrees
+.worktrees/
+
+# TypeScript
+*.tsbuildinfo
+
+# Claude settings (project-local only)
 .claude/settings.local.json
 .claude/settings.json
-.worktrees/

@@ -41,18 +41,19 @@ if [ "$COVERAGE" != "--" ]; then
 fi
 
 # ── Parsear cobertura por módulo ───────────────────────────────
-MODULE_TABLE="| Módulo | Stmts | Branch | Funcs | Lines | Status |\n|--------|-------|--------|-------|-------|--------|"
+# Formato bun test --coverage: " path/to/file.ts  |  85.71 |   92.30 | 10-20"
+# Colunas: % Funcs | % Lines | Uncovered Line #s
+# Usa arquivo temporário para evitar que echo -e interprete \a, \n etc. em paths Windows
+_MOD_TMP=$(mktemp)
+printf '| Módulo | %% Funcs | %% Lines | Status |\n|--------|---------|---------|--------|\n' > "$_MOD_TMP"
 while IFS= read -r line; do
-  # Linhas com percentuais: "apps/api/routes  85.71  100  75  85.71"
-  if echo "$line" | grep -qE "^\s+[a-zA-Z].*\|.*[0-9]+\.[0-9]+"; then
-    MODULE=$(echo "$line" | awk '{print $1}' | tr -d '|' | tr -d ' ')
-    STMTS=$(echo "$line" | awk '{print $2}' | tr -d '|' | tr -d ' ')
-    BRANCH=$(echo "$line" | awk '{print $3}' | tr -d '|' | tr -d ' ')
-    FUNCS=$(echo "$line" | awk '{print $4}' | tr -d '|' | tr -d ' ')
-    LINES=$(echo "$line" | awk '{print $5}' | tr -d '|' | tr -d ' ')
+  if echo "$line" | grep -qE '^\s+\S+\s+\|[[:space:]]+[0-9]+\.[0-9]+'; then
+    MODULE=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $1); print $1}')
+    FUNCS=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}')
+    LINES=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')
     INT=$(echo "$LINES" | cut -d. -f1)
     if [ "$INT" -ge 80 ] 2>/dev/null; then MOD_STATUS="✅"; else MOD_STATUS="❌"; fi
-    MODULE_TABLE="$MODULE_TABLE\n| $MODULE | $STMTS% | $BRANCH% | $FUNCS% | $LINES% | $MOD_STATUS |"
+    printf '| %s | %s%% | %s%% | %s |\n' "$MODULE" "$FUNCS" "$LINES" "$MOD_STATUS" >> "$_MOD_TMP"
   fi
 done <<< "$TEST_OUTPUT"
 
@@ -123,7 +124,7 @@ cat > "$QUALITY_FILE" << QUALEOF
 
 ## Cobertura por Módulo
 
-$(echo -e "$MODULE_TABLE")
+$(cat "$_MOD_TMP")
 
 ---
 
@@ -158,4 +159,5 @@ $(echo -e "$SPEC_TABLE")
 _Gerado por \`check-quality.sh\` · Última atualização: ${TIMESTAMP}_
 QUALEOF
 
+rm -f "$_MOD_TMP"
 echo "✅ docs/quality.md atualizado (cobertura: ${COVERAGE}%)"

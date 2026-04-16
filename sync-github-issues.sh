@@ -44,7 +44,12 @@ if [[ "$DRY_RUN" == false ]]; then
     error "gh CLI nao autenticado. Rode: gh auth login"
   fi
 else
-  OWNER="dry-run"; REPO_NAME="dry-run"; PROJECT_NUMBER="0"
+  # Dry-run: lê project-id se disponível (para lookup de issues existentes)
+  if [[ -f "$PROJECT_ID_FILE" ]] && gh auth status &>/dev/null 2>&1; then
+    IFS='/' read -r OWNER REPO_NAME PROJECT_NUMBER < "$PROJECT_ID_FILE"
+  else
+    OWNER=""; REPO_NAME=""; PROJECT_NUMBER="0"
+  fi
 fi
 
 # Determine board URL (org vs user account)
@@ -82,7 +87,7 @@ CREATED=0; UPDATED=0
 
 # ── Process a single User Story ──────────────────
 process_us() {
-  local us="$1" title="$2" priority="$3" milestone="$4" tasks_body="$5"
+  local us="$1" title="$2" priority="$3" milestone="$4" tasks_body="$5" done_count="${6:-0}" total_count="${7:-0}"
 
   [[ -z "$us" || -z "$title" ]] && return
 
@@ -96,27 +101,51 @@ process_us() {
     full_body=""
   fi
 
-  if [[ "$DRY_RUN" == true ]]; then
-    echo "  Would create/update: $issue_title"
-    echo "    Labels:    $priority_label, feature, spec-pendente"
-    echo "    Milestone: ${milestone:-<sem milestone>}"
-    echo "    Tasks:"
-    printf '%b' "$tasks_body" | sed 's/^/      /'
-    echo ""
-    CREATED=$((CREATED + 1))
-    return
+  # Determine completion state
+  local all_done=false has_progress=false
+  [[ "$total_count" -gt 0 && "$done_count" -eq "$total_count" ]] && all_done=true
+  [[ "$total_count" -gt 0 && "$done_count" -gt 0 && "$done_count" -lt "$total_count" ]] && has_progress=true
+
+  local status_str="sem tasks"
+  [[ "$total_count" -gt 0 && "$done_count" -eq "$total_count" ]] \
+    && status_str="CONCLUÍDA ($done_count/$total_count tasks)"
+  [[ "$total_count" -gt 0 && "$done_count" -gt 0 && "$done_count" -lt "$total_count" ]] \
+    && status_str="em andamento ($done_count/$total_count tasks)"
+  [[ "$total_count" -gt 0 && "$done_count" -eq 0 ]] \
+    && status_str="pendente (0/$total_count tasks)"
+
+  # Look up existing issue (before dry-run check, so output shows CRIAR vs ATUALIZAR)
+  # NOTE: gh --jq does NOT support --arg; embed title directly in the expression
+  local existing_number _escaped_title
+  _escaped_title="${issue_title//\"/\\\"}"
+  if [[ -n "$OWNER" && -n "$REPO_NAME" ]]; then
+    existing_number=$(gh issue list \
+      --repo "$OWNER/$REPO_NAME" \
+      --state all \
+      --limit 200 \
+      --json number,title \
+      --jq ".[] | select(.title == \"$_escaped_title\") | .number" 2>/dev/null \
+      | head -1 || echo "")
+  else
+    existing_number=""
   fi
 
-  # Check if issue already exists
-  local existing_number
-  existing_number=$(gh issue list \
-    --repo "$OWNER/$REPO_NAME" \
-    --search "in:title \"$issue_title\"" \
-    --state all \
-    --json number,title \
-    --jq --arg title "$issue_title" \
-    '.[] | select(.title == $title) | .number' 2>/dev/null \
-    | head -1 || echo "")
+  if [[ "$DRY_RUN" == true ]]; then
+    if [[ -z "$existing_number" ]]; then
+      echo "  [CRIAR]         $issue_title"
+      CREATED=$((CREATED + 1))
+    else
+      echo "  [ATUALIZAR #$existing_number] $issue_title"
+      UPDATED=$((UPDATED + 1))
+    fi
+    echo "    Status:    $status_str"
+    [[ "$all_done" == true ]]  && echo "    → Fecharia a issue"
+    [[ "$all_done" == false && -n "$existing_number" ]] && echo "    → Reabriria se estiver fechada"
+    echo "    Labels:    $priority_label, feature, spec-pendente"
+    echo "    Milestone: ${milestone:-<sem milestone>}"
+    echo ""
+    return
+  fi
 
   if [[ -z "$existing_number" ]]; then
     # Build milestone flag conditionally (empty milestone causes gh error)
@@ -140,6 +169,11 @@ process_us() {
         --url "$new_issue_url" &>/dev/null || true
       ok "Criada: $issue_title (#$issue_number)"
       CREATED=$((CREATED + 1))
+      # Close if all tasks are done
+      if [[ "$all_done" == true ]]; then
+        gh issue close "$issue_number" --repo "$OWNER/$REPO_NAME" &>/dev/null || true
+        info "  → Fechada (todas as $total_count tasks concluídas)"
+      fi
     else
       warn "Falha ao criar: $issue_title"
     fi
@@ -167,6 +201,13 @@ ${full_body}"
       --body "$updated_body" &>/dev/null
     ok "Atualizada: $issue_title (#$existing_number)"
     UPDATED=$((UPDATED + 1))
+    # Manage open/closed state based on task completion
+    if [[ "$all_done" == true ]]; then
+      gh issue close "$existing_number" --repo "$OWNER/$REPO_NAME" &>/dev/null || true
+      info "  → Fechada (todas as $total_count tasks concluídas)"
+    else
+      gh issue reopen "$existing_number" --repo "$OWNER/$REPO_NAME" &>/dev/null || true
+    fi
   fi
 }
 
@@ -176,23 +217,39 @@ current_title=""
 current_priority=""
 current_milestone=""
 current_tasks=""
+current_done=0
+current_total=0
 in_us_block=false
 in_tasks=false
+current_sprint=""
 
 flush_us() {
   process_us "$current_us" "$current_title" "$current_priority" \
-             "$current_milestone" "$current_tasks"
+             "$current_milestone" "$current_tasks" "$current_done" "$current_total"
   current_us=""; current_title=""; current_priority=""
   current_milestone=""; current_tasks=""
+  current_done=0; current_total=0
   in_us_block=false; in_tasks=false
 }
 
 while IFS= read -r line || [[ -n "$line" ]]; do
+  # Sprint section heading (para rastreamento de contexto)
+  if [[ "$line" =~ ^##[[:space:]]+(Sprint[[:space:]]+[0-9]+[A-Za-z]*) ]]; then
+    current_sprint="${BASH_REMATCH[1]}"
+
   # US heading: ### US-03 — Título  or  ### US-03 - Título
-  if [[ "$line" =~ ^###[[:space:]]+(US-[0-9]+)[[:space:]]+(—|-)[[:space:]]+(.+)$ ]]; then
+  elif [[ "$line" =~ ^###[[:space:]]+(US-[0-9]+)[[:space:]]+(—|-)[[:space:]]+(.+)$ ]]; then
     flush_us
     current_us="${BASH_REMATCH[1]}"
     current_title="${BASH_REMATCH[3]}"
+    in_us_block=true
+    in_tasks=false
+
+  # US heading: **US-03: Título** — N pontos  (formato atual do backlog)
+  elif [[ "$line" =~ ^\*\*(US-[0-9]+):[[:space:]]+([^*]+)\*\* ]]; then
+    flush_us
+    current_us="${BASH_REMATCH[1]}"
+    current_title="${BASH_REMATCH[2]}"
     in_us_block=true
     in_tasks=false
 
@@ -201,10 +258,14 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       current_priority="${BASH_REMATCH[1]}"
     elif [[ "$line" =~ \*\*Milestone:\*\*[[:space:]]+(.+)$ ]]; then
       current_milestone="${BASH_REMATCH[1]}"
-    elif [[ "$line" =~ ^\*\*Tasks:\*\*[[:space:]]*$ ]]; then
+    elif [[ "$line" =~ ^(\*\*)?Tasks:(\*\*)?[[:space:]]*$ ]]; then
       in_tasks=true
-    elif [[ "$in_tasks" == true && "$line" =~ ^-[[:space:]]\[.?\][[:space:]](.+)$ ]]; then
-      current_tasks="${current_tasks}- [ ] ${BASH_REMATCH[1]}\n"
+    elif [[ "$in_tasks" == true && "$line" =~ ^-[[:space:]]\[(.?)\][[:space:]](.+)$ ]]; then
+      _cb="${BASH_REMATCH[1]}"
+      _txt="${BASH_REMATCH[2]}"
+      current_tasks="${current_tasks}- [${_cb}] ${_txt}\n"
+      current_total=$((current_total + 1))
+      [[ "$_cb" == "x" ]] && current_done=$((current_done + 1))
     elif [[ "$line" =~ ^###[[:space:]] ]] && [[ ! "$line" =~ ^###[[:space:]]+US- ]]; then
       flush_us
     fi
@@ -217,8 +278,12 @@ flush_us  # process last US (safe to call even if already flushed — process_us
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [[ "$DRY_RUN" == true ]]; then
-  info "DRY RUN concluido — nenhuma Issue criada"
-  echo "   Stories encontradas: $CREATED"
+  info "DRY RUN concluido — nenhuma Issue criada/alterada"
+  echo "   A criar:     $CREATED"
+  echo "   A atualizar: $UPDATED"
+  if [[ -z "$OWNER" ]]; then
+    warn "Sem credenciais gh — não foi possível verificar issues existentes (contagem 'a atualizar' pode estar incorreta)"
+  fi
 else
   info "GitHub Issues sincronizadas"
   echo "   Criadas:     $CREATED"

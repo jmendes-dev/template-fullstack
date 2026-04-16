@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Template de projeto fullstack com workflow SDD/TDD + Superpowers para Claude Code.
-> Versão atual: **v1.1.0** — [CHANGELOG](CHANGELOG.md)
+> Versão atual: **v1.2.0** — [CHANGELOG](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui
 
@@ -65,7 +65,11 @@ template-fullstack/
 ├── DESIGN_SYSTEM.md              ← ui-ux-pro-max → entrevista → MASTER.md + design-brief.md
 │
 │  ── Bootstrap ──
-├── start_project.md              ← Bootstrap: 8 fases de inicialização de projeto novo
+├── start_project.md              ← Bootstrap: 9 fases de inicialização de projeto novo
+│
+│  ── Superpowers ──
+├── .superpowers/
+│   └── agent-memory-bootstrap.md ← Guia para pré-popular memórias dos agentes em projeto novo
 │
 │  ── Artefatos por feature ──
 ├── plans/                        ← PRDs e planos faseados gerados pelo Claude
@@ -103,10 +107,9 @@ template-fullstack/
 │   │   ├── backend-developer/MEMORY.md
 │   │   ├── frontend-developer/MEMORY.md
 │   │   └── ...                   ← um diretório por agente
-│   ├── hooks/                    ← Hook scripts (PreToolUse, UserPromptSubmit, PostToolUse)
+│   ├── hooks/                    ← Hook scripts (PreToolUse, UserPromptSubmit)
 │   │   ├── pre-tool-use.sh       ← Bloqueia .github/workflows/, avisa sobre globais
-│   │   ├── inject-context.sh     ← Injeção condicional de contexto por palavras-chave
-│   │   └── post-tool-use.sh      ← Aciona check-quality.sh automaticamente após bun test
+│   │   └── inject-context.sh     ← Injeção condicional de contexto por palavras-chave
 │   ├── settings.example.json     ← Template de settings com plugins + hooks (copiar para settings.json)
 │   ├── settings.json             ← Configuração pessoal ativa — gitignored, não versionado
 │   ├── settings.local.example.json ← Template de permissões (copiar para settings.local.json)
@@ -155,7 +158,7 @@ template-fullstack/
 | `sync-globals.sh` | ✅ | ✅ | Puxar atualizações do template |
 | `promote-learning.sh` | ✅ | ✅ | Enviar aprendizados para o template |
 | `setup-github-project.sh` | ✅ | ✅ | Criar Project board + labels + branch protection |
-| `sync-github-issues.sh` | ✅ | ✅ | Sincronizar backlog.md → GitHub Issues |
+| `sync-github-issues.sh` | ✅ | ✅ | Sincronizar backlog.md → GitHub Issues (rastreamento de conclusão de tasks) |
 | `check-health.sh` | ✅ | ✅ | Diagnóstico do template + modo `--assert` para CI |
 | `check-quality.sh` | ✅ | ✅ | Atualizar quality.md após bun test |
 
@@ -163,9 +166,9 @@ template-fullstack/
 
 | Mecanismo | Onde | O que faz |
 |---|---|---|
-| `PreToolUse` hook | `.claude/hooks/pre-tool-use.sh` | Bloqueia writes em `.github/workflows/`; avisa sobre arquivos globais |
+| `PreToolUse` hook | `.claude/hooks/pre-tool-use.sh` | Bloqueia writes em `.github/workflows/`; avisa sobre arquivos globais (Write\|Edit unificado) |
 | `UserPromptSubmit` hook | `.claude/hooks/inject-context.sh` | Injeta session-state sempre; quality.md e backlog só quando relevante |
-| `PostToolUse` hook | `.claude/hooks/post-tool-use.sh` | Aciona `check-quality.sh` automaticamente após `bun test` |
+| `PostToolUse` hook | `settings.json` (inline) | Aciona `check-quality.sh` automaticamente após `bun test` |
 | `Stop` hook | `settings.json` | Cria `docs/session-state.md` se não existe |
 | Structured agent output | Todos os 10 agentes | Protocolo STATUS/ARTEFATOS/PRÓXIMO/CONCERNS ao fim de cada task |
 
@@ -378,7 +381,7 @@ Verifica: versão instalada, agentes (10/10), arquivos críticos, scripts execut
 
 ```
 1. Iniciar projeto novo
-   → Claude segue a sequência de 7 agentes com handoff explícito
+   → Claude segue a sequência de 7 agentes + bootstrap de memória dos agentes (Fase 9)
 
 2. Implementar a US-01
    Implementar a US-02

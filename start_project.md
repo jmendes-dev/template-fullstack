@@ -656,6 +656,24 @@ Após push, configurar no GitHub (Settings → Secrets and variables):
 
 ---
 
+## Fase 9 — Bootstrap de memória dos agentes
+
+**Ação**: pré-popular as memórias dos agentes com contexto do projeto para eliminar o período de cold start.
+
+**Ler**: `.superpowers/agent-memory-bootstrap.md` — guia completo com checklist, template de MEMORY.md e conteúdo mínimo por agente.
+
+**Por quê**: sem bootstrap, cada agente começa "do zero" e precisa redescobrir a stack, os padrões e o inventário de rotas/schemas nas primeiras sessões. Com o bootstrap, os agentes entram produtivos desde a primeira invocação.
+
+**Hard constraints**:
+- Executar somente após Fase 7 (app base funcionando) — precisa do inventário real do codebase
+- MEMORY.md de cada agente: máximo 200 linhas (truncado automaticamente além disso)
+- Nunca duplicar o que já está em `CLAUDE.md` ou `claude-stacks.md` nas memórias
+- Informações de stack/padrões vão como fatos; código completo nunca entra na memória
+
+**Gate**: todos os 10 diretórios de `agent-memory/` têm um `MEMORY.md` preenchido com o resumo crítico do projeto.
+
+---
+
 ## Resumo de gates
 
 | Fase | Gate |
@@ -669,6 +687,7 @@ Após push, configurar no GitHub (Settings → Secrets and variables):
 | 6 — Banco | Migration aplicada, schema em sync |
 | 7 — App base | Health check + lint + typecheck + banco em sync + API responses verificadas com curl |
 | 8 — CI/CD e Git | Primeiro commit + CI verde + CD workflows criados (Portainer) |
+| 9 — Bootstrap memória | Todos os 10 `agent-memory/*/MEMORY.md` preenchidos |
 
 ---
 

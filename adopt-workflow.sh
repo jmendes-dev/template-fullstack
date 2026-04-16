@@ -79,6 +79,7 @@ GLOBAL_FILES=(
   ".claude/settings.local.example.json"
   ".claude/hooks/pre-tool-use.sh"
   ".claude/hooks/inject-context.sh"
+  ".claude/hooks/post-tool-use.sh"
 )
 
 info "Copiando arquivos globais..."
@@ -203,10 +204,25 @@ if [ ! -f "$TARGET_DIR/docs/user-stories.md" ]; then
 
 > Gerado via REQUIREMENTS.md. Fonte de verdade para requisitos do projeto.
 > Cada story segue o formato XP: Como [ator], quero [ação], para que [benefício].
+> **Para gerar:** abrir REQUIREMENTS.md e seguir as instruções do prompt.
 
 ---
 
-<!-- Rodar o prompt do REQUIREMENTS.md para gerar as stories -->
+<!-- Exemplo de story (remover após gerar o conteúdo real):
+
+### US-01 — Autenticação de usuário
+**Como** visitante, **quero** criar conta e fazer login, **para que** eu possa acessar funcionalidades protegidas.
+
+**Critérios de aceite:**
+- [ ] Posso me registrar com e-mail e senha
+- [ ] Posso fazer login com credenciais válidas
+- [ ] Recebo mensagem de erro clara em credenciais inválidas
+- [ ] Sessão persiste ao recarregar a página
+
+**Estimativa:** M (3-5 dias)
+**Prioridade:** P1
+
+-->
 STORIES_EOF
   ok "docs/user-stories.md (template)"
 fi
@@ -218,6 +234,7 @@ if [ ! -f "$TARGET_DIR/docs/backlog.md" ]; then
 
 > Gerado via REQUIREMENTS.md. Modelo Kanban com priorização (P1/P2/P3).
 > Ordenado por prioridade: P1 primeiro, depois P2, depois P3.
+> **Para gerar:** abrir REQUIREMENTS.md e seguir as instruções do prompt.
 
 ---
 
@@ -231,7 +248,19 @@ if [ ! -f "$TARGET_DIR/docs/backlog.md" ]; then
 
 ---
 
-<!-- Rodar o prompt do REQUIREMENTS.md para gerar o backlog -->
+<!-- Exemplo de formato (remover após gerar o conteúdo real):
+
+### US-01 — Autenticação de usuário · **P1**
+
+**Status:** 🔴 Não iniciado
+
+| Task | Agente | Status |
+|------|--------|--------|
+| 1.1 Criar schema de usuário (Drizzle) | data-engineer-dba | ⏳ |
+| 1.2 Implementar endpoints POST /auth/register e POST /auth/login | backend-developer | ⏳ |
+| 1.3 Implementar tela de login e registro | frontend-developer | ⏳ |
+
+-->
 BACKLOG_EOF
   ok "docs/backlog.md (template)"
 fi
@@ -405,12 +434,20 @@ fi
 touch "$TARGET_DIR/docs/specs/.gitkeep" 2>/dev/null || true
 touch "$TARGET_DIR/docs/design-system/pages/.gitkeep" 2>/dev/null || true
 
+# docs/adr/ — necessário para software-architect criar ADR-001
+mkdir -p "$TARGET_DIR/docs/adr"
+touch "$TARGET_DIR/docs/adr/.gitkeep" 2>/dev/null || true
+ok "docs/adr/ (criado)"
+
 ok "Estrutura docs/ completa"
 
 # ── GitHub templates ──────────────────────────
 
 info "Configurando .github/..."
 mkdir -p "$TARGET_DIR/.github"
+mkdir -p "$TARGET_DIR/.github/workflows"
+touch "$TARGET_DIR/.github/workflows/.gitkeep" 2>/dev/null || true
+ok ".github/workflows/ (criado — populate via devops-sre-engineer)"
 
 if [ ! -f "$TARGET_DIR/.github/pull_request_template.md" ]; then
   cp "$SCRIPT_DIR/.github/pull_request_template.md" "$TARGET_DIR/.github/pull_request_template.md" 2>/dev/null || \

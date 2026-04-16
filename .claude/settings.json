@@ -30,7 +30,7 @@
       "matcher": "Bash",
       "hooks": [{
         "type": "command",
-        "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"bun test\" && [ -f check-quality.sh ] && bash check-quality.sh 2>/dev/null || true'",
+        "command": "bash .claude/hooks/post-tool-use.sh",
         "async": true
       }]
     }]

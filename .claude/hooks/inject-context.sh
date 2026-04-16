@@ -12,8 +12,13 @@
 PROMPT="${CLAUDE_USER_PROMPT:-}"
 if [ -z "$PROMPT" ] && [ ! -t 0 ]; then
   _STDIN=$(cat 2>/dev/null)
-  # Extrai o campo "prompt" do JSON: {"prompt":"..."} ou {"prompt": "..."}
-  PROMPT=$(echo "$_STDIN" | grep -o '"prompt" *: *"[^"]*"' | head -1 | sed 's/"prompt" *: *"//;s/"$//')
+  # Extrai o campo "prompt" do JSON — usa jq se disponível, regex como fallback
+  if command -v jq &>/dev/null; then
+    PROMPT=$(echo "$_STDIN" | jq -r '.prompt // empty' 2>/dev/null || true)
+  fi
+  if [ -z "$PROMPT" ]; then
+    PROMPT=$(echo "$_STDIN" | grep -o '"prompt" *: *"[^"]*"' | head -1 | sed 's/"prompt" *: *"//;s/"$//')
+  fi
 fi
 out=""
 

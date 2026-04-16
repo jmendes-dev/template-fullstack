@@ -63,6 +63,7 @@ fi
 
 GLOBAL_FILES=(
   "claude-stacks.md"
+  "claude-sdd.md"
   "claude-design.md"
   "claude-subagents.md"
   "claude-debug.md"
@@ -143,7 +144,6 @@ done
 
 INSTANCE_FILES=(
   "CLAUDE.md"
-  "claude-sdd.md"
 )
 
 info "Copiando arquivos instanciados (sem sobrescrever existentes)..."

@@ -31,6 +31,7 @@ GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/jmendes-
 # Arquivos instanciados (CLAUDE.md, claude-stacks-refactor.md, docs/*) NUNCA são sobrescritos.
 GLOBAL_FILES=(
   "claude-stacks.md"
+  "claude-sdd.md"
   "claude-design.md"
   "claude-subagents.md"
   "claude-debug.md"

@@ -10,16 +10,19 @@ set -euo pipefail
 #   ./sync-github-issues.sh path/backlog.md    # arquivo explícito
 #   ./sync-github-issues.sh --dry-run          # mostra o que faria, sem criar Issues
 #   ./sync-github-issues.sh --dry-run path/... # dry-run em arquivo específico
+#   ./sync-github-issues.sh --debug            # imprime cada linha do parser (diagnóstico)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Parse args ───────────────────────────────────
 DRY_RUN=false
+DEBUG=false
 BACKLOG_FILE=""
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
+    --debug)   DEBUG=true ;;
     *) BACKLOG_FILE="$arg" ;;
   esac
 done
@@ -32,6 +35,7 @@ info()  { echo -e "${CYAN}ℹ${NC}  $1"; }
 ok()    { echo -e "${GREEN}✓${NC}  $1"; }
 warn()  { echo -e "${YELLOW}⚠${NC}  $1"; }
 error() { echo -e "${RED}✗${NC}  $1"; exit 1; }
+debug() { [[ "$DEBUG" == true ]] && echo -e "\033[0;35m[DEBUG]\033[0m $1" >&2 || true; }
 
 # ── Read project config ──────────────────────────
 PROJECT_ID_FILE="$SCRIPT_DIR/.github/project-id"
@@ -232,10 +236,17 @@ flush_us() {
   in_us_block=false; in_tasks=false
 }
 
+_LINES_PARSED=0
+_US_FOUND=0
+
 while IFS= read -r line || [[ -n "$line" ]]; do
+  _LINES_PARSED=$((_LINES_PARSED + 1))
+  debug "L${_LINES_PARSED}: $(echo "$line" | head -c 80)"
+
   # Sprint section heading (para rastreamento de contexto)
   if [[ "$line" =~ ^##[[:space:]]+(Sprint[[:space:]]+[0-9]+[A-Za-z]*) ]]; then
     current_sprint="${BASH_REMATCH[1]}"
+    debug "  → Sprint detectado: $current_sprint"
 
   # US heading: ### US-03 — Título  or  ### US-03 - Título
   elif [[ "$line" =~ ^###[[:space:]]+(US-[0-9]+)[[:space:]]+(—|-)[[:space:]]+(.+)$ ]]; then
@@ -244,6 +255,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     current_title="${BASH_REMATCH[3]}"
     in_us_block=true
     in_tasks=false
+    _US_FOUND=$((_US_FOUND + 1))
+    debug "  → US detectada (formato ###): $current_us — $current_title"
 
   # US heading: **US-03: Título** — N pontos  (formato atual do backlog)
   elif [[ "$line" =~ ^\*\*(US-[0-9]+):[[:space:]]+([^*]+)\*\* ]]; then
@@ -252,25 +265,34 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     current_title="${BASH_REMATCH[2]}"
     in_us_block=true
     in_tasks=false
+    _US_FOUND=$((_US_FOUND + 1))
+    debug "  → US detectada (formato **): $current_us — $current_title"
 
   elif [[ "$in_us_block" == true ]]; then
     if [[ "$line" =~ \*\*Prioridade:\*\*[[:space:]]+([^[:space:]]+) ]]; then
       current_priority="${BASH_REMATCH[1]}"
+      debug "  → Prioridade: $current_priority"
     elif [[ "$line" =~ \*\*Milestone:\*\*[[:space:]]+(.+)$ ]]; then
       current_milestone="${BASH_REMATCH[1]}"
+      debug "  → Milestone: $current_milestone"
     elif [[ "$line" =~ ^(\*\*)?Tasks:(\*\*)?[[:space:]]*$ ]]; then
       in_tasks=true
+      debug "  → Início de Tasks"
     elif [[ "$in_tasks" == true && "$line" =~ ^-[[:space:]]\[(.?)\][[:space:]](.+)$ ]]; then
       _cb="${BASH_REMATCH[1]}"
       _txt="${BASH_REMATCH[2]}"
       current_tasks="${current_tasks}- [${_cb}] ${_txt}\n"
       current_total=$((current_total + 1))
       [[ "$_cb" == "x" ]] && current_done=$((current_done + 1))
+      debug "  → Task [${_cb}]: ${_txt}"
     elif [[ "$line" =~ ^###[[:space:]] ]] && [[ ! "$line" =~ ^###[[:space:]]+US- ]]; then
+      debug "  → Fim de bloco US (heading não-US)"
       flush_us
     fi
   fi
 done < "$BACKLOG_FILE"
+
+[[ "$DEBUG" == true ]] && echo -e "\033[0;35m[DEBUG]\033[0m Parser concluído: ${_LINES_PARSED} linhas lidas, ${_US_FOUND} US detectadas" >&2
 
 flush_us  # process last US (safe to call even if already flushed — process_us guards on empty us/title)
 

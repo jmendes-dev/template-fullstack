@@ -73,6 +73,24 @@ Antes de implementar qualquer hook TanStack Query ou data fetching:
 
 ---
 
+## Estratégia de Versionamento
+
+Contratos seguem **semver simplificado** no campo `Versão`:
+
+| Tipo de mudança | Versão | Ação obrigatória |
+|-----------------|--------|-----------------|
+| Novo campo opcional na response | `MINOR` (1.0.0 → 1.1.0) | Atualizar contrato; frontend ignora campo novo |
+| Renomear campo / mudar tipo | `MAJOR` (1.x.x → 2.0.0) | Criar `v2` no path (`/api/v2/...`); manter v1 ativa por 1 sprint |
+| Novo endpoint no mesmo domínio | `MINOR` | Adicionar seção no contrato existente |
+| Remover campo ou endpoint | `MAJOR` | Deprecation notice no contrato antes de remover |
+
+**Regras de breaking change:**
+- Frontend deve ser atualizado **antes** de remover suporte à versão antiga
+- `qa-engineer` valida que todos os cenários do spec ainda passam após mudança MAJOR
+- Contratos MAJOR ficam em `docs/contracts/[domínio].v[N].contract.md` durante período de transição
+
+---
+
 ## Contratos Disponíveis
 
 <!-- Lista gerada automaticamente ao criar arquivos *.contract.md -->

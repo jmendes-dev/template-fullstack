@@ -80,6 +80,7 @@ GLOBAL_FILES=(
   ".claude/hooks/pre-tool-use.sh"
   ".claude/hooks/inject-context.sh"
   ".claude/hooks/post-tool-use.sh"
+  "package.json.example"
 )
 
 info "Copiando arquivos globais..."

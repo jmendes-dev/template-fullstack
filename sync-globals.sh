@@ -49,6 +49,8 @@ GLOBAL_FILES=(
   ".claude/hooks/pre-tool-use.sh"
   ".claude/hooks/inject-context.sh"
   ".claude/hooks/post-tool-use.sh"
+  "package.json.example"
+  ".superpowers/agent-memory-bootstrap.md"
 )
 
 # Agentes — sincronizados junto com os globais
@@ -103,6 +105,7 @@ echo ""
 # ── Baixar/Copiar arquivos globais ─────────────
 
 mkdir -p "$TEMP_DIR/.claude/agents"
+mkdir -p "$TEMP_DIR/.superpowers"
 
 if [ "$SOURCE" = "remote" ]; then
   info "Fonte: GitHub ($GITHUB_RAW_BASE)"
@@ -181,6 +184,7 @@ for file in "${GLOBAL_FILES[@]}"; do
 done
 
 mkdir -p "./.claude/agents"
+mkdir -p "./.superpowers"
 for agent in "${AGENT_FILES[@]}"; do
   if [ ! -f "$TEMP_DIR/.claude/agents/$agent" ]; then
     continue

@@ -67,6 +67,9 @@ template-fullstack/
 │  ── Bootstrap ──
 ├── start_project.md              ← Bootstrap: 9 fases de inicialização de projeto novo
 │
+│  ── Referência de stack ──
+├── package.json.example          ← Deps e scripts de referência: raiz + apps/api, apps/web, packages/shared
+│
 │  ── Superpowers ──
 ├── .superpowers/
 │   └── agent-memory-bootstrap.md ← Guia para pré-popular memórias dos agentes em projeto novo
@@ -146,8 +149,8 @@ template-fullstack/
 
 | Tipo | Arquivos | Comportamento |
 |---|---|---|
-| **Global** | `claude-stacks.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.example.json`, `.claude/settings.local.example.json` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
-| **Instanciado** | `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
+| **Global** | `claude-stacks.md`, `claude-sdd.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `package.json.example`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.example.json`, `.claude/settings.local.example.json`, `.superpowers/agent-memory-bootstrap.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
+| **Instanciado** | `CLAUDE.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
 | **Gitignored** | `.claude/settings.json`, `.claude/settings.local.json` | Configuração pessoal ativa — nunca commitado |
 
 ### Scripts disponíveis por contexto

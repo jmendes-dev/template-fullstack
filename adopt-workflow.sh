@@ -81,10 +81,12 @@ GLOBAL_FILES=(
   ".claude/hooks/inject-context.sh"
   ".claude/hooks/post-tool-use.sh"
   "package.json.example"
+  ".superpowers/agent-memory-bootstrap.md"
 )
 
 info "Copiando arquivos globais..."
 mkdir -p "$TARGET_DIR/.claude/hooks"
+mkdir -p "$TARGET_DIR/.superpowers"
 for file in "${GLOBAL_FILES[@]}"; do
   if [ -f "$SCRIPT_DIR/$file" ]; then
     cp "$SCRIPT_DIR/$file" "$TARGET_DIR/$file"

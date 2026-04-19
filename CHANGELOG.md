@@ -5,6 +5,32 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.5.0] — 2026-04-19
+
+### Corrigido (P0 — críticos)
+- `check-quality.sh`: gate de testes estava sempre reportando ✅ por bug no exit capture (`|| true` mascarava falhas)
+- `.claude/settings.json`: hooks com path relativo quebravam silenciosamente em git worktrees — migrado para resolução via `git rev-parse --git-common-dir`
+- `adopt-workflow.sh`: CLAUDE.md era sobrescrito em toda re-execução — agora só copia na 1ª vez (use `--force-claude-md` para reinstalar)
+- `.claude/hooks/post-tool-use.sh`: erros do check-quality eram engolidos com `2>/dev/null` — agora logados em `.claude/logs/quality.log`
+
+### Adicionado (P0/P1/P2)
+- `.github/workflows/ci.yml`: CI mínimo com lint + typecheck + test (gates de qualidade agora têm enforcement externo)
+- `check-quality.sh`: lint (Biome) e typecheck (tsc) agora verificados e reportados no quality dashboard
+- `CLAUDE.md`: tabela "OWNERSHIP DE ETAPAS" clarifica commands vs Superpowers skills (elimina ambiguidade)
+- `pre-tool-use.sh`: lembrete automático de `./sync-github-issues.sh` ao editar `docs/backlog.md`
+
+### Corrigido (P1 — refs e redundâncias)
+- `triage.md`: tabela de agentes removida (deduplicada com CLAUDE.md) — fonte única
+- `claude-stacks.md`: 4 refs `START_PROJECT.md` → `start_project.md` (case fix para Linux CI)
+- `claude-sdd.md`: encoding corrompido `S🔴 prosseguir` → `Só prosseguir`
+- `docs/backlog.md`, `docs/user-stories.md`: substituídas refs fantasma a `REQUIREMENTS.md`
+- `docs/design-system/MASTER.md`: substituídas refs fantasma a `DESIGN_SYSTEM.md` e `claude-design.md`
+
+### Corrigido (P3 — robustez)
+- `promote-learning.sh`: `sed -i` → `sed -i.bak` (portável macOS/BSD/Linux)
+
+---
+
 ## [1.4.0] — 2026-04-19
 
 ### Adicionado

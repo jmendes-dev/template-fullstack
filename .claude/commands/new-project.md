@@ -21,6 +21,10 @@ Nenhuma fase pode ser iniciada sem o gate da fase anterior estar cumprido.
 
 ## Fase 1 — Levantamento de Requisitos
 
+> **Skills disponíveis**: invocar `novo-prd` (entrevista guiada) e `prd-planejamento` (geração de backlog).
+> Se as skills estiverem disponíveis, prefira-as — elas mantêm o mesmo protocolo de entrevista abaixo.
+> Se as skills não estiverem disponíveis, executar o protocolo inline a seguir.
+
 Assumir o papel de analista XP sênior e conduzir a entrevista abaixo com o usuário.
 O objetivo é extrair requisitos suficientes para gerar `docs/user-stories.md` e `docs/backlog.md`.
 

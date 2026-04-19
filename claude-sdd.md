@@ -169,7 +169,7 @@ Aprova este spec para iniciar a implementação?
 (Responda "sim" para prosseguir, ou indique os ajustes desejados)
 ```
 
-S� prosseguir após "sim" explícito.
+Só prosseguir após "sim" explícito.
 
 ---
 

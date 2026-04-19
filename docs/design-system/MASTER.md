@@ -1,9 +1,9 @@
 # Design System
 
 > Fonte de verdade visual do projeto.
-> Gerado via DESIGN_SYSTEM.md (pipeline de 3 passos: ui-ux-pro-max → entrevista → brief).
-> Para regras estruturais: ver `claude-design.md`.
+> Gerado via skill `ui-ux-pro-max` (pipeline: entrevista → brief → tokens).
+> Para regras estruturais: ver `DESIGN.md`.
 
 ---
 
-<!-- Rodar o pipeline do DESIGN_SYSTEM.md para gerar o design system -->
+<!-- Executar /feature com escopo "gerar design system" para disparar a skill ui-ux-pro-max -->

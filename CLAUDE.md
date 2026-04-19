@@ -35,6 +35,25 @@ Para refatoração, invocar **`/refactor`**.
 
 ---
 
+## 🔁 OWNERSHIP DE ETAPAS — Commands vs Skills
+
+> Commands são **orquestradores pt-BR** que invocam skills. Não competem — cada um tem dono.
+
+| Etapa do fluxo | Dono | Mecanismo |
+|---|---|---|
+| Classificar pedido | `/triage` | command (wrapper) |
+| Brainstorm pré-spec | `superpowers:brainstorming` | skill |
+| Redigir spec | `claude-sdd.md` + `/feature` | template + command |
+| Decompor em micro-tasks | `superpowers:writing-plans` | skill |
+| Executar tasks em paralelo | `superpowers:subagent-driven-development` | skill |
+| Implementar (TDD) | `superpowers:test-driven-development` | skill |
+| Verificar antes de declarar pronto | `superpowers:verification-before-completion` | skill |
+| Code review | `superpowers:requesting-code-review` | skill |
+| Merge / PR | `superpowers:finishing-a-development-branch` | skill |
+| Encerrar ciclo | `/finish` | command (wrapper) |
+
+---
+
 ## ⚡ SKILLS — INVOCAÇÃO OBRIGATÓRIA
 
 | Situação | Skill OBRIGATÓRIA |

@@ -19,4 +19,7 @@ if [[ "$GCD" != /* ]] && [[ ! "$GCD" =~ ^[A-Za-z]:/ ]]; then
 fi
 ROOT=$(dirname "$GCD")
 
-[ -f "$ROOT/check-quality.sh" ] && bash "$ROOT/check-quality.sh" 2>/dev/null || true
+if [ -f "$ROOT/check-quality.sh" ]; then
+  mkdir -p "$ROOT/.claude/logs"
+  bash "$ROOT/check-quality.sh" >> "$ROOT/.claude/logs/quality.log" 2>&1 || true
+fi

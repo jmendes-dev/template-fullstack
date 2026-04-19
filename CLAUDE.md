@@ -1,8 +1,8 @@
 # CLAUDE.md — Protocolo de Orquestração
 
 > Arquivo carregado automaticamente. Sub-arquivos: lidos **sob demanda** conforme tabela abaixo.
-> **Hierarquia:** Instruções do usuário > Superpowers skills > `claude-sdd.md` > `claude-stacks.md` > `claude-debug.md` > `claude-design.md` > `claude-stacks-refactor.md`
-> Para decisões visuais: `docs/design-system/MASTER.md` prevalece sobre `claude-design.md`.
+> **Hierarquia:** Instruções do usuário > Superpowers skills > `claude-sdd.md` > `claude-stacks.md` > `claude-debug.md` > `DESIGN.md` > `claude-stacks-refactor.md`
+> Para decisões visuais: `docs/design-system/MASTER.md` prevalece sobre `DESIGN.md` (Parte 1).
 
 ---
 
@@ -76,8 +76,7 @@ Para bugs e troubleshooting, invocar **`/bug`**.
 | `claude-stacks.md` | Regras de stack, padrões técnicos |
 | `claude-stacks-refactor.md` | Aprendizados, bug journal |
 | `claude-debug.md` | Bug fix, troubleshooting, CI quebrando |
-| `claude-design.md` | Task frontend (criar/modificar componente) |
-| `DESIGN_SYSTEM.md` | Gerar ou regenerar design system do projeto (pipeline ui-ux-pro-max) |
+| `DESIGN.md` | Task frontend OU gerar/regenerar design system |
 | `docs/design-system/design-brief.md` | Montar contexto de componente para subagente |
 | `docs/design-system/pages/*.md` | Componente com override de página |
 | `docs/user-stories.md` | Referenciar story ou criar feature |
@@ -95,7 +94,7 @@ Execute nesta ordem com handoff explícito:
 
 1. `requirements-roadmap-builder` → gera `docs/user-stories.md` + `docs/backlog.md` — **aguardar aprovação**
 2. `software-architect` → lê backlog → gera `docs/adr/ADR-001-stack-selection.md`
-3. `ux-ui-designer` → lê `DESIGN_SYSTEM.md` + user-stories → gera `docs/design-system/MASTER.md` — **aguardar aprovação**
+3. `ux-ui-designer` → lê `DESIGN.md` (Parte 2) + user-stories → gera `docs/design-system/MASTER.md` — **aguardar aprovação**
 4. `ux-ui-designer` → regenera `docs/design-system/design-brief.md` a partir do MASTER.md aprovado
 5. `data-engineer-dba` → lê user-stories + ADRs → schema inicial em `packages/shared/src/schemas/`
 6. `devops-sre-engineer` → CI/CD + docker-compose + `.github/workflows/`
@@ -117,7 +116,7 @@ Execute nesta ordem com handoff explícito:
 - ❌ `[skip ci]`, `--no-verify`, `--force`
 - ❌ Tecnologias fora do `claude-stacks.md` sem aprovação
 - ❌ Modificar spec sem amendment aprovado
-- ❌ Componente frontend sem `claude-design.md`
+- ❌ Componente frontend sem `DESIGN.md`
 - ❌ Cores/fontes/espaçamentos hardcoded
 - ❌ Componente sem 4 estados obrigatórios (Loading, Empty, Error, Success)
 - ❌ Cortar design brief do contexto de componente

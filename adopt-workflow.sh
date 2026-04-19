@@ -64,12 +64,11 @@ fi
 GLOBAL_FILES=(
   "claude-stacks.md"
   "claude-sdd.md"
-  "claude-design.md"
+  "DESIGN.md"
   "claude-subagents.md"
   "claude-debug.md"
   "start_project.md"
   "REQUIREMENTS.md"
-  "DESIGN_SYSTEM.md"
   ".gitattributes"
   "setup-github-project.sh"
   "sync-github-issues.sh"
@@ -170,7 +169,7 @@ if [ ! -f "$TARGET_DIR/claude-stacks-refactor.md" ]; then
 >
 > **Auto-atualizado pelo Claude** quando um erro evitável é encontrado (ver CLAUDE.md → Auto-atualização do Stacks).
 >
-> **Hierarquia**: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `claude-design.md` > `claude-stacks-refactor.md`
+> **Hierarquia**: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `DESIGN.md` > `claude-stacks-refactor.md`
 
 ---
 
@@ -274,12 +273,12 @@ if [ ! -f "$TARGET_DIR/docs/design-system/MASTER.md" ]; then
 # Design System
 
 > Fonte de verdade visual do projeto.
-> Gerado via DESIGN_SYSTEM.md (pipeline de 3 passos: ui-ux-pro-max → entrevista → brief).
-> Para regras estruturais: ver `claude-design.md`.
+> Gerado via DESIGN.md (Parte 2 — pipeline de 3 passos: ui-ux-pro-max → entrevista → brief).
+> Para regras estruturais: ver `DESIGN.md` (Parte 1).
 
 ---
 
-<!-- Rodar o pipeline do DESIGN_SYSTEM.md para gerar o design system -->
+<!-- Rodar o pipeline da Parte 2 do DESIGN.md para gerar o design system -->
 MASTER_EOF
   ok "docs/design-system/MASTER.md (template)"
 fi
@@ -586,7 +585,7 @@ fi
 echo "  2. (opcional) Ativar rastreamento GitHub Issues (requer gh autenticado):"
 echo "     ./setup-github-project.sh"
 echo "  3. Rodar REQUIREMENTS.md para gerar stories e backlog"
-echo "  4. Rodar DESIGN_SYSTEM.md para gerar o design system"
+echo "  4. Rodar DESIGN.md (Parte 2) para gerar o design system"
 echo "  5. Commitar:"
 echo "     git add . && git commit -m 'docs: adopt SDD/TDD workflow'"
 echo ""

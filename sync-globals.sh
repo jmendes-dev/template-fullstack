@@ -59,6 +59,7 @@ COMMAND_FILES=(
   "finish.md"
   "continue.md"
   "new-project.md"
+  "refactor.md"
 )
 
 # Agentes — sincronizados junto com os globais

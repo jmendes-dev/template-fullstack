@@ -10,6 +10,7 @@
 
 Para qualquer pedido novo ou ambíguo, invocar **`/triage`**.
 Para bugs e troubleshooting, invocar **`/bug`**.
+Para refatoração, invocar **`/refactor`**.
 
 > O routing completo de agentes e a decisão spec-vs-TDD estão em `.claude/commands/triage.md`.
 

@@ -5,6 +5,22 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.4.0] — 2026-04-19
+
+### Adicionado
+- `.claude/commands/refactor.md`: `/refactor` com guardrails de isolamento (branch obrigatória, baseline verde, inventário de testes, proibição de novo comportamento)
+- `inject-context.sh`: reminder de triagem obrigatória injetado em todo prompt que não começa com slash command
+
+### Corrigido
+- Loop circular `/feature` ↔ `/triage`: `/feature` agora classifica inline sem reinvocar `/triage`; `/triage` indica próximo passo como referência documentacional
+- Contradição entre `/triage` (roteava refactor via `/feature`) e `CLAUDE.md` (proíbe misturar refactor com novas features) — resolvida com `/refactor` dedicado
+
+### Alterado
+- `CLAUDE.md`: bloco TRIAGEM menciona `/refactor` explicitamente
+- `sync-globals.sh`: `refactor.md` adicionado a `COMMAND_FILES`
+
+---
+
 ## [1.3.0] — 2026-04-19
 
 ### Adicionado

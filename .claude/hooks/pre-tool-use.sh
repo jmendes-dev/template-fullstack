@@ -62,4 +62,17 @@ if echo "$FILE" | grep -qE '(^|/)docs/backlog\.md$'; then
   echo "(Prosseguindo — apenas um aviso)"
 fi
 
+# ── Soft warning: paths de código de produção ─────────────────────
+# CLAUDE.md proíbe escrever código de produção sem agente especializado.
+# Este aviso lembra o orquestrador de delegar antes de editar diretamente.
+if echo "$FILE" | grep -qE '(^|/)(apps|packages)/(api|web|shared)/src/'; then
+  echo "⚠️  AVISO: $FILE é código de produção."
+  echo "CLAUDE.md exige delegação ao agente especializado:"
+  echo "  apps/api/**  → backend-developer"
+  echo "  apps/web/**  → frontend-developer"
+  echo "  packages/shared/src/schemas/** → data-engineer-dba"
+  echo "Se este arquivo está sendo editado por um subagente, ignore este aviso."
+  echo "(Prosseguindo — apenas um aviso)"
+fi
+
 exit 0

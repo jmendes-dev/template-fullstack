@@ -1,7 +1,7 @@
 # CLAUDE.md — Protocolo de Orquestração
 
 > Arquivo carregado automaticamente. Sub-arquivos: lidos **sob demanda** conforme tabela abaixo.
-> **Hierarquia:** Instruções do usuário > Superpowers skills > `claude-sdd.md` > `claude-stacks.md` > `claude-debug.md` > `DESIGN.md` > `claude-stacks-refactor.md`
+> **Hierarquia:** Instruções do usuário > Superpowers skills > `.claude/commands/` > `claude-sdd.md` > `claude-stacks.md` > `DESIGN.md` > `claude-stacks-refactor.md`
 > Para decisões visuais: `docs/design-system/MASTER.md` prevalece sobre `DESIGN.md` (Parte 1).
 
 ---
@@ -74,30 +74,16 @@ Para bugs e troubleshooting, invocar **`/bug`**.
 | `claude-sdd.md` | Triage → spec necessária + contextos de subagente |
 | `claude-stacks.md` | Regras de stack, padrões técnicos |
 | `claude-stacks-refactor.md` | Aprendizados, bug journal |
-| `claude-debug.md` | Bug fix, troubleshooting, CI quebrando |
+| `claude-debug.md` | Política de bugs pré-existentes + tabela de escalação (referência para `/bug`) |
 | `DESIGN.md` | Task frontend OU gerar/regenerar design system |
 | `docs/design-system/design-brief.md` | Montar contexto de componente para subagente |
 | `docs/design-system/pages/*.md` | Componente com override de página |
 | `docs/user-stories.md` | Referenciar story ou criar feature |
 | `docs/backlog.md` | Continuar, executar task, verificar progresso |
 | `docs/specs/US-XX.spec.md` | Story com spec já gerado |
-| `start_project.md` | "Iniciar projeto novo" |
+| `start_project.md` | Gates de fase (referência para `/new-project`) |
 | `.claude/agents/*.md` | Verificar capabilities antes de invocar agente |
 | `.claude/agent-memory/[agent]/MEMORY.md` | Consultar memória de agente especializado |
-
----
-
-## 🏗️ SEQUÊNCIA DE AGENTES — Projeto Novo
-
-Execute nesta ordem com handoff explícito:
-
-1. `requirements-roadmap-builder` → gera `docs/user-stories.md` + `docs/backlog.md` — **aguardar aprovação**
-2. `software-architect` → lê backlog → gera `docs/adr/ADR-001-stack-selection.md`
-3. `ux-ui-designer` → lê `DESIGN.md` (Parte 2) + user-stories → gera `docs/design-system/MASTER.md` — **aguardar aprovação**
-4. `ux-ui-designer` → regenera `docs/design-system/design-brief.md` a partir do MASTER.md aprovado
-5. `data-engineer-dba` → lê user-stories + ADRs → schema inicial em `packages/shared/src/schemas/`
-6. `devops-sre-engineer` → CI/CD + docker-compose + `.github/workflows/`
-7. Rodar `./setup-github-project.sh`
 
 ---
 

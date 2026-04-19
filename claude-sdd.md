@@ -5,7 +5,6 @@
 > Gera specs compactas e autocontidas que definem O QUÊ implementar.
 > O Superpowers (`writing-plans` + `subagent-driven-development`) define COMO executar.
 >
-> **Hierarquia**: `CLAUDE.md` > `claude-sdd.md` > `claude-stacks.md` > `claude-stacks-refactor.md`
 > SDD não substitui o TDD — ele alimenta o TDD com contratos precisos, reduzindo retrabalho e consumo de tokens.
 
 ---

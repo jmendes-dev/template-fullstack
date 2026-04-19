@@ -65,7 +65,6 @@ GLOBAL_FILES=(
   "claude-stacks.md"
   "claude-sdd.md"
   "DESIGN.md"
-  "claude-subagents.md"
   "claude-debug.md"
   "start_project.md"
   ".gitattributes"
@@ -105,6 +104,21 @@ if [ -d "$SCRIPT_DIR/.claude/agents" ]; then
   ok "$AGENT_COUNT agente(s) copiado(s)"
 else
   warn ".claude/agents/ não encontrado no template — pulando"
+fi
+
+# ── Slash commands ─────────────────────────────
+
+info "Copiando .claude/commands/..."
+mkdir -p "$TARGET_DIR/.claude/commands"
+if [ -d "$SCRIPT_DIR/.claude/commands" ]; then
+  for f in "$SCRIPT_DIR/.claude/commands/"*.md; do
+    [ -f "$f" ] || continue
+    cp "$f" "$TARGET_DIR/.claude/commands/$(basename "$f")"
+    echo "  ✓ $(basename "$f")"
+  done
+  ok "Slash commands copiados"
+else
+  warn ".claude/commands/ não encontrado no template — pulando"
 fi
 
 # ── Estrutura agent-memory ─────────────────────

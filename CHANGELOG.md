@@ -5,6 +5,26 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.3.0] — 2026-04-19
+
+### Adicionado
+- `.claude/commands/` com 6 slash commands: `/bug`, `/triage`, `/feature`, `/finish`, `/continue`, `/new-project`
+- `DESIGN.md` (merge de `claude-design.md` + `DESIGN_SYSTEM.md`)
+
+### Removido
+- `claude-subagents.md` (absorvido em `claude-sdd.md`)
+- `DESIGN_SYSTEM.md` (merged em `DESIGN.md`)
+- `REQUIREMENTS.md` (absorvido em `/new-project`)
+
+### Alterado
+- `CLAUDE.md`: hierarquia canônica atualizada, árvore de decisão movida para `/triage`
+- `claude-debug.md`: reduzido a reference card (protocolo em `/bug`)
+- `start_project.md`: reduzido a gates de fase (procedimento em `/new-project`)
+- `claude-sdd.md`: absorveu contextos de subagente de `claude-subagents.md`
+- `sync-globals.sh`: agora sincroniza `.claude/commands/` via glob
+
+---
+
 ## [1.2.0] — 2026-04-16
 
 ### Added

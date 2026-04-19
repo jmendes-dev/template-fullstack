@@ -32,12 +32,9 @@ GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/jmendes-
 GLOBAL_FILES=(
   "claude-stacks.md"
   "claude-sdd.md"
-  "claude-design.md"
-  "claude-subagents.md"
+  "DESIGN.md"
   "claude-debug.md"
   "start_project.md"
-  "REQUIREMENTS.md"
-  "DESIGN_SYSTEM.md"
   "setup-github-project.sh"
   "sync-github-issues.sh"
   "sync-globals.sh"
@@ -52,6 +49,16 @@ GLOBAL_FILES=(
   ".claude/hooks/post-tool-use.sh"
   "package.json.example"
   ".superpowers/agent-memory-bootstrap.md"
+)
+
+# Slash commands — sincronizados junto com os globais
+COMMAND_FILES=(
+  "bug.md"
+  "triage.md"
+  "feature.md"
+  "finish.md"
+  "continue.md"
+  "new-project.md"
 )
 
 # Agentes — sincronizados junto com os globais
@@ -106,6 +113,7 @@ echo ""
 # ── Baixar/Copiar arquivos globais ─────────────
 
 mkdir -p "$TEMP_DIR/.claude/agents"
+mkdir -p "$TEMP_DIR/.claude/commands"
 mkdir -p "$TEMP_DIR/.claude/hooks"
 mkdir -p "$TEMP_DIR/.superpowers"
 
@@ -127,6 +135,14 @@ if [ "$SOURCE" = "remote" ]; then
       ok "Baixado: .claude/agents/$agent"
     else
       warn "Falha ao baixar: .claude/agents/$agent — pulando"
+    fi
+  done
+
+  for cmd in "${COMMAND_FILES[@]}"; do
+    if curl -sfL "$GITHUB_RAW_BASE/.claude/commands/$cmd" -o "$TEMP_DIR/.claude/commands/$cmd"; then
+      ok "Baixado: .claude/commands/$cmd"
+    else
+      warn "Falha ao baixar: .claude/commands/$cmd — pulando"
     fi
   done
 else
@@ -155,6 +171,13 @@ else
       warn "Não encontrado: $SOURCE/.claude/agents/$agent — pulando"
     fi
   done
+
+  # Sync slash commands via glob
+  for f in "$SOURCE/.claude/commands/"*.md; do
+    [ -f "$f" ] || continue
+    cp "$f" "$TEMP_DIR/.claude/commands/$(basename "$f")"
+    ok "Copiado: .claude/commands/$(basename "$f")"
+  done
 fi
 
 # ── Comparar arquivos globais ─────────────────
@@ -166,6 +189,7 @@ echo ""
 CHANGES=0
 CHANGED_FILES=()
 CHANGED_AGENTS=()
+CHANGED_COMMANDS=()
 
 for file in "${GLOBAL_FILES[@]}"; do
   if [ ! -f "$TEMP_DIR/$file" ]; then
@@ -188,6 +212,7 @@ for file in "${GLOBAL_FILES[@]}"; do
 done
 
 mkdir -p "./.claude/agents"
+mkdir -p "./.claude/commands"
 mkdir -p "./.superpowers"
 for agent in "${AGENT_FILES[@]}"; do
   if [ ! -f "$TEMP_DIR/.claude/agents/$agent" ]; then
@@ -209,6 +234,26 @@ for agent in "${AGENT_FILES[@]}"; do
   fi
 done
 
+for cmd in "${COMMAND_FILES[@]}"; do
+  if [ ! -f "$TEMP_DIR/.claude/commands/$cmd" ]; then
+    continue
+  fi
+
+  if [ ! -f "./.claude/commands/$cmd" ]; then
+    echo -e "${GREEN}+++ NOVO${NC}: .claude/commands/$cmd"
+    CHANGES=$((CHANGES + 1))
+    CHANGED_COMMANDS+=("$cmd")
+  elif ! diff -q "./.claude/commands/$cmd" "$TEMP_DIR/.claude/commands/$cmd" > /dev/null 2>&1; then
+    ADDED=$(diff "./.claude/commands/$cmd" "$TEMP_DIR/.claude/commands/$cmd" | grep -c "^>" || true)
+    REMOVED=$(diff "./.claude/commands/$cmd" "$TEMP_DIR/.claude/commands/$cmd" | grep -c "^<" || true)
+    echo -e "${YELLOW}~~~ ALTERADO${NC}: .claude/commands/$cmd  (+${ADDED} -${REMOVED} linhas)"
+    CHANGES=$((CHANGES + 1))
+    CHANGED_COMMANDS+=("$cmd")
+  else
+    echo -e "    sem alteração: .claude/commands/$cmd"
+  fi
+done
+
 echo ""
 
 if [ "$CHANGES" -eq 0 ]; then
@@ -226,6 +271,9 @@ for f in "${CHANGED_FILES[@]}"; do
 done
 for a in "${CHANGED_AGENTS[@]}"; do
   echo "    • .claude/agents/$a"
+done
+for c in "${CHANGED_COMMANDS[@]}"; do
+  echo "    • .claude/commands/$c"
 done
 echo ""
 
@@ -250,6 +298,13 @@ for agent in "${CHANGED_AGENTS[@]}"; do
   ok "Atualizado: .claude/agents/$agent"
 done
 
+# Sync slash commands
+mkdir -p "./.claude/commands"
+for cmd in "${CHANGED_COMMANDS[@]}"; do
+  cp "$TEMP_DIR/.claude/commands/$cmd" "./.claude/commands/$cmd"
+  ok "Atualizado: .claude/commands/$cmd"
+done
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✅ $CHANGES arquivo(s) sincronizado(s)"
@@ -258,6 +313,7 @@ echo ""
 echo "  Para commitar:"
 FILES_TO_COMMIT=("${CHANGED_FILES[@]}")
 for a in "${CHANGED_AGENTS[@]}"; do FILES_TO_COMMIT+=(".claude/agents/$a"); done
+for c in "${CHANGED_COMMANDS[@]}"; do FILES_TO_COMMIT+=(".claude/commands/$c"); done
 echo "  git add ${FILES_TO_COMMIT[*]}"
 echo "  git commit -m 'docs: sync global configs from template'"
 echo ""
@@ -268,3 +324,8 @@ if [ -f "./CLAUDE.md" ]; then
   info "Nota: CLAUDE.md é instanciado — NÃO foi alterado."
   info "Se os globais mudaram estrutura, revise o CLAUDE.md manualmente."
 fi
+
+echo ""
+warn "Arquivos obsoletos — podem ser removidos dos projetos adotados:"
+echo "    claude-subagents.md, DESIGN_SYSTEM.md, REQUIREMENTS.md"
+echo "    (versões antigas de claude-debug.md e start_project.md foram substituídas)"

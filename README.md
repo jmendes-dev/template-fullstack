@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Template de projeto fullstack com workflow SDD/TDD + Superpowers para Claude Code.
-> Versão atual: **v1.2.0** — [CHANGELOG](CHANGELOG.md)
+> Versão atual: **v1.3.0** — [CHANGELOG](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui
 
@@ -53,19 +53,21 @@ template-fullstack/
 │
 │  ── Orquestração ──
 ├── CLAUDE.md                     ← Protocolo executável. Routing mandatório de agentes.
-├── claude-sdd.md                 ← Specs: define O QUÊ implementar (contratos, cenários)
-├── claude-subagents.md           ← Templates de contexto para subagentes (conhecimento injetado)
+├── claude-sdd.md                 ← Specs: define O QUÊ implementar + contextos de subagente
 ├── claude-stacks.md              ← Stack técnica: regras, padrões, anti-patterns
 ├── claude-stacks-refactor.md     ← Aprendizados e extensões (começa vazio, cresce com o projeto)
-├── claude-design.md              ← Regras estruturais de UI/UX + pipeline design brief
-├── claude-debug.md               ← Orquestração de debugging (Superpowers + personal skills)
+├── DESIGN.md                     ← Regras estruturais de UI/UX + pipeline design system
+├── claude-debug.md               ← Reference card de debugging (protocolo em /bug)
+├── start_project.md              ← Gates de fase para projeto novo (procedimento em /new-project)
 │
-│  ── Pipelines de geração ──
-├── REQUIREMENTS.md               ← Entrevista → user-stories + backlog (Kanban P1/P2/P3)
-├── DESIGN_SYSTEM.md              ← ui-ux-pro-max → entrevista → MASTER.md + design-brief.md
-│
-│  ── Bootstrap ──
-├── start_project.md              ← Bootstrap: 9 fases de inicialização de projeto novo
+│  ── Slash commands ──
+├── .claude/commands/
+│   ├── bug.md                    ← /bug: protocolo de debugging step-by-step
+│   ├── triage.md                 ← /triage: árvore de decisão + routing de agentes
+│   ├── feature.md                ← /feature: fluxo completo spec → plan → execute → verify
+│   ├── finish.md                 ← /finish: DoD, code review, merge, deploy
+│   ├── continue.md               ← /continue: retomar sessão ou backlog
+│   └── new-project.md            ← /new-project: sequência de 7 agentes para projeto novo
 │
 │  ── Referência de stack ──
 ├── package.json.example          ← Deps e scripts de referência: raiz + apps/api, apps/web, packages/shared
@@ -95,6 +97,7 @@ template-fullstack/
 │
 │  ── Agentes especializados ──
 ├── .claude/
+│   ├── commands/                 ← 6 slash commands (global — sincronizado via glob)
 │   ├── agents/                   ← 10 agentes por papel técnico (global — sincronizado)
 │   │   ├── backend-developer.md
 │   │   ├── frontend-developer.md
@@ -149,7 +152,7 @@ template-fullstack/
 
 | Tipo | Arquivos | Comportamento |
 |---|---|---|
-| **Global** | `claude-stacks.md`, `claude-sdd.md`, `claude-design.md`, `claude-subagents.md`, `claude-debug.md`, `start_project.md`, `REQUIREMENTS.md`, `DESIGN_SYSTEM.md`, `package.json.example`, `.gitattributes`, todos os scripts `.sh`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.example.json`, `.claude/settings.local.example.json`, `.superpowers/agent-memory-bootstrap.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
+| **Global** | `claude-stacks.md`, `claude-sdd.md`, `DESIGN.md`, `claude-debug.md`, `start_project.md`, `package.json.example`, `.gitattributes`, todos os scripts `.sh`, `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/hooks/*.sh`, `.claude/settings.example.json`, `.claude/settings.local.example.json`, `.superpowers/agent-memory-bootstrap.md` | Reutilizáveis. Atualizados no template, propagados via `sync-globals.sh` |
 | **Instanciado** | `CLAUDE.md`, `claude-stacks-refactor.md`, tudo em `docs/`, `.claude/agent-memory/` | Específicos por projeto. Nunca sobrescritos pelo sync |
 | **Gitignored** | `.claude/settings.json`, `.claude/settings.local.json` | Configuração pessoal ativa — nunca commitado |
 
@@ -237,7 +240,8 @@ Cada story passa pelo ciclo completo: triage → spec → plan → execute → v
 ```
 
 O script copia automaticamente:
-- Arquivos globais (`claude-stacks.md`, `claude-design.md`, scripts `.sh`, etc.)
+- Arquivos globais (`claude-stacks.md`, `DESIGN.md`, scripts `.sh`, etc.)
+- `.claude/commands/` — 6 slash commands (`/bug`, `/triage`, `/feature`, `/finish`, `/continue`, `/new-project`)
 - `.claude/agents/` — todos os 10 agentes especializados
 - `.claude/hooks/` — hook scripts (pre-tool-use, inject-context)
 - `.claude/agent-memory/` — estrutura de memória criada vazia para cada agente
@@ -254,7 +258,7 @@ cd /path/to/seu-projeto
 
 **3. Ajustar CLAUDE.md** ao projeto ou no Claude Code: `Adotar workflow SDD/TDD neste projeto`.
 
-**4. Gerar docs** — REQUIREMENTS.md (stories + backlog) e DESIGN_SYSTEM.md (design system).
+**4. Gerar docs** — usar `/new-project` para stories + backlog e `DESIGN.md` (Parte 2) para design system.
 
 **5. Commitar:**
 ```bash
@@ -301,7 +305,7 @@ O sync exibe a versão atual vs template antes de mostrar o diff:
 git add . && git commit -m "docs: sync from template v1.1.0"
 ```
 
-> O sync **nunca** toca em: `CLAUDE.md`, `claude-sdd.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings.json`, `.claude/settings.local.json`.
+> O sync **nunca** toca em: `CLAUDE.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings.json`, `.claude/settings.local.json`.
 
 ---
 

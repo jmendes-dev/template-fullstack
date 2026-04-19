@@ -25,6 +25,19 @@ out=""
 # ── Session state — sempre ────────────────────────────────────────
 [ -f docs/session-state.md ] && out="$(cat docs/session-state.md)"
 
+# ── Enforçamento de triagem — prompts sem slash command ──────────
+# Se o prompt não começa com "/" e não está vazio, prepender lembrete.
+if [ -n "$PROMPT" ] && [ "${PROMPT#/}" = "$PROMPT" ]; then
+  out="$out
+---
+### ⚠️ TRIAGEM OBRIGATÓRIA
+Este prompt não é invocação de slash command. Antes de qualquer ação:
+1. Se é bug/erro → invocar \`/bug\`
+2. Se é feature/refactor/ambíguo → invocar \`/triage\`
+3. Se é continuação explícita da tarefa atual → prosseguir
+Não pular para implementação direta."
+fi
+
 # ── Quality dashboard — condicional ──────────────────────────────
 # Palavras-chave: testes, qualidade, bugs, lint, cobertura
 if echo "$PROMPT" | grep -qiE 'test|qualidade|cobertura|coverage|bug|erro|error|quality|falha|quebr|lint|typecheck|spec'; then

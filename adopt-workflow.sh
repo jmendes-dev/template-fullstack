@@ -161,11 +161,11 @@ INSTANCE_FILES=(
 info "Copiando arquivos instanciados (sem sobrescrever existentes)..."
 for file in "${INSTANCE_FILES[@]}"; do
   if [ -f "$SCRIPT_DIR/$file" ]; then
-    if [ ! -f "$TARGET_DIR/$file" ] || [ "$file" = "CLAUDE.md" ]; then
+    if [ ! -f "$TARGET_DIR/$file" ]; then
       cp "$SCRIPT_DIR/$file" "$TARGET_DIR/$file"
       ok "$file"
     else
-      warn "$file já existe — mantendo versão do projeto"
+      warn "$file já existe — mantendo versão do projeto (use --force-claude-md para reinstalar)"
     fi
   fi
 done

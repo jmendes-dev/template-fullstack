@@ -14,8 +14,10 @@ mkdir -p docs
 
 # ── Executar testes e capturar output ─────────────────────────
 echo "Executando bun test --coverage..."
-TEST_OUTPUT=$(bun test --coverage 2>&1 || true)
+set +e
+TEST_OUTPUT=$(bun test --coverage 2>&1)
 TEST_EXIT=$?
+set -e
 
 # ── Parsear cobertura geral ────────────────────────────────────
 COVERAGE=$(echo "$TEST_OUTPUT" | grep -E "^All files" | grep -oE "[0-9]+\.[0-9]+" | head -1 || echo "--")

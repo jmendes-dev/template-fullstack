@@ -115,7 +115,7 @@ while IFS= read -r line; do
       if echo "$DEST" | grep -qi "stacks"; then
         TARGET_FILE="$TEMPLATE_DIR/claude-stacks.md"
       elif echo "$DEST" | grep -qi "design"; then
-        TARGET_FILE="$TEMPLATE_DIR/claude-design.md"
+        TARGET_FILE="$TEMPLATE_DIR/DESIGN.md"
       elif echo "$DEST" | grep -qi "subagent"; then
         TARGET_FILE="$TEMPLATE_DIR/claude-sdd.md"
       else

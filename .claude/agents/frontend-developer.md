@@ -93,7 +93,7 @@ Lint/Format: Biome 2.x
 **Antes de implementar qualquer componente**:
 1. Ler `docs/design-system/design-brief.md` — tokens visuais obrigatórios
 2. Verificar se existe override em `docs/design-system/pages/<nome-da-pagina>.md`
-3. Ler `claude-design.md` para regras estruturais (acessibilidade, responsividade, estados)
+3. Ler `DESIGN.md` (Parte 1) para regras estruturais (acessibilidade, responsividade, estados)
 
 **4 estados obrigatórios** em todo componente com dados:
 - `loading` → Skeleton (shadcn)

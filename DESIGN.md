@@ -72,7 +72,7 @@ O `docs/design-system/design-brief.md` é o resumo compacto (~800 tokens) do MAS
 - Anti-patterns específicos do projeto
 - Visual checklist
 
-O agente principal injeta o design-brief.md no prompt do component-agent (ver `claude-subagents.md` → Template: component-agent). O subagente aplica esses valores diretamente no código.
+O agente principal injeta o design-brief.md no prompt do component-agent (ver `claude-sdd.md → seção "Contextos de Subagente"` → Template: component-agent). O subagente aplica esses valores diretamente no código.
 
 ### Geração e Manutenção do Design Brief
 
@@ -594,7 +594,7 @@ docs/
 ### design-brief.md — o que contém (gerado a partir do MASTER.md)
 
 - Resumo compacto (~800 tokens) com valores literais (hex, px, weights)
-- Otimizado para injeção no prompt do `component-agent` (ver `claude-subagents.md`)
+- Otimizado para injeção no prompt do `component-agent` (ver `claude-sdd.md → seção "Contextos de Subagente"`)
 - Não contém justificativas, histórico ou referências — apenas dados actionable
 - Deve ser regenerado sempre que o MASTER.md mudar
 
@@ -705,7 +705,7 @@ Aprova o spec e o override para iniciar a implementação?
 > 3. **design-brief.md** é gerado automaticamente como resumo compacto para subagentes
 >
 > **Pré-requisitos:**
-> - `docs/user-stories.md` existente (gerado via REQUIREMENTS.md)
+> - `docs/user-stories.md` existente (gerado via `/new-project`)
 > - `docs/backlog.md` existente
 > - Plugin ui-ux-pro-max instalado no Claude Code (ver instruções abaixo)
 >
@@ -716,7 +716,7 @@ Aprova o spec e o override para iniciar a implementação?
 >
 > **O que esta parte NÃO faz:**
 > - Não define regras estruturais (isso está na Parte 1)
-> - Não substitui o levantamento de requisitos (isso está no `REQUIREMENTS.md`)
+> - Não substitui o levantamento de requisitos (usar `/new-project`)
 > - Não gera código — apenas documentação de design
 
 ---

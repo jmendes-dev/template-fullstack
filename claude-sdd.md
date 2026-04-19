@@ -275,7 +275,7 @@ Após spec aprovado, o agente principal invoca `superpowers:writing-plans` passa
 ### Input para o Superpowers
 
 1. **O spec aprovado** (`docs/specs/US-XX-nome.spec.md`) — como documento principal
-2. **Contexto de conhecimento** (injetado do workflow — ver `claude-subagents.md`):
+2. **Contexto de conhecimento** (injetado do workflow — ver seção "Contextos de Subagente" neste arquivo):
    - Stack rules relevantes (de `claude-stacks.md`)
    - Design brief (`docs/design-system/design-brief.md`) — se tem componentes frontend
    - Page override (`docs/design-system/pages/*.md`) — se página tem override

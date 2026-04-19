@@ -65,7 +65,7 @@ Para refatoração, invocar **`/refactor`**.
 | **Erro em rota Hono** | `hono-api-debugging` |
 | **Erro em query Drizzle** | `drizzle-database-debugging` |
 | **Erro em React/TanStack** | `react-tanstack-debugging` |
-| 2-3 tentativas de fix falhadas | `escalation-and-bug-journal` |
+| 3 tentativas falhadas (ver nível 2 em `claude-debug.md`) | `escalation-and-bug-journal` |
 | Prestes a declarar "pronto" | `superpowers:verification-before-completion` |
 | Após concluir feature | `superpowers:requesting-code-review` |
 | Implementação completa → merge/PR | `superpowers:finishing-a-development-branch` |

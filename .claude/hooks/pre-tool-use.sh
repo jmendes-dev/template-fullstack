@@ -7,12 +7,21 @@
 #   exit 0  → permite o tool call prosseguir (com ou sem aviso)
 #   exit 2  → BLOQUEIA o tool call e mostra a mensagem ao Claude
 
-FILE=$(echo "${CLAUDE_TOOL_INPUT:-}" | grep -o '"file_path" *: *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' | head -1)
+_extract_file_path() {
+  local json="$1"
+  if command -v jq &>/dev/null; then
+    jq -r '.file_path // empty' 2>/dev/null <<< "$json" | head -1
+  else
+    echo "$json" | grep -o '"file_path" *: *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' | head -1
+  fi
+}
+
+FILE=$(_extract_file_path "${CLAUDE_TOOL_INPUT:-}")
 
 # Se CLAUDE_TOOL_INPUT não estava disponível, tentar stdin (Claude Code envia JSON via stdin)
 if [ -z "$FILE" ] && [ ! -t 0 ]; then
   STDIN=$(cat 2>/dev/null)
-  FILE=$(echo "${STDIN}" | grep -o '"file_path" *: *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' | head -1)
+  FILE=$(_extract_file_path "$STDIN")
 fi
 
 # Sem file_path → não é Write/Edit ou não há path — deixar passar

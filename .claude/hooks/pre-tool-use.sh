@@ -45,4 +45,12 @@ if echo "$FILE" | grep -qE '(^|/)claude-(stacks|subagents|debug|design)\.md$'; t
   echo "(Prosseguindo — apenas um aviso)"
 fi
 
+# ── Soft reminder: docs/backlog.md → sugerir sync com GitHub Issues ─
+if echo "$FILE" | grep -qE '(^|/)docs/backlog\.md$'; then
+  echo "📋 LEMBRETE: Após salvar docs/backlog.md, execute:"
+  echo "  ./sync-github-issues.sh"
+  echo "para manter os GitHub Issues sincronizados."
+  echo "(Prosseguindo — apenas um aviso)"
+fi
+
 exit 0

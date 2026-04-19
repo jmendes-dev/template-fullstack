@@ -65,20 +65,7 @@ Story introduz schemas, endpoints ou componentes NOVOS (contrato novo)?
 
 ## Regras de roteamento de agentes
 
-Ao decidir qual agente invocar para a implementação:
-
-| Domínio | Agente obrigatório |
-|---|---|
-| `apps/api/**` (rotas, serviços, middleware) | `backend-developer` |
-| `apps/web/**` (componentes, pages, hooks) | `frontend-developer` |
-| `packages/shared/src/schemas/**` | `data-engineer-dba` |
-| CI/CD, Dockerfile, GitHub Actions | `devops-sre-engineer` |
-| `docs/design-system/**`, componentes visuais | `ux-ui-designer` |
-| Arquitetura, ADRs, revisão estrutural | `software-architect` |
-| Backlog, sprint, DoD, issues/PRs | `project-manager` |
-| Levantamento de requisitos, roadmap | `requirements-roadmap-builder` |
-| Test plans, coverage, bug reports | `qa-engineer` |
-| OWASP, dependency audit, security review | `security-engineer` |
+Ver tabela de routing em `CLAUDE.md` (seção "ROUTING DE AGENTES"). Fonte de verdade única.
 
 O orquestrador **nunca** escreve código de produção diretamente — toda implementação é delegada ao agente correto.
 

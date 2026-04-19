@@ -235,7 +235,7 @@ S3_BUCKET=             # nome do bucket
 S3_FORCE_PATH_STYLE=   # "true" para S3-compatible
 ```
 
-Compose para Portainer — ver regras detalhadas em `START_PROJECT.md` Fase 4. Regras obrigatórias por service:
+Compose para Portainer — ver regras detalhadas em `start_project.md` Fase 4. Regras obrigatórias por service:
 
 | Regra | Aplica a |
 |---|---|
@@ -262,7 +262,7 @@ Todo projeto on-premises deve ter backup automático do PostgreSQL com envio par
 
 **Imagem**: `${REGISTRY}/backup-postgres:latest` — container sidecar que roda `pg_dump | gzip | mc pipe` em loop, enviando diretamente para o MinIO sem uso de disco local.
 
-**Compose**: service `backup` obrigatório em todos os compose files (dev, UAT, PRD). Ver `START_PROJECT.md` Fase 4 para configuração completa.
+**Compose**: service `backup` obrigatório em todos os compose files (dev, UAT, PRD). Ver `start_project.md` Fase 4 para configuração completa.
 
 | Ambiente | S3_ENDPOINT | Bucket | Retenção |
 |---|---|---|---|
@@ -460,7 +460,7 @@ Nunca considerar tarefa finalizada com CI vermelho. CD bloqueado automaticamente
 
 ## Planejamento
 
-Projeto novo → seguir `START_PROJECT.md`. Feature nova ou dependência desconhecida → consultar context7 MCP para documentação de API/sintaxe (ou docs oficiais). Para versão latest de pacotes, usar `bun info <pacote>` (requer `package.json` no diretório — se falhar, usar `npm view <pacote> version` como fallback) — context7 não é confiável como fonte de versão. Nunca assumir APIs, subpaths ou compatibilidade de versão de memória — sempre verificar.
+Projeto novo → seguir `start_project.md`. Feature nova ou dependência desconhecida → consultar context7 MCP para documentação de API/sintaxe (ou docs oficiais). Para versão latest de pacotes, usar `bun info <pacote>` (requer `package.json` no diretório — se falhar, usar `npm view <pacote> version` como fallback) — context7 não é confiável como fonte de versão. Nunca assumir APIs, subpaths ou compatibilidade de versão de memória — sempre verificar.
 
 ## Regras para IA
 
@@ -479,7 +479,7 @@ Projeto novo → seguir `START_PROJECT.md`. Feature nova ou dependência desconh
 13. **API response format**: seguir rigorosamente a seção "API response format". Nunca retornar sem envelope `{ data }`
 14. Commits seguem Conventional Commits. Branches seguem o padrão `feat/`/`fix/`/`chore/`
 15. **Storage sempre via S3 SDK** (`@aws-sdk/client-s3` + `S3_ENDPOINT` env var). Nunca salvar uploads no filesystem local em prod. **Em dev**: MinIO roda como container local no compose (service `minio`) — credenciais via `.env`, nunca hardcoded. **Em UAT/PRD**: MinIO é serviço externo centralizado — conexão via env vars do Portainer, nunca container no compose de produção
-16. **Projeto novo**: se o repositório não contém `apps/` ou `packages/shared/`, considerar projeto novo. Ler e executar `START_PROJECT.md` **antes de qualquer outra ação**
+16. **Projeto novo**: se o repositório não contém `apps/` ou `packages/shared/`, considerar projeto novo. Ler e executar `start_project.md` **antes de qualquer outra ação**
 17. **Nullable fields**: colunas Drizzle sem `.notNull()` produzem `T | null` no TypeScript. Frontend **deve** tratar nulls explicitamente (ex: `user.firstName || ""`, `user.avatarUrl ?? undefined`)
 18. **shadcn/ui — verificar antes de usar**: conferir o código real em `src/components/ui/<componente>.tsx` antes de passar props. Variantes não-padrão não existem — usar `className`
 19. **Contrato API-Frontend**: antes de construir o frontend, verificar responses reais da API (via curl ou tests). Nunca inventar campos ou assumir transformações. Ver seção "API response format"

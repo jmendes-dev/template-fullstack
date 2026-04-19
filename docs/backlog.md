@@ -1,6 +1,6 @@
 # Backlog
 
-> Gerado via REQUIREMENTS.md. Modelo Kanban com priorização (P1/P2/P3).
+> Gerado via `/new-project` (skill `novo-prd` → `prd-planejamento`). Modelo Kanban com priorização (P1/P2/P3).
 > Ordenado por prioridade: P1 primeiro, depois P2, depois P3.
 
 ---
@@ -15,4 +15,4 @@
 
 ---
 
-<!-- Rodar o prompt do REQUIREMENTS.md para gerar o backlog -->
+<!-- Executar /new-project para gerar o backlog via entrevista guiada -->

@@ -59,14 +59,42 @@ while IFS= read -r line; do
   fi
 done <<< "$TEST_OUTPUT"
 
+# ── Lint (Biome) ──────────────────────────────────────────────
+if command -v bunx &>/dev/null && [ -f "biome.json" ] || [ -f "biome.jsonc" ]; then
+  set +e
+  LINT_OUTPUT=$(bunx biome check . 2>&1)
+  LINT_EXIT=$?
+  set -e
+  if [ "$LINT_EXIT" -eq 0 ]; then
+    DOD_LINT="- [x] \`bunx biome check\` zero erros"
+  else
+    DOD_LINT="- [ ] \`bunx biome check\` zero erros ← **FALHOU**"
+  fi
+else
+  DOD_LINT="- [ ] \`bunx biome check\` zero erros (biome.json não encontrado — pulado)"
+fi
+
+# ── Typecheck ─────────────────────────────────────────────────
+if command -v bunx &>/dev/null && [ -f "tsconfig.json" ]; then
+  set +e
+  TYPE_OUTPUT=$(bunx tsc --noEmit 2>&1)
+  TYPE_EXIT=$?
+  set -e
+  if [ "$TYPE_EXIT" -eq 0 ]; then
+    DOD_TYPE="- [x] \`tsc --noEmit\` zero erros"
+  else
+    DOD_TYPE="- [ ] \`tsc --noEmit\` zero erros ← **FALHOU**"
+  fi
+else
+  DOD_TYPE="- [ ] \`tsc --noEmit\` zero erros (tsconfig.json não encontrado — pulado)"
+fi
+
 # ── Gates DoD ─────────────────────────────────────────────────
 if [ "$TEST_EXIT" -eq 0 ] && [ "$COV_STATUS" = "✅" ]; then
   DOD_TEST="- [x] \`bun test\` passa com cobertura ≥ 80%"
 else
   DOD_TEST="- [ ] \`bun test\` passa com cobertura ≥ 80% ← **FALHOU**"
 fi
-DOD_LINT="- [ ] \`bunx biome check\` zero erros"
-DOD_TYPE="- [ ] \`tsc --noEmit\` zero erros"
 DOD_SPEC=""  # será definido na seção Spec Coverage abaixo
 
 # ── Spec Coverage ─────────────────────────────────────────────

@@ -71,8 +71,7 @@ Para bugs e troubleshooting, invocar **`/bug`**.
 
 | Arquivo | Ler quando... |
 |---|---|
-| `claude-sdd.md` | Triage → spec necessária |
-| `claude-subagents.md` | Montar contexto para subagente |
+| `claude-sdd.md` | Triage → spec necessária + contextos de subagente |
 | `claude-stacks.md` | Regras de stack, padrões técnicos |
 | `claude-stacks-refactor.md` | Aprendizados, bug journal |
 | `claude-debug.md` | Bug fix, troubleshooting, CI quebrando |

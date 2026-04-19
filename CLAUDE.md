@@ -6,29 +6,20 @@
 
 ---
 
-## 🔀 ÁRVORE DE DECISÃO — Todo pedido segue este fluxo
+## 🔀 TRIAGEM — Todo pedido segue este fluxo
 
-```
-Pedido recebido
-├── "Iniciar projeto novo"        → ler start_project.md → SEQUÊNCIA DE AGENTES (ver abaixo)
-├── "Adotar workflow / retrofit"  → rodar ./adopt-workflow.sh → ajustar CLAUDE.md
-├── Feature / Story (nova)        → TRIAGE → spec se novo contrato → PLAN → EXECUTE → VERIFY → FINISH
-├── Feature / Story (existente)   → localizar no backlog → spec se ausente → EXECUTE → VERIFY → FINISH
-├── Bug / erro                    → ler claude-debug.md → checkpoint git → skill de debugging
-├── Refatoração                   → TRIAGE (sem contrato novo) → TDD direto
-├── "Continuar backlog"           → ler docs/backlog.md → próxima P1 → confirmar → executar
-└── Pedido ambíguo                → fazer UMA pergunta antes de qualquer ação
-```
+Para qualquer pedido novo ou ambíguo, invocar **`/triage`**.
+Para bugs e troubleshooting, invocar **`/bug`**.
 
-**TRIAGE:** Story introduz schemas/endpoints/componentes novos? → **SIM**: gerar spec (ler `claude-sdd.md`). **NÃO**: TDD direto.
+> O routing completo de agentes e a decisão spec-vs-TDD estão em `.claude/commands/triage.md`.
 
 ---
 
-## 🤖 ROUTING MANDATÓRIO DE AGENTES — Sem exceções
+## 🤖 ROUTING DE AGENTES — Referência rápida
 
-> **O orquestrador NUNCA escreve código de produção diretamente. Toda implementação é delegada.**
+> O orquestrador **nunca** escreve código de produção diretamente. Toda implementação é delegada.
 
-| Arquivo / Domínio | Agente OBRIGATÓRIO |
+| Arquivo / Domínio | Agente |
 |---|---|
 | `apps/api/**` (rotas, serviços, middleware) | `backend-developer` |
 | `apps/web/**` (componentes, pages, hooks) | `frontend-developer` |

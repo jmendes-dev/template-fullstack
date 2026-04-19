@@ -5,6 +5,17 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.5.1] — 2026-04-19
+
+### Corrigido
+- `CLAUDE.md`: threshold de escalação alinhado com `claude-debug.md` ("2-3" → "3 tentativas") — fonte única
+- `pre-tool-use.sh`: extração de `file_path` usa `jq` quando disponível (regex como fallback) — robusto com paths especiais
+
+### Adicionado
+- `pre-tool-use.sh`: soft warning ao editar `apps/*/src/**` ou `packages/shared/src/**` — lembra delegação ao agente
+
+---
+
 ## [1.5.0] — 2026-04-19
 
 ### Corrigido (P0 — críticos)

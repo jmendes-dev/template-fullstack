@@ -128,6 +128,7 @@ if [ "$SOURCE" = "remote" ]; then
       ok "Baixado: $file"
     else
       warn "Falha ao baixar: $file — pulando"
+      DOWNLOAD_ERRORS=$((DOWNLOAD_ERRORS + 1))
     fi
   done
 
@@ -136,6 +137,7 @@ if [ "$SOURCE" = "remote" ]; then
       ok "Baixado: .claude/agents/$agent"
     else
       warn "Falha ao baixar: .claude/agents/$agent — pulando"
+      DOWNLOAD_ERRORS=$((DOWNLOAD_ERRORS + 1))
     fi
   done
 
@@ -144,8 +146,16 @@ if [ "$SOURCE" = "remote" ]; then
       ok "Baixado: .claude/commands/$cmd"
     else
       warn "Falha ao baixar: .claude/commands/$cmd — pulando"
+      DOWNLOAD_ERRORS=$((DOWNLOAD_ERRORS + 1))
     fi
   done
+
+  if [ "$DOWNLOAD_ERRORS" -gt 0 ]; then
+    echo ""
+    warn "$DOWNLOAD_ERRORS arquivo(s) não puderam ser baixados (rede ou 404)."
+    warn "Verifique a conexão ou use: ./sync-globals.sh /caminho/local/para/template"
+    echo ""
+  fi
 else
   # Fonte local
   if [ ! -d "$SOURCE" ]; then
@@ -188,6 +198,7 @@ info "Comparando com arquivos locais..."
 echo ""
 
 CHANGES=0
+DOWNLOAD_ERRORS=0
 CHANGED_FILES=()
 CHANGED_AGENTS=()
 CHANGED_COMMANDS=()
@@ -258,6 +269,10 @@ done
 echo ""
 
 if [ "$CHANGES" -eq 0 ]; then
+  if [ "$DOWNLOAD_ERRORS" -gt 0 ]; then
+    warn "Sync incompleto: $DOWNLOAD_ERRORS arquivo(s) com falha de download."
+    exit 1
+  fi
   ok "Tudo sincronizado — nenhuma alteração necessária."
   exit 0
 fi

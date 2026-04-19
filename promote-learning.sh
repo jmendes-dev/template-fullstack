@@ -131,7 +131,7 @@ while IFS= read -r line; do
         ok "Adicionado a $TARGET_FILE"
 
         # Marcar como promovido no projeto
-        sed -i "${LINE_NUM}s/⏳ Pendente/✅ Promovido $(date +%Y-%m-%d)/" "$REFACTOR_FILE"
+        sed -i.bak "${LINE_NUM}s/⏳ Pendente/✅ Promovido $(date +%Y-%m-%d)/" "$REFACTOR_FILE" && rm -f "${REFACTOR_FILE}.bak"
         ok "Marcado como ✅ Promovido em claude-stacks-refactor.md"
       else
         warn "Arquivo destino não encontrado: $TARGET_FILE — pulando"
@@ -140,7 +140,7 @@ while IFS= read -r line; do
 
     [Rr])
       # Marcar como rejeitado
-      sed -i "${LINE_NUM}s/⏳ Pendente/❌ Rejeitado/" "$REFACTOR_FILE"
+      sed -i.bak "${LINE_NUM}s/⏳ Pendente/❌ Rejeitado/" "$REFACTOR_FILE" && rm -f "${REFACTOR_FILE}.bak"
       ok "Marcado como ❌ Rejeitado"
       ;;
 

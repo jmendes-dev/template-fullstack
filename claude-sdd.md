@@ -363,3 +363,108 @@ Se durante a implementação algo exige mudança no spec:
 - ❌ Fazer spec para tasks triviais (< 10 linhas, sem contrato novo)
 - ❌ Spec que repete o que já está em `claude-stacks.md` — referenciar, não copiar
 - ❌ Implementar sem passar pelo Superpowers plan (pular Step 2)
+
+---
+
+## 🤖 Contextos de Subagente
+
+> Define qual conhecimento injetar em cada tipo de subagente durante PLAN/EXECUTE.
+> O Superpowers (`subagent-driven-development`) cuida da execução; este bloco fornece o que o Superpowers não tem: regras de stack, design brief, cenários do spec.
+
+### Princípio: Superpowers Executa, Workflow Injeta
+
+```
+Superpowers (execução):                Workflow (conhecimento):
+├── writing-plans (decompõe)           ├── claude-stacks.md (regras de stack)
+├── subagent-driven-development        ├── design-brief.md (tokens visuais)
+├── test-driven-development (TDD)      ├── pages/*.md (overrides de página)
+├── requesting-code-review             ├── specs/US-XX.spec.md (cenários)
+└── verification-before-completion     └── DESIGN.md (regras UI)
+```
+
+### Contexto por tipo de task
+
+#### Schema & Types (`packages/shared`)
+
+Injetar: seção "Contratos — Schema" do spec + regras Drizzle/Zod + arquivo de schema atual (se existir).
+
+Stack rules essenciais:
+- Schemas em `packages/shared/src/schemas/` — `kebab-case.ts`
+- Exportar via barrel: `packages/shared/src/index.ts`
+- Todo schema tem `createdAt` e `updatedAt` com defaults
+- IDs: `uuid` com `defaultRandom()`
+- Zod schemas via `drizzle-zod`: `createInsertSchema`, `createSelectSchema`
+- Rodar `bun run db:generate` após criar o schema
+
+Budget máximo: ≤ 1500 tokens
+
+#### API Endpoints (`apps/api`)
+
+Injetar: seção "Contratos — API" do spec + schemas Zod importáveis + rotas existentes relacionadas.
+
+Stack rules essenciais:
+- Framework: Hono. Validação: `sValidator` de `@hono/standard-validator`
+- Response sucesso: `c.json({ data: ... })`
+- Response lista: `c.json({ data: [...], pagination: { page, limit, total, totalPages } })`
+- Response erro: `c.json({ error, code, details }, status)`
+- Auth: `getAuth(c)` — síncrono
+- Importar schemas de `@projeto/shared`, db de `../db`
+- Arquivo de rota: `apps/api/src/routes/kebab-case.ts`
+
+Budget máximo: ≤ 1500 tokens
+
+#### React Components (`apps/web`)
+
+Injetar: seção "Contratos — Componente" do spec + types importáveis + API contract + **design brief** (literal) + **page override** (se existir).
+
+Stack rules essenciais:
+- React 19 + TypeScript strict
+- Data fetching: TanStack Query + Hono RPC client tipado
+- Forms: React Hook Form + `standardSchemaResolver` (Zod v4)
+- UI: shadcn/ui + Tailwind CSS v4. Nunca CSS inline
+- States obrigatórios: loading (Skeleton), empty (ícone+msg+CTA), error (Alert+retry), success
+- Toasts: Sonner
+
+Visual checklist (incluir literalmente no contexto do subagente):
+```
+- [ ] Cores usam tokens do design brief (sem hex hardcoded)
+- [ ] Tipografia segue escala do brief
+- [ ] 4 estados: loading/empty/error/success
+- [ ] Responsivo: mobile stack → desktop grid
+- [ ] Hover/focus states com transition
+```
+
+Budget máximo: ≤ 3500 tokens — **nunca cortar design brief**.
+
+#### Fix / Debugging
+
+Injetar: mensagem de erro exata + stack trace + contexto de reprodução + seção do spec + **tentativas anteriores** + regra de stack violada.
+
+Protocolo: seguir `/bug` + `superpowers:systematic-debugging`.
+Se não diagnosticar em 3 tentativas: PARAR e retornar diagnóstico parcial.
+
+Budget máximo: ≤ 1500 tokens
+
+### O que NÃO enviar
+
+- ❌ `CLAUDE.md` inteiro
+- ❌ `claude-stacks.md` inteiro — apenas regras da camada relevante
+- ❌ `DESIGN.md` inteiro — apenas design brief compacto (`docs/design-system/design-brief.md`)
+- ❌ Código de outros módulos/features
+- ❌ Histórico de conversa anterior
+
+### O que SEMPRE enviar
+
+- ✅ Seção exata do spec (copiada, não referenciada)
+- ✅ Paths de arquivos (input e output)
+- ✅ Stack rules da camada relevante
+- ✅ Cenários de teste do spec
+- ✅ Design brief — apenas para tasks de frontend
+- ✅ Tentativas anteriores — apenas para fix (evitar loops)
+
+### Proibições de subagente
+
+- ❌ Subagente nunca faz commit, push, install, ou modifica docs/specs
+- ❌ Nunca enviar mais que o budget de contexto do tipo
+- ❌ Nunca cortar design brief do contexto de componente
+- ❌ Fix-agent que falha 3x deve parar e retornar diagnóstico, não continuar tentando

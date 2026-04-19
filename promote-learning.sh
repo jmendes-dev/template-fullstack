@@ -117,7 +117,7 @@ while IFS= read -r line; do
       elif echo "$DEST" | grep -qi "design"; then
         TARGET_FILE="$TEMPLATE_DIR/claude-design.md"
       elif echo "$DEST" | grep -qi "subagent"; then
-        TARGET_FILE="$TEMPLATE_DIR/claude-subagents.md"
+        TARGET_FILE="$TEMPLATE_DIR/claude-sdd.md"
       else
         warn "Destino não reconhecido: $DEST"
         read -p "  Caminho completo do arquivo destino no template: " TARGET_FILE

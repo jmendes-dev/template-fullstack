@@ -68,7 +68,6 @@ GLOBAL_FILES=(
   "claude-subagents.md"
   "claude-debug.md"
   "start_project.md"
-  "REQUIREMENTS.md"
   ".gitattributes"
   "setup-github-project.sh"
   "sync-github-issues.sh"
@@ -204,9 +203,9 @@ if [ ! -f "$TARGET_DIR/docs/user-stories.md" ]; then
   cat > "$TARGET_DIR/docs/user-stories.md" << 'STORIES_EOF'
 # User Stories
 
-> Gerado via REQUIREMENTS.md. Fonte de verdade para requisitos do projeto.
+> Fonte de verdade para requisitos do projeto.
 > Cada story segue o formato XP: Como [ator], quero [ação], para que [benefício].
-> **Para gerar:** abrir REQUIREMENTS.md e seguir as instruções do prompt.
+> **Para gerar:** usar o comando `/new-project` e seguir a entrevista de levantamento de requisitos.
 
 ---
 
@@ -234,9 +233,9 @@ if [ ! -f "$TARGET_DIR/docs/backlog.md" ]; then
   cat > "$TARGET_DIR/docs/backlog.md" << 'BACKLOG_EOF'
 # Backlog
 
-> Gerado via REQUIREMENTS.md. Modelo Kanban com priorização (P1/P2/P3).
+> Modelo Kanban com priorização (P1/P2/P3).
 > Ordenado por prioridade: P1 primeiro, depois P2, depois P3.
-> **Para gerar:** abrir REQUIREMENTS.md e seguir as instruções do prompt.
+> **Para gerar:** usar o comando `/new-project` e seguir a entrevista de levantamento de requisitos.
 
 ---
 
@@ -584,7 +583,7 @@ if [ "$HAS_CLAUDE" = true ]; then
 fi
 echo "  2. (opcional) Ativar rastreamento GitHub Issues (requer gh autenticado):"
 echo "     ./setup-github-project.sh"
-echo "  3. Rodar REQUIREMENTS.md para gerar stories e backlog"
+echo "  3. Usar o comando /new-project para gerar stories e backlog"
 echo "  4. Rodar DESIGN.md (Parte 2) para gerar o design system"
 echo "  5. Commitar:"
 echo "     git add . && git commit -m 'docs: adopt SDD/TDD workflow'"

@@ -1,14 +1,30 @@
-# REQUIREMENTS.md — Prompt de Levantamento de Requisitos
+---
+description: "Bootstrap de projeto novo: requisitos → stories → sequência de agentes"
+---
 
-> **Como usar:** Cole este conteúdo em uma conversa com o Claude (aqui no chat ou no Claude Code).
-> Ele vai conduzir a entrevista e ao final gerar os dois artefatos: `user-stories.md` e `backlog.md`.
->
-> Se houver um PDF de mapeamento de processos, anexe-o antes de iniciar.
-> Se houver um `claude-stacks.md` preenchido, mencione as tecnologias ao começar.
+# /new-project — Bootstrap de Projeto Novo
+
+Use este comando ao iniciar qualquer projeto novo do zero. Ele guia o processo completo:
+levantamento de requisitos → geração de artefatos → sequência de agentes especialistas → validação de saúde.
+
+> Para hard-constraints e gates de cada fase, consultar `start_project.md`.
+> Para regras de stack, consultar `claude-stacks.md`.
 
 ---
 
-## 🤖 Prompt para colar no Claude
+## Pré-requisito: ler start_project.md
+
+Antes de qualquer ação, ler `start_project.md` para verificar os gates obrigatórios de cada fase.
+Nenhuma fase pode ser iniciada sem o gate da fase anterior estar cumprido.
+
+---
+
+## Fase 1 — Levantamento de Requisitos
+
+Assumir o papel de analista XP sênior e conduzir a entrevista abaixo com o usuário.
+O objetivo é extrair requisitos suficientes para gerar `docs/user-stories.md` e `docs/backlog.md`.
+
+### Prompt de entrevista
 
 ```
 Você é um analista XP sênior conduzindo o levantamento de requisitos de um novo projeto (ou nova feature).
@@ -50,9 +66,9 @@ DIMENSÕES A COBRIR (na ordem que fizer sentido para o contexto):
     - Alguma referência visual rápida? (ex: "quero algo parecido com o Linear")
     - O público é técnico ou leigo? (afeta densidade de informação)
     - Desktop-first ou mobile-first?
-    
+
     > NOTA: não aprofundar design nesta entrevista. Registrar as respostas no final do
-    > `user-stories.md` como seção "Sementes de Design" para alimentar o DESIGN_SYSTEM.md depois.
+    > `user-stories.md` como seção "Sementes de Design" para alimentar o DESIGN.md depois.
 
 ---
 
@@ -80,7 +96,7 @@ Fora de escopo: [o que não faz parte desta story]
 ## Sementes de Design
 
 > Respostas coletadas durante o levantamento de requisitos.
-> Estas sementes alimentam a entrevista de design system (`DESIGN_SYSTEM.md`).
+> Estas sementes alimentam a entrevista de design system (`DESIGN.md`).
 > Não são decisões finais — serão aprofundadas na etapa de design.
 
 - **Marca existente**: [sim/não — se sim, descrever brevemente]
@@ -131,11 +147,9 @@ Tasks:
 Comece perguntando: "Qual é o nome do projeto (ou da feature) e qual problema ele resolve para o usuário?"
 ```
 
----
+### Checklist pós-entrevista
 
-## 📋 Checklist pós-entrevista
-
-Antes de considerar o levantamento completo, confirme:
+Antes de avançar para a Fase 2, confirmar:
 
 - [ ] Todos os atores identificados
 - [ ] Fluxo principal documentado
@@ -145,14 +159,9 @@ Antes de considerar o levantamento completo, confirme:
 - [ ] Critérios de pronto definidos
 - [ ] Escopo negativo declarado (o que NÃO entra)
 - [ ] Prioridades definidas e aprovadas (P1/P2/P3 para cada story)
-- [ ] `user-stories.md` gerado em `docs/`
-- [ ] `backlog.md` gerado em `docs/` com stories ordenadas por prioridade
-- [ ] Stories referenciadas no `CLAUDE.md` do projeto
-- [ ] Sementes de design coletadas e registradas no `user-stories.md`
+- [ ] Sementes de design coletadas e registradas
 
----
-
-## 🔄 Uso para features em projetos existentes
+### Uso para features em projetos existentes
 
 Se o projeto já existe e você está levantando uma **nova feature**:
 
@@ -162,3 +171,129 @@ Se o projeto já existe e você está levantando uma **nova feature**:
 4. Defina a prioridade das novas stories em relação às existentes.
 5. Ao final, gere apenas o **diff** do backlog — novas tasks, não reescreva o backlog inteiro.
 6. Novas stories P1 entram antes das P2/P3 existentes na ordem do backlog.
+
+---
+
+## Fase 2 — Aprovação e Documentação
+
+Após concluir a entrevista, invocar o agente `requirements-roadmap-builder` para gerar os artefatos formais.
+
+**Handoff para o agente:**
+
+```
+Você é o requirements-roadmap-builder. Com base na entrevista de levantamento de requisitos
+já concluída, gerar:
+1. `docs/user-stories.md` — stories no formato XP com critérios de aceite e seção "Sementes de Design"
+2. `docs/backlog.md` — Kanban priorizado (P1/P2/P3) com tasks e testes planejados
+
+Aguardar aprovação explícita do usuário antes de avançar.
+```
+
+**Gate**: usuário aprovou `docs/user-stories.md` e `docs/backlog.md` explicitamente.
+
+---
+
+## Fase 3 — Sequência de Agentes
+
+Executar nesta ordem com handoff explícito entre cada etapa. **Não avançar sem aprovação quando indicado.**
+
+### Passo 1 — requirements-roadmap-builder (já concluído na Fase 2)
+
+Saída: `docs/user-stories.md` + `docs/backlog.md`
+Gate: aprovação explícita do usuário.
+
+### Passo 2 — software-architect
+
+```
+Você é o software-architect. Ler `docs/backlog.md` e `docs/user-stories.md`.
+Gerar `docs/adr/ADR-001-stack-selection.md` com a decisão de stack justificada
+para este projeto específico. Confirmar deploy target (Railway ou Portainer).
+```
+
+Saída: `docs/adr/ADR-001-stack-selection.md`
+Gate: ADR commitado (não requer aprovação explícita, mas deve ser revisado antes do passo 3).
+
+### Passo 3 — ux-ui-designer (design system)
+
+```
+Você é o ux-ui-designer. Ler `DESIGN.md` (Parte 2) + `docs/user-stories.md`
+(seção "Sementes de Design") + `docs/adr/ADR-001-stack-selection.md`.
+Executar o pipeline de 3 passos da Parte 2 do DESIGN.md para gerar
+`docs/design-system/MASTER.md`.
+```
+
+Saída: `docs/design-system/MASTER.md`
+Gate: **aguardar aprovação explícita do usuário** antes de avançar.
+
+### Passo 4 — ux-ui-designer (design brief)
+
+```
+Você é o ux-ui-designer. O MASTER.md foi aprovado.
+Regenerar `docs/design-system/design-brief.md` a partir do MASTER.md aprovado.
+O brief deve ter ~800 tokens — resumo compacto para injeção em contextos de componente.
+```
+
+Saída: `docs/design-system/design-brief.md`
+Gate: brief commitado.
+
+### Passo 5 — data-engineer-dba
+
+```
+Você é o data-engineer-dba. Ler `docs/user-stories.md` + `docs/adr/ADR-001-stack-selection.md`.
+Criar schema inicial Drizzle em `packages/shared/src/schemas/` com:
+- Todas as entidades identificadas nas stories P1
+- createdAt + updatedAt em todos os schemas
+- Schemas Zod derivados (insert + select)
+- Tipos TypeScript exportados
+- Barrel em packages/shared/src/index.ts
+```
+
+Saída: schemas em `packages/shared/src/schemas/`
+Gate: `bun run db:generate` sem erros.
+
+### Passo 6 — devops-sre-engineer
+
+```
+Você é o devops-sre-engineer. Ler `docs/adr/ADR-001-stack-selection.md` para confirmar
+deploy target (Railway ou Portainer). Criar:
+- Dockerfiles multi-stage (api + web, prod + dev)
+- docker-compose.dev.yml (sempre)
+- docker-compose.yml / docker-compose-uat.yml / docker-compose-prd.yml (só Portainer)
+- .github/workflows/ci.yml
+- .github/workflows/cd-uat.yml + cd-prd.yml (só Portainer)
+Consultar start_project.md para as constraints detalhadas de cada arquivo.
+```
+
+Saída: arquivos Docker + CI/CD
+Gate: `docker compose -f docker-compose.dev.yml up` → todos os services `healthy`.
+
+### Passo 7 — setup-github-project.sh
+
+```bash
+./setup-github-project.sh
+```
+
+Gate: GitHub Project criado e sincronizado com `docs/backlog.md`.
+
+---
+
+## Fase 4 — Validação de Saúde
+
+Após concluir a sequência de agentes, verificar que o projeto está saudável:
+
+```bash
+./check-health.sh --assert
+```
+
+Se o comando reportar falhas, corrigir antes de declarar o bootstrap completo.
+
+---
+
+## Regras
+
+- **Deploy target é obrigatório**: perguntar ao usuário se não foi informado. Nunca assumir.
+- **Nenhum arquivo criado antes do plano aprovado**: se o usuário não aprovou, perguntar. Nunca assumir aprovação.
+- **Agentes em sequência**: não invocar o passo N+1 sem o gate do passo N cumprido.
+- **Aprovação explícita obrigatória** nos gates marcados — "ok", "pode continuar" ou equivalente não é aprovação de artefato. O usuário deve confirmar o conteúdo.
+- **Sem código de produção antes da Fase 3 passo 5**: o data-engineer-dba cria o primeiro schema. Antes disso, apenas artefatos de documentação.
+- **Anti-patterns proibidos**: ver seção "Anti-patterns" em `start_project.md` — especialmente não pular fases, não assumir deploy target, não hardcodar portas ou credenciais.

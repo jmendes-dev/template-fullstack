@@ -30,7 +30,7 @@ Pedido recebido: $ARGUMENTS
 │     └── Seguir decisão de TRIAGE abaixo
 │
 ├── Refatoração
-│     └── TRIAGE sem spec → TDD direto (mesmo fluxo do /feature sem a etapa de spec)
+│     └── Próximo passo: /refactor (branch isolada, sem novas features)
 │
 └── Pedido ambíguo
       └── Fazer UMA pergunta antes de qualquer ação

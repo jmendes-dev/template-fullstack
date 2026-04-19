@@ -44,10 +44,10 @@ Avaliar a story/request:
 Story introduz schemas, endpoints ou componentes NOVOS (contrato novo)?
 │
 ├── SIM → Spec obrigatória
-│     └── Invocar /feature (que inclui etapa de geração de spec via claude-sdd.md)
+│     └── Próximo passo: SPEC → PLAN → EXECUTE → VERIFY → FINISH (ver /feature para o roteiro)
 │
 └── NÃO → TDD direto
-      └── Invocar /feature (pulando etapa de spec, indo direto para PLAN → EXECUTE)
+      └── Próximo passo: PLAN → EXECUTE → VERIFY → FINISH (ver /feature, pule Passo 2)
 ```
 
 **Sinais de "contrato novo":**

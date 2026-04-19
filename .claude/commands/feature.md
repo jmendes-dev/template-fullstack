@@ -7,13 +7,14 @@ description: "Fluxo completo de feature: TRIAGE → SPEC → PLAN → EXECUTE �
 Use para qualquer feature nova ou existente. Passe o contexto:
 `/feature adicionar autenticação com Clerk na rota /api/me`
 
-## Passo 1 — TRIAGE
+## Passo 1 — Classificar (inline, sem invocar /triage)
 
-Executar `/triage $ARGUMENTS` para classificar o pedido.
+Se o usuário já rodou `/triage`, pular para Passo 2. Caso contrário, avaliar:
 
-A saída do triage determina o próximo passo:
-- **Spec necessária = sim** → Passo 2
-- **Spec necessária = não** → Pular para Passo 3
+- Story introduz schemas, endpoints ou componentes NOVOS? → spec obrigatória (Passo 2)
+- Ajuste em contrato existente, bug fix, style tweak? → TDD direto (Passo 3)
+
+Se ambíguo, PARAR e invocar `/triage` antes de prosseguir.
 
 ## Passo 2 — SPEC (apenas se triage indicou "contrato novo")
 

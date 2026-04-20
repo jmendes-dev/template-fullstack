@@ -311,7 +311,7 @@ Executada via `superpowers:verification-before-completion`:
 
 ```bash
 bun test                    # testes passam
-bun test --coverage         # cobertura ≥ 80%
+bun test --coverage         # cobertura ≥ 95%
 bun run lint                # lint limpo
 bun run typecheck           # types limpos
 ```

@@ -1,0 +1,65 @@
+# cd-portainer-uat.yml.example
+# Rename to cd-portainer-uat.yml to activate.
+#
+# Prerequisites — configure in GitHub repository settings:
+#   Variables (Settings > Secrets and variables > Actions > Variables):
+#     APP_NAME             — set at org level; prefix for image names (e.g. "myapp")
+#     INTERNAL_REGISTRY    — set at org level; internal Docker registry URL (e.g. "10.10.254.66:5000")
+#
+#   Secrets (Settings > Secrets and variables > Actions > Secrets):
+#     PORTAINER_WEBHOOK_UAT      — TODO: webhook URL from Portainer UAT stack
+#     VITE_CLERK_PUBLISHABLE_KEY — TODO: Clerk publishable key for frontend build
+#     SONAR_TOKEN                — SonarCloud/SonarQube token (already used by CI)
+#
+# This workflow NEVER triggers directly on push.
+# It fires only after the CI workflow completes successfully on the `uat` branch.
+# Guard: `if: github.event.workflow_run.conclusion == 'success'`
+
+name: Deploy UAT
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [uat]
+    types: [completed]
+
+jobs:
+  # Step 1: Build and push the API image to the internal registry.
+  # skip_deploy: true → builds + pushes the image but does NOT trigger the
+  # Portainer webhook yet. This ensures the API image is in the registry before
+  # the Web container is redeployed (frontend may depend on new API contracts).
+  deploy-api:
+    name: Build & Push API
+    if: github.event.workflow_run.conclusion == 'success'
+    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
+    with:
+      app_name: ${{ vars.APP_NAME }}-api
+      registry: ${{ vars.INTERNAL_REGISTRY }}
+      dockerfile: apps/api/Dockerfile
+      # build_context must be '.' (repo root) so the Dockerfile can COPY packages/shared
+      build_context: '.'
+      # skip_deploy: true means build+push only — webhook NOT triggered here.
+      # The webhook is triggered by deploy-web, which updates the full stack.
+      skip_deploy: true
+    secrets:
+      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
+
+  # Step 2: Build and push the Web image, then trigger the Portainer webhook.
+  # needs: deploy-api ensures API is in the registry before Portainer redeploys.
+  # BUILD_SECRETS injects VITE_* vars as Docker build args — they are embedded
+  # in the JS bundle at build time. nginx does not have access to env vars.
+  deploy-web:
+    name: Build, Push & Deploy Web
+    needs: deploy-api
+    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
+    with:
+      app_name: ${{ vars.APP_NAME }}-web
+      registry: ${{ vars.INTERNAL_REGISTRY }}
+      dockerfile: apps/web/Dockerfile
+      build_context: '.'
+    secrets:
+      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
+      # BUILD_SECRETS passes VITE_* as Docker build args for the frontend bundle.
+      # TODO: add or remove VITE_* entries as your project requires.
+      BUILD_SECRETS: |
+        VITE_CLERK_PUBLISHABLE_KEY=${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}

@@ -16,7 +16,7 @@ Checklist mínimo:
 - `bun test` — todos os testes passam
 - `bunx biome check` — lint sem erros
 - `tsc --noEmit` — typecheck sem erros
-- `./check-quality.sh` — cobertura ≥ 80% por módulo
+- `./check-quality.sh` — cobertura ≥ 95% por módulo
 - Happy path testado manualmente (ou declarar impossibilidade justificada)
 
 **Não avançar se qualquer item falhar.**

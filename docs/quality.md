@@ -9,10 +9,9 @@
 
 | Métrica | Valor | Status |
 |---------|-------|--------|
-| Cobertura geral | --% | ⏳ |
-| Lint (Biome) | -- | ⏳ |
-| Typecheck | -- | ⏳ |
-| Última execução | -- | -- |
+| Cobertura geral | N/A | ⏳ Aguardando |
+| Testes | ⏳ Não executado | -- |
+| Última execução | — | -- |
 
 ---
 
@@ -20,16 +19,15 @@
 
 | Módulo | % Funcs | % Lines | Status |
 |--------|---------|---------|--------|
-| -- | --% | --% | ⏳ |
 
 ---
 
 ## Gates do DoD
 
-- [ ] `bun test` passa com cobertura ≥ 80%
+- [ ] `bun test` passa com cobertura ≥ 95%
 - [ ] `bunx biome check` zero erros
 - [ ] `tsc --noEmit` zero erros
-- [ ] Cenários do spec cobertos (nenhum spec encontrado em docs/specs/)
+- [ ] Cenários do spec cobertos
 - [ ] Code review aprovado (`superpowers:requesting-code-review`)
 
 ---
@@ -53,4 +51,4 @@
 
 ---
 
-_Gerado por `check-quality.sh` · Última atualização: --_
+_Gerado por `check-quality.sh` · Última atualização: —_

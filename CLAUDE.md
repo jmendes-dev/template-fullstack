@@ -115,7 +115,7 @@ Para refatoração, invocar **`/refactor`**.
 - ❌ Feature com contrato novo sem spec aprovado
 - ❌ Funcionalidade não mapeada no backlog
 - ❌ `any` TypeScript sem justificativa
-- ❌ Commit com testes falhando ou cobertura < 80%
+- ❌ Commit com testes falhando ou cobertura < 95%
 - ❌ Misturar refactor com novas funcionalidades
 - ❌ Test runner diferente de `bun test`
 - ❌ Ignorar lint (Biome) ou typecheck

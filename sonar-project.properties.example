@@ -1,0 +1,39 @@
+# sonar-project.properties.example
+# Rename to sonar-project.properties and set your project key and organization.
+# This file is read by SonarSource/sonarqube-scan-action in ci.yml.
+#
+# SonarCloud setup:
+#   1. Create a project at https://sonarcloud.io
+#   2. Set sonar.projectKey and sonar.organization below
+#   3. Add SONAR_TOKEN secret to the GitHub repository
+#      (Settings > Secrets and variables > Actions > Secrets)
+#
+# SonarQube (self-hosted) setup:
+#   1. Remove sonar.organization (not used in self-hosted)
+#   2. Set SONAR_HOST_URL env var in the GitHub Actions step (or here)
+
+# TODO: replace with your SonarCloud/SonarQube project key (e.g. "myorg_myapp")
+sonar.projectKey=organization_project-name
+
+# TODO: replace with your SonarCloud organization slug (remove for self-hosted SonarQube)
+sonar.organization=organization
+
+# Source directories — scans all app and package TypeScript sources.
+sonar.sources=apps,packages
+
+# Test directories — same roots as sources; test files are identified by inclusions below.
+sonar.tests=apps,packages
+
+# Files matching these patterns are treated as test files.
+sonar.test.inclusions=**/*.test.ts,**/*.test.tsx
+
+# Exclude generated, vendored, and build output from analysis.
+sonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**
+
+# Coverage report path — produced by: bun test --coverage --coverage-reporter lcov --coverage-dir ./coverage
+# Must match the --coverage-dir value in ci.yml.
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+
+# Exclude config and type declaration files from coverage computation.
+# These files have no testable logic.
+sonar.coverage.exclusions=**/*.config.ts,**/*.d.ts

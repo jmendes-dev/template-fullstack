@@ -14,7 +14,7 @@
 | **1 — Planejamento** | Produzir plano em texto (objetivo, deploy target, entidades, endpoints, telas, deps extras) | Plano aprovado | **Sim** | Deploy target confirmado; nenhum arquivo criado antes da aprovação |
 | **2 — Scaffold** | Criar estrutura de pastas e configs de workspace | Árvore de diretórios completa | Não | `ls` confirma todas as pastas; estrutura bate com template em `start_project.md` (versão antiga) / `/new-project` |
 | **3 — Configs** | `biome.json`, `tsconfig.json` (cada workspace), `vite.config.ts`, `drizzle.config.ts`, CSS principal | Todos os arquivos criados | Não | Arquivos presentes; validação com `bunx biome check .` na Fase 5 |
-| **4 — Docker** | Dockerfiles multi-stage + compose files (conforme deploy target) | Containers subindo | Não | `docker compose -f docker-compose.dev.yml up` → todos `healthy`; API responde em `/health` |
+| **4 — Docker** | Dockerfiles multi-stage + compose files (conforme deploy target) | Containers subindo | Não | `docker compose up` → todos `healthy`; API responde em `/health` |
 | **5 — Deps** | `bun add` por workspace; `bunx biome migrate --write`; `bunx shadcn@latest init` | `bun.lock` commitado | Não | `bun install` sem erros; `bun run typecheck` passa; `bunx biome check .` passa |
 | **6 — Banco** | Schema Drizzle + Zod em `packages/shared`; `db:generate`; `db:migrate` | Migration aplicada | Não | `bun run db:generate` → no changes; tabelas existem no PostgreSQL |
 | **7 — App base** | Hono app + React app + hono/client RPC; Clerk condicional | Health check verde | Não | `curl /health` → `{ status: "ok" }`; frontend abre; `biome check` + `typecheck` + `db:generate` passam; responses verificadas com curl antes de construir frontend |

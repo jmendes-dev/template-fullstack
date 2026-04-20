@@ -7,14 +7,10 @@ description: "Fluxo completo de feature: TRIAGE → SPEC → PLAN → EXECUTE �
 Use para qualquer feature nova ou existente. Passe o contexto:
 `/feature adicionar autenticação com Clerk na rota /api/me`
 
-## Passo 1 — Classificar (inline, sem invocar /triage)
+## Passo 1 — Classificar
 
-Se o usuário já rodou `/triage`, pular para Passo 2. Caso contrário, avaliar:
-
-- Story introduz schemas, endpoints ou componentes NOVOS? → spec obrigatória (Passo 2)
-- Ajuste em contrato existente, bug fix, style tweak? → TDD direto (Passo 3)
-
-Se ambíguo, PARAR e invocar `/triage` antes de prosseguir.
+Se não veio de `/triage` → invocar `/triage` primeiro.
+Após triage: seguir Passo 2 se spec necessária, Passo 3 se TDD direto.
 
 ## Passo 2 — SPEC (apenas se triage indicou "contrato novo")
 
@@ -22,7 +18,6 @@ Se ambíguo, PARAR e invocar `/triage` antes de prosseguir.
 2. Localizar ou criar `docs/specs/US-XX.spec.md`
 3. Gerar o spec com todos os campos do template: contexto, contratos (request/response), cenários BDD, critérios de aceite
 4. **Aguardar aprovação do usuário antes de continuar** — spec é um contrato, não pode ser modificado unilateralmente
-5. Após aprovação, registrar o spec em `docs/contracts/README.md`
 
 ## Passo 3 — PLAN
 
@@ -32,7 +27,7 @@ O plano deve:
 - Decompor a feature em micro-tasks independentes
 - Mapear cada task ao agente responsável
 - Identificar dependências entre tasks
-- Salvar em `docs/superpowers/plans/`
+- Atualizar `docs/backlog.md` com as tasks geradas
 
 ## Passo 4 — EXECUTE
 
@@ -52,7 +47,7 @@ Invocar skill: `superpowers:verification-before-completion`
 Antes de declarar qualquer coisa como pronto:
 - Todos os testes passam: `bun test`
 - Lint e typecheck limpos: `bunx biome check && tsc --noEmit`
-- Cobertura ≥ 80% por módulo: `./check-quality.sh`
+- Cobertura ≥ 95% por módulo: `./check-quality.sh`
 - Comportamento testado manualmente no happy path e edge cases
 
 ## Passo 6 — FINISH

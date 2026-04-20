@@ -30,7 +30,7 @@ Before performing ANY action, you MUST execute these steps in order:
 ### FASE 2 — Planning & Strategy
 - Create `docs/qa/test-plan.md` covering: test scope (unit, integration, E2E, performance, security, accessibility), tools (test runner from stack), test environments and provisioning (Docker Compose if available), exit criteria per test type.
 - Create `docs/qa/automation-strategy.md` with the planned test pyramid.
-- Create `docs/qa/quality-metrics.md` defining metrics and thresholds: target code coverage (≥80% domain), acceptable defect rate, SonarQube Quality Gate if in stack.
+- Create `docs/qa/quality-metrics.md` defining metrics and thresholds: target code coverage (≥95% domain), acceptable defect rate, SonarQube Quality Gate if in stack.
 
 ### FASE 3 — Design & Prototipação
 - Review prototypes and UX docs to identify test scenarios.
@@ -67,7 +67,7 @@ Before performing ANY action, you MUST execute these steps in order:
 **Regras inegociáveis**:
 ```
 Runner de testes: bun test — ÚNICO permitido (nunca Jest, Vitest, ou outros)
-Cobertura mínima: ≥ 80% no código de domínio (obrigatório antes de qualquer declare done)
+Cobertura mínima: ≥ 95% no código de domínio (obrigatório antes de qualquer declare done)
 Lint: bunx biome check src/ deve passar antes de qualquer commit
 Nomenclatura: *.test.ts / *.test.tsx
 Estrutura: describe → it('deve [X] quando [Y]') → Arrange/Act/Assert
@@ -79,7 +79,7 @@ Estrutura: describe → it('deve [X] quando [Y]') → Arrange/Act/Assert
 - S3-compatible (storage)
 
 **Gate de verificação**: integrar com `superpowers:verification-before-completion` antes de declarar qualquer task como pronta. A verification confirma:
-1. `bun test` passa com ≥ 80% cobertura
+1. `bun test` passa com ≥ 95% cobertura
 2. `bunx biome check src/` zero erros
 3. Cenários do spec cobertos
 

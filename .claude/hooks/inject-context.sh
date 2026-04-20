@@ -22,12 +22,25 @@ if [ -z "$PROMPT" ] && [ ! -t 0 ]; then
 fi
 out=""
 
-# ── Session state — sempre ────────────────────────────────────────
-[ -f docs/session-state.md ] && out="$(cat docs/session-state.md)"
+# ── Session state — sempre, mas compacto quando não há contexto ──
+if [ -f docs/session-state.md ]; then
+  # Se Story ainda é "--", não há sessão ativa — injeta placeholder mínimo
+  if grep -q "^\- \*\*Story:\*\* --$" docs/session-state.md 2>/dev/null; then
+    out="# Session State
+_Sem contexto ativo._"
+  else
+    out="$(cat docs/session-state.md)"
+  fi
+fi
 
 # ── Enforçamento de triagem — prompts sem slash command ──────────
-# Se o prompt não começa com "/" e não está vazio, prepender lembrete.
-if [ -n "$PROMPT" ] && [ "${PROMPT#/}" = "$PROMPT" ]; then
+# Dispara apenas para prompts de ação (não para perguntas informacionais).
+# Heurística: prompts que começam com verbos de ação ou palavras-chave de implementação.
+_IS_QUESTION=false
+if echo "$PROMPT" | grep -qiE '^(o que|como|por que|qual|quais|explique|mostre|me diga|what|how|why|which|explain|show|tell|analise|analisa|verifique|verifica|revise|avalie|avalia|descreva|descreve|explore|explora|resume|sumarize|mapeie|olhe|veja|busque)'; then
+  _IS_QUESTION=true
+fi
+if [ -n "$PROMPT" ] && [ "${PROMPT#/}" = "$PROMPT" ] && [ "$_IS_QUESTION" = "false" ]; then
   out="$out
 ---
 ### ⚠️ TRIAGEM OBRIGATÓRIA
@@ -55,15 +68,7 @@ if echo "$PROMPT" | grep -qiE 'continu|execut|task|story|backlog|US-[0-9]|sprint
 $(head -50 docs/backlog.md)"
 fi
 
-# Se CLAUDE_USER_PROMPT não está disponível, injetar tudo (fallback seguro)
-if [ -z "$PROMPT" ]; then
-  [ -f docs/quality.md ] && out="$out
----
-$(cat docs/quality.md)"
-  [ -f docs/backlog.md ] && out="$out
----
-### BACKLOG ATUAL
-$(head -50 docs/backlog.md)"
-fi
+# Se CLAUDE_USER_PROMPT não está disponível, não injetar contexto adicional
+# Impossível determinar relevância sem o prompt — session-state é suficiente para continuidade
 
 [ -n "$out" ] && echo "$out" || true

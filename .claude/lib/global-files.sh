@@ -17,6 +17,7 @@ GLOBAL_FILES=(
   "promote-learning.sh"
   "check-health.sh"
   "check-quality.sh"
+  "check-spec-coverage.sh"
   ".claude/lib/global-files.sh"
   ".claude/settings.local.example.json"
   ".claude/settings.example.json"
@@ -24,6 +25,15 @@ GLOBAL_FILES=(
   ".claude/hooks/inject-context.sh"
   ".claude/hooks/post-tool-use.sh"
   "package.json.example"
+  ".env.example"
+  "biome.json.example"
+  "tsconfig.json.example"
+  "sonar-project.properties.example"
+  ".github/pull_request_template.md"
+  ".github/workflows/ci.yml"
+  ".github/workflows/cd-portainer-uat.yml.example"
+  ".github/workflows/cd-portainer-prd.yml.example"
+  ".github/workflows/cd-railway.yml.example"
   ".superpowers/agent-memory-bootstrap.md"
 )
 

@@ -1,30 +1,64 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches: [main, uat]
+  pull_request:
+    branches: [main, uat]
 
 jobs:
   quality:
     name: Quality Gates
-    runs-on: ubuntu-latest
+    # Blacksmith runners: faster and cheaper than standard GitHub-hosted runners.
+    # See: https://docs.useblacksmith.com/get-started/overview
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 is required by SonarQube for accurate blame/SCM data
+          # and for proper diff analysis on PRs.
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.3"
 
+      # --frozen-lockfile ensures the CI uses exactly the versions in bun.lock.
+      # Fails fast if someone forgot to commit lockfile changes.
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
+      # Security audit — non-blocking, informational (vulnerabilities appear in logs).
+      # Upgrade to `bun audit --audit-level=high` to block on high severity.
+      - name: Security audit
+        run: bun audit || true
+
+      # Lint runs FIRST — cheapest gate, catches style/formatting issues before
+      # spending compute on tests. Script defined in root package.json: bunx biome check .
       - name: Lint (Biome)
-        run: bunx biome check --reporter=github .
+        run: bun run lint
 
+      # Typecheck order: shared → api → web (dependency graph direction).
+      # Script defined in root package.json: bun run --filter='*' typecheck
       - name: Typecheck
-        run: bunx tsc --noEmit
+        run: bun run typecheck
 
+      # Testes devem passar — falha aqui bloqueia o CI (e portanto o CD).
       - name: Test with coverage
-        run: bun test --coverage
+        run: bun test --recursive --coverage --coverage-reporter lcov --coverage-dir ./coverage
+
+      # Verifica que todo cenário dos specs tem teste correspondente.
+      # Fonte única de verdade: check-spec-coverage.sh (usado também localmente).
+      - name: Spec coverage check
+        run: ./check-spec-coverage.sh
+
+      # SonarQube sobe coverage (lcov) e faz análise estática.
+      # if: always() garante upload mesmo se testes falharam (para diagnóstico).
+      # Quality gate: coverage >= 95% (configurado no projeto SonarQube).
+      # Requer: sonar-project.properties na raiz + secret SONAR_TOKEN.
+      - name: SonarQube Scan
+        if: always() && secrets.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

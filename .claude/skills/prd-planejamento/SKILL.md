@@ -323,7 +323,7 @@ Contrato completo no PRD — aqui listamos apenas o escopo desta fase:
 **Técnicos** (padrões obrigatórios):
 - [ ] Endpoints retornam `{ data }` / `{ error, code }` conforme CLAUDE.md
 - [ ] Endpoints sem auth retornam 401
-- [ ] Cobertura de testes >= 80% nas rotas e handlers novos
+- [ ] Cobertura de testes >= 95% nas rotas e handlers novos
 - [ ] `bun run typecheck` e `bun run lint` passam
 
 **Risco desta fase:** [risco do PRD que se torna real nesta fase, se houver. Omitir se não houver.]
@@ -364,7 +364,7 @@ Contrato completo no PRD — aqui listamos apenas o escopo desta fase:
 
 **Técnicos:**
 - [ ] Endpoints sem permissão retornam 403
-- [ ] Cobertura de testes >= 80% nas rotas e handlers novos
+- [ ] Cobertura de testes >= 95% nas rotas e handlers novos
 - [ ] `bun run typecheck` e `bun run lint` passam
 
 <!-- Repetir para cada fase adicional -->
@@ -376,7 +376,7 @@ Contrato completo no PRD — aqui listamos apenas o escopo desta fase:
 > Marcar apenas quando TODOS os critérios de aceite de todas as fases estiverem verdes.
 
 - [ ] Todas as histórias de Prioridade Alta do PRD implementadas
-- [ ] CI verde (lint, typecheck, testes, cobertura >= 80%)
+- [ ] CI verde (lint, typecheck, testes, cobertura >= 95%)
 - [ ] Deploy de staging validado
 - [ ] Smoke test manual seguindo os "Como demonstrar" de cada fase
 - [ ] PRD atualizado com decisões que mudaram durante a implementação

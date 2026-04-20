@@ -261,7 +261,7 @@ Gate: `bun run db:generate` sem erros.
 Você é o devops-sre-engineer. Ler `docs/adr/ADR-001-stack-selection.md` para confirmar
 deploy target (Railway ou Portainer). Criar:
 - Dockerfiles multi-stage (api + web, prod + dev)
-- docker-compose.dev.yml (sempre)
+- docker-compose.yml (dev local — sempre)
 - docker-compose.yml / docker-compose-uat.yml / docker-compose-prd.yml (só Portainer)
 - .github/workflows/ci.yml
 - .github/workflows/cd-uat.yml + cd-prd.yml (só Portainer)
@@ -269,7 +269,7 @@ Consultar start_project.md para as constraints detalhadas de cada arquivo.
 ```
 
 Saída: arquivos Docker + CI/CD
-Gate: `docker compose -f docker-compose.dev.yml up` → todos os services `healthy`.
+Gate: `docker compose up` → todos os services `healthy`.
 
 ### Passo 7 — setup-github-project.sh
 

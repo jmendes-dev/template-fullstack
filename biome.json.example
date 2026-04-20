@@ -1,0 +1,71 @@
+// Rename to biome.json. Biome 2.x suporta comentários neste arquivo.
+// Configurado para monorepo Bun: Hono (API) + React 19 (Web) + packages/shared.
+// Após renomear, rodar: bunx biome migrate --write (se migrando do Biome 1.x)
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+
+  "organizeImports": {
+    "enabled": true
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error"
+      },
+
+      "style": {
+        "useConst": "error"
+      },
+
+      "suspicious": {
+        // warn (não error): devs precisam de console.log em dev. Remover antes de PR.
+        "noConsoleLog": "warn",
+        // warn (não error): stack permite `any` documentado (ver claude-stacks.md)
+        "noExplicitAny": "warn"
+      }
+    }
+  },
+
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+
+  "files": {
+    "ignore": [
+      "node_modules",
+      "dist",
+      "coverage",
+      "*.min.js"
+    ]
+  },
+
+  "overrides": [
+    {
+      "includes": [
+        "apps/**/*.ts",
+        "apps/**/*.tsx",
+        "packages/**/*.ts"
+      ]
+    }
+  ]
+}

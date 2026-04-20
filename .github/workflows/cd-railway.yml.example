@@ -1,0 +1,86 @@
+# cd-railway.yml.example
+# Rename to cd-railway.yml to activate.
+#
+# Railway deployment model:
+#   - Railway auto-detects Dockerfile and deploys when connected via GitHub integration.
+#   - This workflow provides a CI-gated deploy using the Railway CLI for explicit control.
+#   - If you only need auto-deploy on push, enable the GitHub integration in the Railway
+#     dashboard and skip this workflow entirely.
+#
+# Prerequisites — configure in GitHub repository settings:
+#   Secrets (Settings > Secrets and variables > Actions > Secrets):
+#     RAILWAY_TOKEN — TODO: generate at https://railway.com/account/tokens
+#
+#   Service names (update the `with.service_name` values below to match your Railway project):
+#     TODO: set service names in deploy-api and deploy-web jobs (e.g. "myapp-api", "myapp-web")
+#
+# This workflow NEVER triggers directly on push.
+# It fires only after the CI workflow completes successfully on the `main` branch.
+# Guard: `if: github.event.workflow_run.conclusion == 'success'`
+
+name: Deploy Railway
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  # Step 1: Deploy the API service.
+  # Runs database migrations before starting the new API version.
+  # Railway pre-deploy command is the recommended approach (railway.toml), but
+  # running it here gives explicit control and CI-visible logs.
+  deploy-api:
+    name: Deploy API
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      # Run migrations before deploying so the new API starts against a
+      # fully migrated schema. If migration fails, deploy is aborted.
+      - name: Run database migrations
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # TODO: update --service to match your Railway API service name
+          railway run --service myapp-api bun run db:migrate
+
+      - name: Deploy API to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # TODO: update --service to match your Railway API service name
+          railway up --service myapp-api --detach
+
+  # Step 2: Deploy the Web service after API is live.
+  # needs: deploy-api ensures the API is deployed before the frontend.
+  deploy-web:
+    name: Deploy Web
+    needs: deploy-api
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy Web to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # TODO: update --service to match your Railway Web service name
+          railway up --service myapp-web --detach

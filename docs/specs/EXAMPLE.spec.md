@@ -105,4 +105,4 @@ Permite que o admin cadastre produtos no catálogo. Primeiro schema do projeto �
 - [ ] Endpoints POST + GET implementados e testados
 - [ ] `ProductForm` com 4 estados (idle/submitting/error/success)
 - [ ] Cenários 1-7 cobertos com nomenclatura `it('Cenário X.Y: ...')`
-- [ ] Cobertura ≥ 80%
+- [ ] Cobertura ≥ 95%

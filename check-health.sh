@@ -87,8 +87,7 @@ CRITICAL_FILES=(
   "docs/session-state.md:Session State"
   "docs/backlog.md:Backlog"
   "docs/user-stories.md:User Stories"
-  "docs/contracts/README.md:Contract Registry"
-  "docs/design-system/MASTER.md:Design System MASTER"
+"docs/design-system/MASTER.md:Design System MASTER"
   "docs/design-system/design-brief.md:Design Brief"
   ".claude/settings.json:Settings com hooks"
 )
@@ -97,8 +96,30 @@ for entry in "${CRITICAL_FILES[@]}"; do
   label="${entry##*:}"
   if [ -f "$path" ]; then
     ok "$label ($path)"
+  elif [ "$path" = "docs/session-state.md" ]; then
+    err "$label não existe ($path) — hook inject-context.sh vai falhar"
   else
     warn "$label não existe ($path)"
+  fi
+done
+echo ""
+
+# ── 4b. Config template files ────────────────────────────────
+echo "📋 Config Templates (arquivos .example)"
+TEMPLATE_FILES=(
+  ".env.example:.env com todas as variáveis"
+  "biome.json.example:Lint config (Biome 2.x)"
+  "tsconfig.json.example:TypeScript config base"
+  "sonar-project.properties.example:SonarQube config"
+  ".github/workflows/ci.yml:CI pipeline"
+)
+for entry in "${TEMPLATE_FILES[@]}"; do
+  path="${entry%%:*}"
+  label="${entry##*:}"
+  if [ -f "$path" ]; then
+    ok "$label ($path)"
+  else
+    warn "$label ausente ($path) — sync-globals.sh para restaurar"
   fi
 done
 echo ""
@@ -120,7 +141,7 @@ echo ""
 
 # ── 6. Scripts disponíveis ────────────────────────────────────
 echo "🚀 Scripts"
-SCRIPTS=("sync-github-issues.sh" "setup-github-project.sh" "sync-globals.sh" "promote-learning.sh" "check-quality.sh" "check-health.sh")
+SCRIPTS=("sync-github-issues.sh" "setup-github-project.sh" "sync-globals.sh" "promote-learning.sh" "check-quality.sh" "check-health.sh" "check-spec-coverage.sh")
 for script in "${SCRIPTS[@]}"; do
   if [ -f "$script" ] && [ -x "$script" ]; then
     ok "$script"

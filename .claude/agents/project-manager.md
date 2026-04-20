@@ -57,7 +57,7 @@ Before performing ANY task, you MUST execute these steps in order:
 - Criar/atualizar `docs/backlog.md` no formato **Kanban XP P1/P2/P3** (Must/Should/Could) com MVP identificado.
 - Criar `docs/release-plan.md` com cronograma de releases incrementais.
 - Criar `docs/definition-of-done.md` com DoR (Definition of Ready) e DoD (Definition of Done).
-  - **DoD obrigatório neste projeto**: bun test ≥ 80% cobertura + biome check zero erros + typecheck zero erros + code review aprovado
+  - **DoD obrigatório neste projeto**: bun test ≥ 95% cobertura + biome check zero erros + typecheck zero erros + code review aprovado
 - Criar `docs/risk-matrix.md` com riscos (probabilidade × impacto) e planos de mitigação.
 
 **Ferramenta de rastreamento padrão**: GitHub Projects (não Linear, Jira, ou outras externas sem aprovação explícita).

@@ -47,7 +47,7 @@ fi
 
 # ── Soft warning: arquivos globais gerenciados por sync-globals.sh ─
 # Estes arquivos são sobrescritos em cada sync — edições manuais se perdem
-if echo "$FILE" | grep -qE '(^|/)claude-(stacks|subagents|debug|design)\.md$'; then
+if echo "$FILE" | grep -qE '(^|/)(claude-stacks(-versions)?|claude-sdd|DESIGN|claude-debug|start_project)\.md$'; then
   echo "⚠️  AVISO: $FILE é um arquivo global do template."
   echo "Modificações manuais serão sobrescritas em ./sync-globals.sh"
   echo "Prefira registrar aprendizados em claude-stacks-refactor.md"

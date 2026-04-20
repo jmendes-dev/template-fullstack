@@ -15,12 +15,11 @@
 
 ## Checklist DoD
 
-- [ ] `bun test` passa com cobertura ≥ 80%
+- [ ] `bun test` passa com cobertura ≥ 95%
 - [ ] `bunx biome check` zero erros
 - [ ] `tsc --noEmit` zero erros
 - [ ] Todos os cenários do spec têm teste correspondente
 - [ ] Componentes com 4 estados (Loading, Empty, Error, Success) — se frontend
-- [ ] `docs/contracts/README.md` atualizado — se novo endpoint/schema/componente
 - [ ] `docs/backlog.md` atualizado (tasks concluídas marcadas)
 - [ ] Code review via `superpowers:requesting-code-review` executado
 

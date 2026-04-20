@@ -301,7 +301,7 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 
 ## Dev workflow (Docker-first)
 
-- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose up` (Portainer: usa `docker-compose.yml`) ou `docker compose -f docker-compose.dev.yml up` (Railway ou hot-reload com Dockerfile.dev)
+- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose up` — arquivo único `docker-compose.yml` para dev local em todos os targets (Railway e Portainer)
 - Bind-mount do código para hot reload. `bun install` dentro do container
 - Lint, typecheck, test, build: `docker compose exec <service> <comando>`
 - Portas via env var com defaults (`API_PORT`, `WEB_PORT`, `POSTGRES_PORT`). Se ocupada, incrementar +1
@@ -323,7 +323,7 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 ## Testes
 
 - Runner único: **bun test** (backend e frontend)
-- **Cobertura mínima: >= 80%** — enforced via quality gate (domínio, validators, routes, auth, edge cases, error handling)
+- **Cobertura mínima: >= 95%** — enforced via quality gate (domínio, validators, routes, auth, edge cases, error handling)
 - **Security review por endpoint**: auth 401/403, injection (SQL/XSS), mass assignment (rejeitar `role`/`isAdmin`), rate limiting 429, CORS, headers (HSTS, X-Content-Type-Options, X-Frame-Options)
 - Testes rodam no CI antes de build
 
@@ -352,12 +352,12 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run lint                    # bunx biome check .
       - run: bun run typecheck               # tsc --noEmit
-      - run: bun test --recursive --coverage --coverage-reporter lcov --coverage-dir ./coverage || true
+      - run: bun test --recursive --coverage --coverage-reporter lcov --coverage-dir ./coverage
       - uses: SonarSource/sonarqube-scan-action@v6
         env: { SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}" }
 ```
 
-**SonarQube**: `sonar-project.properties` na raiz. Quality gate: coverage >= 80%.
+**SonarQube**: `sonar-project.properties` na raiz. Quality gate: coverage >= 95%.
 
 ### CD — Deploy Portainer (`cd-uat.yml` / `cd-prd.yml`)
 
@@ -415,24 +415,48 @@ on:
 | Regra | Detalhe |
 |---|---|
 | CD só roda após CI verde | `workflow_run` + `conclusion == 'success'` — nunca trigger direto em push |
-| Branches permitidas | `uat` → `cd-uat.yml`, `main` → `cd-prd.yml`. Nenhum outro branch dispara CD |
+| Branches permitidas | `uat` → `cd-portainer-uat.yml`, `main` → `cd-portainer-prd.yml`. Nenhum outro branch dispara CD |
+| Runner | Self-hosted on-prem: UAT usa `[self-hosted, onprem, uat]`, PRD usa `[self-hosted, onprem, prd]` — não GitHub-hosted |
 | Ordem de deploy | API primeiro (`skip_deploy: true` = build+push sem webhook), depois Web (dispara webhook que atualiza a stack inteira) |
 | Reusable workflows | Usar workflows do org repo (`masterboiteam/.github`) para padronizar build/push/webhook |
-| Image tags | UAT: `{REGISTRY}/{APP_NAME}-{service}:uat-latest`. PRD: `{REGISTRY}/{APP_NAME}-{service}:latest` |
+| Image tags | UAT: `uat-{sha}` + `uat-latest`. PRD: `{sha}` + `latest`. Nunca misturar tags entre ambientes |
+| Build context | Sempre `.` (raiz do repo) para Dockerfiles em `apps/*/` que precisam de `packages/shared` |
+| Build args públicos | Usar `build_args` do reusable workflow (multiline `KEY=VALUE`) para args não-sensíveis |
 | Build secrets (Web) | `VITE_*` injetadas via `BUILD_SECRETS` como build args do Docker — embutidas no bundle JS em build time |
 | Webhook Portainer | Após push da imagem, o reusable workflow chama o webhook para Portainer redeployar a stack |
+| PRD environment | O reusable `deploy-prd.yml` usa `environment: production` (aprovação manual se configurada no GitHub) |
+| Cleanup automático | Reusable workflows rodam `docker image prune -f` após cada deploy (UAT: 72h, PRD: 168h) |
+
+**Inputs do reusable workflow** (`deploy-uat.yml` / `deploy-prd.yml`):
+
+| Input | Obrigatório | Default | Descrição |
+|---|---|---|---|
+| `app_name` | ✅ | — | Nome da imagem: `{APP_NAME}-api` ou `{APP_NAME}-web` |
+| `registry` | ✅ | — | Endereço do registry: `${{ vars.INTERNAL_REGISTRY }}` |
+| `dockerfile` | ❌ | `Dockerfile` | Caminho do Dockerfile (ex: `apps/api/Dockerfile`) |
+| `build_context` | ❌ | `.` | Contexto do build — sempre `.` em monorepo |
+| `build_args` | ❌ | `''` | Build args públicos (multiline `KEY=VALUE`) |
+| `skip_deploy` | ❌ | `false` | `true` = build+push sem webhook (API na ordem de deploy) |
+
+**Secrets do reusable workflow**:
+
+| Secret | Descrição |
+|---|---|
+| `PORTAINER_WEBHOOK_UAT` / `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer |
+| `BUILD_SECRETS` | Build args sensíveis (ex: `VITE_CLERK_PUBLISHABLE_KEY=...`) |
 
 **Secrets e vars obrigatórias no GitHub**:
 
-| Tipo | Nome | Descrição |
-|---|---|---|
-| var | `APP_NAME` | Nome do app (prefixo das imagens: `{APP_NAME}-api`, `{APP_NAME}-web`) |
-| secret | `SONAR_TOKEN` | Token SonarCloud/SonarQube |
-| secret | `PORTAINER_WEBHOOK_UAT` | URL do webhook Portainer para stack UAT |
-| secret | `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer para stack PRD |
-| secret | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (injetada no build do frontend) |
+| Tipo | Escopo | Nome | Descrição |
+|---|---|---|---|
+| var | organização | `APP_NAME` | Nome do app (prefixo das imagens: `{APP_NAME}-api`, `{APP_NAME}-web`) |
+| var | organização | `INTERNAL_REGISTRY` | Endereço do registry Docker privado |
+| secret | repositório | `SONAR_TOKEN` | Token SonarCloud/SonarQube |
+| secret | repositório | `PORTAINER_WEBHOOK_UAT` | URL do webhook Portainer stack UAT |
+| secret | repositório | `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer stack PRD |
+| secret | repositório | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (injetada no build do frontend) |
 
-**Nota**: `INTERNAL_REGISTRY` é uma var da **organização** — já está disponível em todos os repos, não precisa ser configurada por repo.
+**Nota**: `APP_NAME` e `INTERNAL_REGISTRY` são vars da **organização** — disponíveis em todos os repos sem configuração por repo.
 
 **Segurança em workflows**: nunca interpolar `${{ github.event.* }}` diretamente em `run:` (command injection). Usar `env:` + variável shell. Ver regra 35.
 
@@ -457,6 +481,20 @@ Após cada push, verificar GitHub Actions. Máximo **7 tentativas** até CI verd
 5. Se 7 tentativas: parar, reportar resumo das tentativas + erro persistente + próximos passos
 
 Nunca considerar tarefa finalizada com CI vermelho. CD bloqueado automaticamente quando CI falha.
+
+### Rollback (Portainer)
+
+Se um deploy quebrar produção:
+
+1. Identificar SHA anterior: GitHub Actions history do CD ou `docker images` no registry
+2. No Portainer, editar a stack PRD e trocar tag `latest` pelo SHA anterior:
+   - `${REGISTRY}/${APP_NAME}-api:latest` → `${REGISTRY}/${APP_NAME}-api:{sha}`
+   - `${REGISTRY}/${APP_NAME}-web:latest` → `${REGISTRY}/${APP_NAME}-web:{sha}`
+3. Portainer faz pull e reinicia (ou acionar webhook manualmente se necessário)
+4. Após estabilizar: criar `hotfix/` branch, corrigir, seguir fluxo normal `uat` → `main`
+
+> Tags SHA ficam no registry por 168h em PRD e 72h em UAT (cleanup automático do CD).
+> UAT: mesma lógica com tag `uat-latest` → `uat-{sha}`.
 
 ## Planejamento
 

@@ -1,0 +1,69 @@
+// Rename to tsconfig.json and update @projeto/* paths to match your project name.
+// This is the monorepo root tsconfig — used for typechecking only (noEmit: true).
+// Each app (apps/api, apps/web) has its own tsconfig.json that extends this one
+// for build-specific settings (target, outDir, etc.).
+{
+  "compilerOptions": {
+    // ── Language & Target ──────────────────────────────────────────────────────
+    // ESNext target + bundler module resolution: correct for Bun runtime and
+    // Vite 8 (Rolldown). Never use CommonJS for new projects in this stack.
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // DOM lib is required for frontend (React) type definitions.
+    // ESNext gives access to latest JS built-ins across all workspaces.
+    "lib": ["ESNext", "DOM"],
+
+    // ── Type Checking ─────────────────────────────────────────────────────────
+    // strict: true enables the full set of strict checks (strictNullChecks,
+    // noImplicitAny, strictFunctionTypes, etc.). Mandatory per claude-stacks.md.
+    "strict": true,
+
+    // ── Emit ──────────────────────────────────────────────────────────────────
+    // noEmit: true — root tsconfig is for type-checking only. Apps handle their
+    // own emit via Vite (web) or bun build (api).
+    "noEmit": true,
+
+    // ── Interop ───────────────────────────────────────────────────────────────
+    // skipLibCheck: true skips type checking of .d.ts files in node_modules.
+    // Safe because third-party types are tested by their own CI.
+    "skipLibCheck": true,
+
+    // allowImportingTsExtensions: true allows `import foo from './foo.ts'`
+    // (required for Bun's native TS resolution without a build step).
+    "allowImportingTsExtensions": true,
+
+    // resolveJsonModule: true allows `import config from './config.json'`.
+    "resolveJsonModule": true,
+
+    // isolatedModules: true ensures each file can be transpiled independently
+    // (required for Bun, Vite, and SWC transpilers). Catches const enum usage
+    // and missing type-only imports early.
+    "isolatedModules": true,
+
+    // ── Path Aliases ──────────────────────────────────────────────────────────
+    // Update @projeto/* to match your project name (e.g. @myapp/shared).
+    // These paths must match the workspace package names in package.json.
+    "paths": {
+      "@projeto/shared": ["./packages/shared/src/index.ts"],
+      "@projeto/api": ["./apps/api/src/index.ts"]
+    }
+  },
+
+  // Include all TypeScript sources across the monorepo workspaces.
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts"
+  ],
+
+  // Exclude test files from the root typecheck pass — each app runs its own
+  // typecheck including tests. Also excludes build output and dependencies.
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

@@ -86,7 +86,7 @@ Forms: React Hook Form + zodResolver (@hookform/resolvers/zod) + schemas de @pro
 UI: shadcn/ui + Tailwind CSS v4 (CSS-first, @import "tailwindcss" — sem tailwind.config.js)
 Toasts: Sonner (nunca alert() ou outras libs)
 API: Hono RPC client — import type { AppType } from "@projeto/api" → hc<AppType>(baseUrl)
-Runner de testes: bun test (ÚNICO permitido — cobertura mínima 80%)
+Runner de testes: bun test (ÚNICO permitido — cobertura mínima 95%)
 Lint/Format: Biome 2.x
 ```
 

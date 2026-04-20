@@ -36,7 +36,7 @@ Se houver falhas → **não é refactor, é fix**. Invocar `/bug` primeiro, depo
 Identificar quais testes cobrem o código a reestruturar.
 
 - Cobertura do escopo < 80% → **PARAR**. Solicitar ao usuário: escrever testes antes de refatorar.
-- Cobertura ≥ 80% → prosseguir.
+- Cobertura ≥ 95% → prosseguir.
 
 ## Passo 5 — Refatorar
 

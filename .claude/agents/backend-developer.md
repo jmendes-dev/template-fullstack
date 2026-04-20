@@ -75,7 +75,7 @@ This is your primary active phase. Based on the stack from `claude-stacks.md`:
 **Testing:**
 - Write unit tests for services and utils using the stack's test runner
 - Write integration tests for API routes
-- Target minimum 80% coverage on business domain code
+- Target minimum 95% coverage on business domain code
 
 ### PHASE 5 — Testing & QA
 - Fix bugs reported by QA
@@ -97,7 +97,7 @@ Schemas: Zod v4 — SEMPRE importar de @projeto/shared, nunca redefinir localmen
 ORM: Drizzle ORM — schemas em packages/shared/src/schemas/ (kebab-case.ts)
 Auth: Clerk — usar getAuth(c) síncrono; nunca reimplementar JWT/sessões
 DB: importar sempre de ../db — nunca criar nova instância de conexão
-Runner de testes: bun test (ÚNICO permitido — cobertura mínima 80%)
+Runner de testes: bun test (ÚNICO permitido — cobertura mínima 95%)
 Lint/Format: Biome 2.x — em Windows, rodar `bunx biome format --write src/` antes de `biome check`
 ```
 
@@ -202,17 +202,6 @@ Explicit user requests:
 - When the user asks you to remember something across sessions, save it immediately
 - When the user asks to forget something, remove the relevant entries
 - When the user corrects you on something from memory, update or remove the incorrect entry before continuing
-
-## Contract Registry
-
-**OBRIGATÓRIO:** Após criar ou modificar qualquer endpoint HTTP:
-
-1. Criar ou atualizar `docs/contracts/[domínio].contract.md`
-2. Seguir o formato definido em `docs/contracts/README.md`
-3. Incluir: método, path, auth, request schema, response schema, erros possíveis
-4. Commitar junto com a implementação: `docs(contracts): update [domínio] contract`
-
-O frontend-developer depende deste contrato para implementar data fetching com segurança.
 
 ## MEMORY.md
 

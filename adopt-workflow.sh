@@ -8,7 +8,17 @@ set -euo pipefail
 # ──────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${1:-.}"
+
+# Argument parsing — suporta --dry-run
+DRY_RUN=false
+_ARGS=()
+for _arg in "$@"; do
+  case "$_arg" in
+    --dry-run) DRY_RUN=true ;;
+    *) _ARGS+=("$_arg") ;;
+  esac
+done
+TARGET_DIR="${_ARGS[0]:-.}"
 
 # Cores para output
 RED='\033[0;31m'
@@ -52,6 +62,39 @@ if [ "$HAS_APPS" = true ]; then
   info "Detectado: projeto com estrutura apps/ (monorepo)"
 else
   warn "Sem estrutura apps/ — o CLAUDE.md será copiado mas o bootstrap pode ser necessário"
+fi
+
+# ── Dry-run: mostrar o que seria feito e sair ────────────────
+if [ "$DRY_RUN" = true ]; then
+  source "$SCRIPT_DIR/.claude/lib/global-files.sh"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  DRY RUN — Nenhum arquivo será modificado"
+  echo "  Destino: $TARGET_DIR"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "📄 Arquivos globais (${#GLOBAL_FILES[@]}):"
+  for _f in "${GLOBAL_FILES[@]}"; do
+    if [ -f "$SCRIPT_DIR/$_f" ]; then
+      echo "  + $_f"
+    else
+      echo "  ⚠ $_f (ausente no template)"
+    fi
+  done
+  echo ""
+  echo "🤖 Agentes (${#AGENT_FILES[@]}):"
+  for _f in "${AGENT_FILES[@]}"; do echo "  + .claude/agents/$_f"; done
+  echo ""
+  echo "📋 Commands (${#COMMAND_FILES[@]}):"
+  for _f in "${COMMAND_FILES[@]}"; do echo "  + .claude/commands/$_f"; done
+  echo ""
+  echo "📁 Estrutura docs/ criada (backlog.md, user-stories.md, session-state.md, etc.)"
+  echo "🪝 Git hook instalado em .githooks/post-commit"
+  [ "$HAS_CLAUDE" = true ] && warn "CLAUDE.md existente seria renomeado para CLAUDE.md.bak"
+  echo ""
+  echo "Execute sem --dry-run para aplicar."
+  echo ""
+  exit 0
 fi
 
 if [ "$HAS_CLAUDE" = true ]; then
@@ -374,7 +417,7 @@ if [ ! -f "$TARGET_DIR/docs/quality.md" ]; then
 
 ## Gates do DoD
 
-- [ ] `bun test` passa com cobertura ≥ 80%
+- [ ] `bun test` passa com cobertura ≥ 95%
 - [ ] `bunx biome check` zero erros
 - [ ] `tsc --noEmit` zero erros
 - [ ] Cenários do spec ativos cobertos (ver Spec Coverage abaixo)
@@ -401,32 +444,6 @@ if [ ! -f "$TARGET_DIR/docs/quality.md" ]; then
 _Gerado por `check-quality.sh` · Última atualização: --_
 QUALITY_EOF
   ok "docs/quality.md (placeholder)"
-fi
-
-# contracts/README.md (criar template se não existe)
-mkdir -p "$TARGET_DIR/docs/contracts"
-if [ ! -f "$TARGET_DIR/docs/contracts/README.md" ]; then
-  cp "$SCRIPT_DIR/docs/contracts/README.md" "$TARGET_DIR/docs/contracts/README.md" 2>/dev/null || \
-  cat > "$TARGET_DIR/docs/contracts/README.md" << 'CONTRACTS_EOF'
-# Contract Registry
-
-> Contratos versionados entre backend e frontend.
-> **Criado por:** `backend-developer` após criar/modificar endpoints.
-> **Lido por:** `frontend-developer` antes de implementar data fetching.
-> **Validado por:** `qa-engineer` na cobertura de testes.
-
----
-
-## Como usar
-
-Após criar ou modificar qualquer endpoint, criar/atualizar `docs/contracts/[domínio].contract.md`.
-Antes de implementar qualquer hook TanStack Query, verificar se o contrato existe.
-
----
-
-<!-- Nenhum contrato ainda — backend-developer deve criar ao implementar endpoints -->
-CONTRACTS_EOF
-  ok "docs/contracts/README.md (template)"
 fi
 
 # .gitkeep em pastas vazias
@@ -466,13 +483,12 @@ if [ ! -f "$TARGET_DIR/.github/pull_request_template.md" ]; then
 ## Definition of Done
 
 - [ ] `bun test` passa (zero falhas)
-- [ ] Cobertura de testes ≥ 80% (`docs/quality.md` atualizado)
+- [ ] Cobertura de testes ≥ 95% (`docs/quality.md` atualizado)
 - [ ] `bunx biome check` zero erros
 - [ ] `tsc --noEmit` zero erros
 - [ ] Todos os cenários do spec cobertos
 - [ ] Code review aprovado (`superpowers:requesting-code-review`)
 - [ ] `docs/backlog.md` atualizado com status da task
-- [ ] `docs/contracts/` atualizado (se endpoints foram criados/modificados)
 - [ ] Sem código hardcoded (cores, fontes, URLs de API, credenciais)
 
 ---

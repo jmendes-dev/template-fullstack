@@ -5,6 +5,16 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.6.0] — 2026-04-19
+
+### Refatorado (P2.1 — redução de massa documental)
+- `README.md`: 510 → 147 linhas — mantido apenas quickstart, pré-requisitos e tabelas de referência rápida
+- `claude-stacks.md`: versões pinadas e notas de compatibilidade extraídas para arquivo separado; header corrigido
+- `claude-stacks-versions.md`: novo arquivo dedicado a versões pinadas (Bun, React, Hono, Tailwind v4, Zod v4, Clerk Core 3, etc.) e notas de compatibilidade por versão
+- `adopt-workflow.sh` + `sync-globals.sh`: `claude-stacks-versions.md` adicionado à lista `GLOBAL_FILES`
+
+---
+
 ## [1.5.1] — 2026-04-19
 
 ### Corrigido

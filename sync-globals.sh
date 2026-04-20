@@ -27,55 +27,37 @@ error() { echo -e "${RED}✗${NC}  $1"; exit 1; }
 # IMPORTANTE: ajuste esta URL para o seu repo
 GITHUB_RAW_BASE="${TEMPLATE_REPO_URL:-https://raw.githubusercontent.com/jmendes-dev/template-fullstack/main}"
 
-# Arquivos globais — APENAS estes são sincronizados.
-# Arquivos instanciados (CLAUDE.md, claude-stacks-refactor.md, docs/*) NUNCA são sobrescritos.
-GLOBAL_FILES=(
-  "claude-stacks.md"
-  "claude-stacks-versions.md"
-  "claude-sdd.md"
-  "DESIGN.md"
-  "claude-debug.md"
-  "start_project.md"
-  "setup-github-project.sh"
-  "sync-github-issues.sh"
-  "sync-globals.sh"
-  "promote-learning.sh"
-  "check-health.sh"
-  "check-quality.sh"
-  "TEMPLATE_VERSION"
-  ".claude/settings.local.example.json"
-  ".claude/settings.example.json"
-  ".claude/hooks/pre-tool-use.sh"
-  ".claude/hooks/inject-context.sh"
-  ".claude/hooks/post-tool-use.sh"
-  "package.json.example"
-  ".superpowers/agent-memory-bootstrap.md"
-)
+# Carregar listas de arquivos — fonte de verdade em .claude/lib/global-files.sh
+LIB_FILE=".claude/lib/global-files.sh"
+if [ -f "$LIB_FILE" ]; then
+  # shellcheck source=.claude/lib/global-files.sh
+  source "$LIB_FILE"
+else
+  # Bootstrap: lib ainda não existe localmente (primeiro sync remoto)
+  GLOBAL_FILES=(
+    "claude-stacks.md" "claude-stacks-versions.md" "claude-sdd.md" "DESIGN.md"
+    "claude-debug.md" "start_project.md" ".gitattributes"
+    "setup-github-project.sh" "sync-github-issues.sh" "sync-globals.sh"
+    "promote-learning.sh" "check-health.sh" "check-quality.sh" "TEMPLATE_VERSION"
+    ".claude/lib/global-files.sh"
+    ".claude/settings.local.example.json" ".claude/settings.example.json"
+    ".claude/hooks/pre-tool-use.sh" ".claude/hooks/inject-context.sh" ".claude/hooks/post-tool-use.sh"
+    "package.json.example" ".superpowers/agent-memory-bootstrap.md"
+  )
+  AGENT_FILES=(
+    "backend-developer.md" "data-engineer-dba.md" "devops-sre-engineer.md"
+    "frontend-developer.md" "project-manager.md" "qa-engineer.md"
+    "requirements-roadmap-builder.md" "security-engineer.md"
+    "software-architect.md" "ux-ui-designer.md"
+  )
+  COMMAND_FILES=(
+    "bug.md" "triage.md" "feature.md" "finish.md"
+    "continue.md" "new-project.md" "refactor.md"
+  )
+fi
 
-# Slash commands — sincronizados junto com os globais
-COMMAND_FILES=(
-  "bug.md"
-  "triage.md"
-  "feature.md"
-  "finish.md"
-  "continue.md"
-  "new-project.md"
-  "refactor.md"
-)
-
-# Agentes — sincronizados junto com os globais
-AGENT_FILES=(
-  "backend-developer.md"
-  "data-engineer-dba.md"
-  "devops-sre-engineer.md"
-  "frontend-developer.md"
-  "project-manager.md"
-  "qa-engineer.md"
-  "requirements-roadmap-builder.md"
-  "security-engineer.md"
-  "software-architect.md"
-  "ux-ui-designer.md"
-)
+# TEMPLATE_VERSION: sincronizado apenas pelo sync-globals (não pelo adopt)
+GLOBAL_FILES+=("TEMPLATE_VERSION")
 
 SOURCE="${1:-remote}"
 TEMP_DIR=$(mktemp -d)

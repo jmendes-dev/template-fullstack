@@ -63,6 +63,7 @@ fi
 
 GLOBAL_FILES=(
   "claude-stacks.md"
+  "claude-stacks-versions.md"
   "claude-sdd.md"
   "DESIGN.md"
   "claude-debug.md"

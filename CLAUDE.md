@@ -93,6 +93,7 @@ Para refatoração, invocar **`/refactor`**.
 |---|---|
 | `claude-sdd.md` | Triage → spec necessária + contextos de subagente |
 | `claude-stacks.md` | Regras de stack, padrões técnicos |
+| `claude-stacks-versions.md` | Versões pinadas e notas de compatibilidade (atualizar ao trocar versão) |
 | `claude-stacks-refactor.md` | Aprendizados, bug journal |
 | `claude-debug.md` | Política de bugs pré-existentes + tabela de escalação (referência para `/bug`) |
 | `DESIGN.md` | Task frontend OU gerar/regenerar design system |

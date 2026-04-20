@@ -61,29 +61,12 @@ fi
 
 # ── Arquivos globais (sempre copiar) ──────────
 
-GLOBAL_FILES=(
-  "claude-stacks.md"
-  "claude-stacks-versions.md"
-  "claude-sdd.md"
-  "DESIGN.md"
-  "claude-debug.md"
-  "start_project.md"
-  ".gitattributes"
-  "setup-github-project.sh"
-  "sync-github-issues.sh"
-  "sync-globals.sh"
-  "promote-learning.sh"
-  "check-health.sh"
-  "check-quality.sh"
-  ".claude/settings.local.example.json"
-  ".claude/hooks/pre-tool-use.sh"
-  ".claude/hooks/inject-context.sh"
-  ".claude/hooks/post-tool-use.sh"
-  "package.json.example"
-  ".superpowers/agent-memory-bootstrap.md"
-)
+# Fonte de verdade: .claude/lib/global-files.sh
+# shellcheck source=.claude/lib/global-files.sh
+source "$SCRIPT_DIR/.claude/lib/global-files.sh"
 
 info "Copiando arquivos globais..."
+mkdir -p "$TARGET_DIR/.claude/lib"
 mkdir -p "$TARGET_DIR/.claude/hooks"
 mkdir -p "$TARGET_DIR/.superpowers"
 for file in "${GLOBAL_FILES[@]}"; do

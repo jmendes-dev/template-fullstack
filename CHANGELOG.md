@@ -5,6 +5,16 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.7.0] — 2026-04-20
+
+### Refatorado (P2.1 + P2.3)
+- `DESIGN.md`: 1162 → 460 linhas (60% redução) — Parte 1 condensada preservando toda estrutura; Parte 2 condensada mantendo pipeline completo
+- `.claude/lib/global-files.sh`: novo arquivo — fonte de verdade única para `GLOBAL_FILES`, `AGENT_FILES` e `COMMAND_FILES`
+- `sync-globals.sh`: sourcing do lib (bootstrap inline se lib ausente na 1ª execução remota)
+- `adopt-workflow.sh`: sourcing do lib; `TEMPLATE_VERSION` permanece exclusivo do sync — elimina drift entre listas independentes
+
+---
+
 ## [1.6.0] — 2026-04-19
 
 ### Refatorado (P2.1 — redução de massa documental)

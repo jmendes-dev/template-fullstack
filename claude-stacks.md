@@ -1,18 +1,18 @@
-# CLAUDE.md
+# claude-stacks.md — Regras e Padrões Técnicos
+
+> **Versões pinadas e notas de compatibilidade**: ver `claude-stacks-versions.md`.
+> Este arquivo contém apenas regras de uso, padrões e anti-patterns (princípios estáveis).
 
 ## Stack
 
 Monorepo TypeScript ≥6.0 · Bun ≥1.3 · Hono ≥4.12.4 · React 19 · Drizzle ORM · Drizzle Kit ≥0.31 · PostgreSQL · Biome 2.x · Vite 8 (Rolldown) · Tailwind CSS v4 · Zod v4 · Node ≥20.19 ou ≥22.12 (para tooling)
 
-## Bun 1.3 — notas relevantes
+## Bun — regras de uso
 
-- **Lockfile**: `bun.lock` (JSONC, git-diffable) é o padrão desde Bun 1.2. `bun.lockb` (binário) não é mais o default — se existir no projeto, deletar e rodar `bun install` para gerar `bun.lock`
-- **Hot reload**: `bun --hot` (soft reload, preserva `globalThis`) vs `--watch` (reinicia processo). Usar `--hot` para API
-- **Opcionais**: `bun build --bytecode` (startup rápido), workspace `"catalog"` (centralizar versões)
-- **Bun.cron**: registra cron jobs no SO (crontab/launchd) — OS-level, **não** in-process. Não funciona em containers Docker. Em containers, usar `setInterval` + tabela `jobs`
-- **Bun.SQL**: driver SQL unificado built-in (PostgreSQL + MySQL + SQLite). postgres.js continua como padrão
-- **Isolated installs**: default em novos workspaces (`configVersion = 1`)
-- **Docker images**: `oven/bun:1.3` (recomendado para reprodutibilidade), `oven/bun:slim`, `oven/bun:distroless`, `oven/bun:alpine`
+- **Lockfile**: `bun.lock` (JSONC). Se `bun.lockb` existir, deletar e rodar `bun install`.
+- **Hot reload**: `bun --hot` para API (preserva `globalThis`). `--watch` reinicia processo.
+- **Bun.cron**: **não funciona em containers Docker** — usar `setInterval` + tabela `jobs` em containers.
+- **Docker image**: `oven/bun:1.3` (reprodutibilidade). Alternativas: `slim`, `distroless`, `alpine`.
 
 ## Estrutura
 

@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Template de projeto fullstack com workflow SDD/TDD + Superpowers para Claude Code.
-> Versão atual: **v1.5.1** — [CHANGELOG](CHANGELOG.md)
+> Versão atual: **v1.7.0** — [CHANGELOG](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui
 
@@ -98,14 +98,18 @@ O sync **nunca** toca: `CLAUDE.md`, `claude-stacks-refactor.md`, `docs/`, `.clau
 CLAUDE.md                    ← Protocolo de orquestração (ponto de entrada)
 claude-sdd.md                ← Metodologia Spec-Driven Development
 claude-stacks.md             ← Regras e padrões técnicos da stack
-DESIGN.md                    ← Regras estruturais de UI/UX
+claude-stacks-versions.md    ← Versões pinadas e notas de compatibilidade
+DESIGN.md                    ← Regras estruturais de UI/UX e pipeline de design system
 claude-debug.md              ← Referência de debugging e escalação
 start_project.md             ← Gates de fase para projeto novo
 .claude/
   commands/                  ← Slash commands: /bug /triage /feature /finish /continue /new-project /refactor
   agents/                    ← 10 agentes especializados
   hooks/                     ← PreToolUse, UserPromptSubmit, PostToolUse
+  lib/global-files.sh        ← Fonte de verdade para GLOBAL_FILES (sync + adopt)
   agent-memory/              ← Memória persistente por agente
+.github/
+  workflows/ci.yml           ← CI: lint + typecheck + test (gates de qualidade)
 docs/
   user-stories.md            ← Stories com critérios de aceite
   backlog.md                 ← Kanban P1/P2/P3

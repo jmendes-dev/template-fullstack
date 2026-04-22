@@ -9,9 +9,9 @@
 
 | Métrica | Valor | Status |
 |---------|-------|--------|
-| Cobertura geral | N/A | ⏳ Aguardando |
-| Testes | ⏳ Não executado | -- |
-| Última execução | — | -- |
+| Cobertura geral | --% | ⏳ |
+| Testes | ❌ Falhou (0 falhas) | -- |
+| Última execução | 2026-04-20 19:05 | -- |
 
 ---
 
@@ -24,10 +24,10 @@
 
 ## Gates do DoD
 
-- [ ] `bun test` passa com cobertura ≥ 95%
-- [ ] `bunx biome check` zero erros
-- [ ] `tsc --noEmit` zero erros
-- [ ] Cenários do spec cobertos
+- [ ] `bun test` passa com cobertura ≥ 95% ← **FALHOU**
+- [ ] `bunx biome check` zero erros (biome.json não encontrado — pulado)
+- [ ] `tsc --noEmit` zero erros (tsconfig.json não encontrado — pulado)
+- [x] Cenários do spec cobertos (0/0)
 - [ ] Code review aprovado (`superpowers:requesting-code-review`)
 
 ---
@@ -51,4 +51,4 @@
 
 ---
 
-_Gerado por `check-quality.sh` · Última atualização: —_
+_Gerado por `check-quality.sh` · Última atualização: 2026-04-20 19:05_

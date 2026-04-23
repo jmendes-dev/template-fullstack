@@ -398,6 +398,64 @@ Extraído das seções "Prioridade Média" e "Prioridade Baixa" do PRD:
 
 ---
 
+## Passo 5.5 — Sincronização com `docs/backlog.md`
+
+Após escrever o plano em `plans/<feature>-plano.md`, o `project-manager` agent deve sincronizar com `docs/backlog.md`. Cada **Fase** do plano se mapeia a uma **Wave** do backlog:
+
+- **Fase 0 — Fundação** → NÃO vira wave (é setup, não entrega ao cliente). USs dessa fase caem em `## Wave: Backlog`.
+- **Fase 1+** → cada fase vira uma wave com nome descritivo extraído do título da fase (ex: "Fase 1 — Cadastro de clientes" → `## Wave: Cadastro de clientes`).
+
+Instruções ao PM agent (ao sintetizar o backlog):
+
+1. Para cada história MVP de uma Fase (exceto Fase 0), criar uma US em `docs/backlog.md` sob `## Wave: <nome-da-fase>`.
+2. Histórias de "Prioridade Média/Baixa" do PRD (pós-MVP) vão para `## Wave: Backlog`.
+3. Cada wave começa com blockquote `> Milestone GitHub: \`<nome>\` · Meta: <descrição de 1 linha da fase>`.
+4. USs mantêm a prioridade P1/P2/P3 extraída do PRD (dentro da mesma wave).
+5. Ordem das waves no backlog: mesma ordem das Fases no plano (Fase 1 primeiro, Fase N último, Backlog no final).
+
+**Exemplo de geração:**
+
+Plano tem Fase 1 ("Cadastro de clientes") com 2 histórias MVP, Fase 2 ("Dashboard") com 1 história MVP, e o PRD tem 1 história de Prioridade Média.
+
+`docs/backlog.md` resultante:
+
+```markdown
+## Wave: Cadastro de clientes
+> Milestone GitHub: `Cadastro de clientes` · Meta: usuário consegue criar e listar clientes
+
+### US-1 — Criar cliente
+**Prioridade:** P1  ·  **Estimativa:** 5  ·  **Status:** pendente
+Tasks:
+- [ ] TASK-1.1: ...
+
+### US-2 — Listar clientes
+**Prioridade:** P1  ·  **Estimativa:** 3  ·  **Status:** pendente
+Tasks:
+- [ ] TASK-2.1: ...
+
+## Wave: Dashboard
+> Milestone GitHub: `Dashboard` · Meta: usuário visualiza indicadores principais
+
+### US-3 — KPIs cards
+**Prioridade:** P1  ·  **Estimativa:** 5  ·  **Status:** pendente
+Tasks:
+- [ ] TASK-3.1: ...
+
+## Wave: Backlog
+> Sem milestone atribuída. Mover para wave concreta ao priorizar.
+
+### US-10 — Exportar relatório (pós-MVP)
+**Prioridade:** P2  ·  **Estimativa:** 5  ·  **Status:** pendente
+Tasks:
+- [ ] TASK-10.1: ...
+```
+
+Após gerar `docs/backlog.md`, o fluxo esperado é:
+1. `./setup-github-project.sh` (se ainda não rodado) → cria milestones das waves
+2. `./sync-github-issues.sh` → cria issues associadas às milestones corretas
+
+---
+
 ## Passo 6 — Revisão final
 
 Após escrever o plano, apresente ao usuário:

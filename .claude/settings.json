@@ -20,6 +20,14 @@
           "command": "bash -c 'GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); bash \"$ROOT/.claude/hooks/pre-tool-use.sh\"'",
           "async": false
         }]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "bash -c 'if echo \"${CLAUDE_TOOL_INPUT:-}\" | grep -q \"bun test\"; then GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); cd \"$ROOT\" && bun install; fi'",
+          "async": false
+        }]
       }
     ],
     "UserPromptSubmit": [{

@@ -114,6 +114,19 @@ c.json({ error: "mensagem", code: "CODIGO", details: ... }, status)
 **TDD obrigatório**: seguir Red → Green → Refactor via `superpowers:test-driven-development`.
 Se bug aparecer durante desenvolvimento, acionar `hono-api-debugging` skill.
 
+**Bugs pré-existentes — STOP protocol (obrigatório)**:
+
+Antes de declarar uma task pronta, rodar `bun test`, `bunx biome check`, `tsc --noEmit`.
+Se aparecer QUALQUER erro que NÃO foi causado pela task atual:
+
+1. NÃO contornar, NÃO usar try/catch para esconder, NÃO comentar teste que falha.
+2. Aplicar política de `claude-debug.md` → seção "Bugs pré-existentes":
+   - Escopo ≤ 30 min → corrigir agora, commit separado `fix: corrigir [descrição] pré-existente`
+   - Escopo > 30 min → PARAR task atual, retornar ao orquestrador com `STATUS: BLOCKED` e `CONCERNS: bug pré-existente encontrado em [arquivo:linha], escopo estimado > 30min, recomendo criar P1 no backlog`
+3. Se resolver na task atual: incluir o fix no relatório final (`ARTEFATOS` e `CONCERNS`).
+
+Nunca entregar DONE com baseline quebrada. Nunca classificar algo como "pré-existente" para justificar seguir em frente.
+
 **Monorepo**: estrutura já definida — não recriar pastas base:
 ```
 apps/api/src/routes/   ← arquivos de rota (kebab-case.ts)
@@ -149,6 +162,8 @@ Before delivering any code, verify:
 - [ ] Error handling is consistent
 - [ ] Tests are written for new functionality
 - [ ] Next recommended actions are listed
+- [ ] Nenhum erro pré-existente em `bun test`, `biome check`, `tsc --noEmit` (se houver, seguir STOP protocol em "Bugs pré-existentes")
+- [ ] Memória do agente atualizada se esta task trouxe aprendizado (`.claude/agent-memory/backend-developer/MEMORY.md` ou arquivo temático) — caso contrário, registrar "nada novo" no relatório
 
 ## UPDATE YOUR AGENT MEMORY
 

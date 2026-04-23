@@ -11,7 +11,7 @@
 |---------|-------|--------|
 | Cobertura geral | --% | ⏳ |
 | Testes | ❌ Falhou (0 falhas) | -- |
-| Última execução | 2026-04-20 19:05 | -- |
+| Última execução | 2026-04-22 16:51 | -- |
 
 ---
 
@@ -51,4 +51,4 @@
 
 ---
 
-_Gerado por `check-quality.sh` · Última atualização: 2026-04-20 19:05_
+_Gerado por `check-quality.sh` · Última atualização: 2026-04-22 16:51_

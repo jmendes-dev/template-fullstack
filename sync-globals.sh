@@ -288,9 +288,19 @@ if [[ ! $REPLY =~ ^[Ss]$ ]]; then
 fi
 
 # ── Aplicar ────────────────────────────────────
+#
+# Proteção contra self-overwrite: bash lê o script do disco em chunks durante a
+# execução. Se sobrescrevermos sync-globals.sh no meio do loop, bash continua
+# lendo bytes inconsistentes e estoura com "syntax error near unexpected token".
+# Solução: deferir o self-update para o FINAL do script, depois de todo output.
+SELF_UPDATE_PENDING=false
 
 echo ""
 for file in "${CHANGED_FILES[@]}"; do
+  if [ "$file" = "sync-globals.sh" ]; then
+    SELF_UPDATE_PENDING=true
+    continue
+  fi
   mkdir -p "$(dirname "./$file")"
   cp "$TEMP_DIR/$file" "./$file"
   ok "Atualizado: $file"
@@ -331,3 +341,12 @@ echo ""
 warn "Arquivos obsoletos — podem ser removidos dos projetos adotados:"
 echo "    claude-subagents.md, DESIGN_SYSTEM.md, REQUIREMENTS.md"
 echo "    (versões antigas de claude-debug.md e start_project.md foram substituídas)"
+
+# ── Self-update deferido (ÚLTIMO passo — bash não deve ler mais nada após isto) ─
+# Por isto este bloco está no FINAL do arquivo. Não adicionar código depois.
+if [ "$SELF_UPDATE_PENDING" = "true" ]; then
+  cp "$TEMP_DIR/sync-globals.sh" "./sync-globals.sh"
+  echo ""
+  info "sync-globals.sh foi atualizado — próxima execução usará a nova versão"
+fi
+exit 0

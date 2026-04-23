@@ -238,6 +238,8 @@ O agente avalia automaticamente; override gerado junto com o spec na mesma aprov
 
 ## Parte 2 — Pipeline do Design System
 
+> ⚠️ **Rodar ANTES** de `/new-project` — ver seção "Pré-requisito — Instalar ui-ux-pro-max" abaixo. O pipeline não tem fallback: sem a skill, não há design system personalizado, e projetos nascem com aparência genérica.
+
 > Gera o design system completo em 3 passos:
 > 1. **ui-ux-pro-max** gera base automática pela indústria/tipo do projeto
 > 2. **Entrevista de refinamento** (~5–7 perguntas) ajusta com preferências do autor
@@ -248,7 +250,9 @@ O agente avalia automaticamente; override gerado junto com o spec na mesma aprov
 
 ---
 
-### Instalar ui-ux-pro-max
+### Pré-requisito — Instalar ui-ux-pro-max ANTES de rodar `/new-project`
+
+> Esta skill é **dependência externa obrigatória**. Sem ela, o Passo 1 do pipeline falha e o `MASTER.md` não é gerado — resultado: projeto nasce com UI genérica shadcn/ui sem personalidade (anti-pattern documentado).
 
 **Opção A — Claude Code Marketplace:**
 ```

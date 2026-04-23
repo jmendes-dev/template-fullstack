@@ -81,7 +81,10 @@ create_label "spec-aprovada" "c2e0c6" "Spec aprovada, pronto para implementar"
 create_label "em-andamento"  "f9d0c4" "Em desenvolvimento ativo"
 
 # ── Milestones ──────────────────────────────────
-info "Criando milestones..."
+# Gera milestones a partir das waves em docs/backlog.md (heading `## Wave: <Nome>`).
+# Cada wave vira um milestone homônimo; "Backlog" (catch-all) é ignorada.
+# Idempotente: milestones já existentes são preservadas.
+info "Criando milestones a partir de docs/backlog.md..."
 
 create_milestone() {
   local title="$1"
@@ -96,12 +99,30 @@ create_milestone() {
   fi
 }
 
-create_milestone "Epico 1 — Levantamento e Planejamento"
-create_milestone "Epico 2 — Arquitetura e Setup"
-create_milestone "Epico 3 — Desenvolvimento"
-create_milestone "Epico 4 — Qualidade e Testes"
-create_milestone "Epico 5 — Seguranca e Revisao"
-create_milestone "Epico 6 — Deploy e Entrega"
+BACKLOG_FILE="$SCRIPT_DIR/docs/backlog.md"
+if [[ -f "$BACKLOG_FILE" ]]; then
+  # Extrair waves únicas do backlog (exceto "Backlog")
+  WAVE_COUNT=0
+  while IFS= read -r wave; do
+    [[ -z "$wave" ]] && continue
+    [[ "$wave" == "Backlog" ]] && continue
+    create_milestone "$wave"
+    WAVE_COUNT=$((WAVE_COUNT + 1))
+  done < <(grep -E "^##[[:space:]]+Wave:" "$BACKLOG_FILE" 2>/dev/null \
+           | sed -E 's/^##[[:space:]]+Wave:[[:space:]]+//' \
+           | sed -E 's/[[:space:]]+$//' \
+           | sort -u)
+
+  if [[ "$WAVE_COUNT" -eq 0 ]]; then
+    warn "Nenhuma wave concreta encontrada em docs/backlog.md — nenhum milestone criado."
+    warn "  Adicione seções '## Wave: <Nome>' ao backlog (exceto 'Backlog' que é catch-all)."
+  else
+    info "  $WAVE_COUNT wave(s) processada(s)."
+  fi
+else
+  warn "docs/backlog.md não encontrado — pulando criação de milestones."
+  warn "  Rode ./setup-github-project.sh novamente após gerar o backlog via /new-project."
+fi
 
 # ── GitHub Project ───────────────────────────────
 info "Criando GitHub Project board..."

@@ -111,6 +111,19 @@ apps/web/src/hooks/      ← custom hooks (TanStack Query)
 Se bug aparecer, acionar `react-tanstack-debugging` skill.
 Para alta qualidade visual, usar `frontend-design` ou `ui-ux-pro-max` skill.
 
+**Bugs pré-existentes — STOP protocol (obrigatório)**:
+
+Antes de declarar uma task pronta, rodar `bun test`, `bunx biome check`, `tsc --noEmit`.
+Se aparecer QUALQUER erro que NÃO foi causado pela task atual:
+
+1. NÃO contornar, NÃO usar try/catch para esconder, NÃO comentar teste que falha.
+2. Aplicar política de `claude-debug.md` → seção "Bugs pré-existentes":
+   - Escopo ≤ 30 min → corrigir agora, commit separado `fix: corrigir [descrição] pré-existente`
+   - Escopo > 30 min → PARAR task atual, retornar ao orquestrador com `STATUS: BLOCKED` e `CONCERNS: bug pré-existente encontrado em [arquivo:linha], escopo estimado > 30min, recomendo criar P1 no backlog`
+3. Se resolver na task atual: incluir o fix no relatório final (`ARTEFATOS` e `CONCERNS`).
+
+Nunca entregar DONE com baseline quebrada. Nunca classificar algo como "pré-existente" para justificar seguir em frente.
+
 ---
 
 ## CODE RULES — STRICTLY ENFORCED
@@ -133,6 +146,8 @@ Before delivering any code:
 - Verify no stack-external dependencies were introduced.
 - Verify data fetching is abstracted into hooks.
 - Verify responsive breakpoints are applied.
+- Verify que `bun test`, `biome check`, `tsc --noEmit` estão zerados — se houver erro pré-existente, aplicar STOP protocol (ver seção "Bugs pré-existentes — STOP protocol").
+- Verify que a memória do agente foi atualizada se houve aprendizado novo (`.claude/agent-memory/frontend-developer/MEMORY.md`); caso contrário, declarar "nada novo" no relatório.
 
 ## COMMUNICATION STYLE
 

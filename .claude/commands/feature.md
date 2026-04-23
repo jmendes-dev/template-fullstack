@@ -50,6 +50,30 @@ Antes de declarar qualquer coisa como pronto:
 - Cobertura ≥ 95% por módulo: `./check-quality.sh`
 - Comportamento testado manualmente no happy path e edge cases
 
+### 5.1 — QA Review (obrigatório)
+
+Despachar `qa-engineer` via Agent tool. Prompt esperado ao agente:
+
+> Revisar a implementação da feature `<título>` contra os cenários do spec `docs/specs/<US-XX>.spec.md` (se existir) e o relatório de cobertura em `docs/quality.md`. Identificar gaps de casos de teste, edge cases não cobertos, e regressões potenciais em features vizinhas. Reportar com `STATUS: DONE | DONE_WITH_CONCERNS | BLOCKED` e lista acionável de testes faltantes.
+
+Se QA retornar `DONE_WITH_CONCERNS` ou `BLOCKED` → escrever tasks no backlog (P1 se bloqueia release) e iterar antes de prosseguir.
+
+### 5.2 — Security Review (condicional)
+
+Despachar `security-engineer` **APENAS SE** a feature toca um destes gatilhos:
+
+- Qualquer arquivo em `apps/api/src/middleware/` ou que importa `getAuth`/`clerkMiddleware`
+- Rota nova que recebe input do usuário (`c.req.json()`, `c.req.query()`, form data)
+- Schema novo em `packages/shared/src/schemas/` com campos sensíveis (email, password, token, apiKey, secret)
+- Variável nova em `.env.example` com sufixo `_SECRET`, `_KEY`, `_TOKEN`
+- Mudança em políticas de CORS, CSP, rate-limit, ou headers de segurança
+
+Prompt esperado ao `security-engineer`:
+
+> Revisar a feature `<título>` contra OWASP Top 10 e checklist do template. Focar em: validação de input, autorização por role (RBAC), vazamento de segredos, cabeçalhos de segurança, rate-limiting. Reportar com `STATUS` e achados acionáveis.
+
+Se Security retornar `DONE_WITH_CONCERNS` → avaliar com usuário se vira P1; se `BLOCKED` → não fazer merge.
+
 ## Passo 6 — FINISH
 
 Invocar `/finish` para encerrar o ciclo de entrega.
@@ -60,5 +84,7 @@ Invocar `/finish` para encerrar o ciclo de entrega.
 - ❌ Funcionalidade não mapeada em `docs/backlog.md`
 - ❌ Iniciar EXECUTE sem PLAN aprovado
 - ❌ Pular VERIFY antes de declarar pronto
+- ❌ Pular QA Review em 5.1 (sempre obrigatório)
+- ❌ Pular Security Review em 5.2 quando algum gatilho (auth/input/segredo) é tocado
 - ❌ Misturar refactor com nova funcionalidade no mesmo ciclo
 - ❌ Tecnologias fora de `claude-stacks.md` sem aprovação explícita

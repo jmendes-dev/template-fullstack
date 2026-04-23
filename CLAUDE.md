@@ -20,18 +20,18 @@ Para refatoração, invocar **`/refactor`**.
 
 > O orquestrador **nunca** escreve código de produção diretamente. Toda implementação é delegada.
 
-| Arquivo / Domínio | Agente |
-|---|---|
-| `apps/api/**` (rotas, serviços, middleware) | `backend-developer` |
-| `apps/web/**` (componentes, pages, hooks) | `frontend-developer` |
-| `packages/shared/src/schemas/**` | `data-engineer-dba` |
-| CI/CD, Dockerfile, GitHub Actions | `devops-sre-engineer` |
-| `docs/design-system/**`, componentes visuais | `ux-ui-designer` |
-| Arquitetura, ADRs, revisão estrutural | `software-architect` |
-| Backlog, sprint, DoD, issues/PRs | `project-manager` |
-| Levantamento de requisitos, roadmap | `requirements-roadmap-builder` |
-| Test plans, coverage, bug reports | `qa-engineer` |
-| OWASP, dependency audit, security review | `security-engineer` |
+| Arquivo / Domínio / Gatilho | Agente | Invocação |
+|---|---|---|
+| `apps/api/**` (rotas, serviços, middleware) | `backend-developer` | Automática por arquivo |
+| `apps/web/**` (componentes, pages, hooks) | `frontend-developer` | Automática por arquivo |
+| `packages/shared/src/schemas/**` | `data-engineer-dba` | Automática por arquivo |
+| CI/CD, Dockerfile, GitHub Actions, docker-compose | `devops-sre-engineer` | Automática por arquivo |
+| `docs/design-system/**`, componentes visuais novos | `ux-ui-designer` | Via `/feature` quando há UI nova |
+| Arquitetura, ADRs, revisão estrutural | `software-architect` | Via `/new-project` ou review explícito |
+| Backlog, sprint, DoD, issues/PRs | `project-manager` | `/continue` Passo 0 e Passo 2 |
+| Levantamento de requisitos, roadmap | `requirements-roadmap-builder` | `/new-project` Fase 1/2 |
+| Test plans, coverage, bug reports | `qa-engineer` | `/feature` Passo 5.1 (sempre) |
+| OWASP, dependency audit, security review | `security-engineer` | `/feature` Passo 5.2 (gatilhos: auth, input, segredos, CORS) |
 
 ---
 
@@ -46,6 +46,9 @@ Para refatoração, invocar **`/refactor`**.
 | Redigir spec | `claude-sdd.md` + `/feature` | template + command |
 | Decompor em micro-tasks | `superpowers:writing-plans` | skill |
 | Executar tasks em paralelo | `superpowers:subagent-driven-development` | skill |
+| QA review de cada feature | `qa-engineer` + `/feature` Passo 5.1 | agente |
+| Security review condicional | `security-engineer` + `/feature` Passo 5.2 | agente |
+| Manter backlog vivo | `project-manager` + `/continue` Passos 0/2 | agente |
 | Implementar (TDD) | `superpowers:test-driven-development` | skill |
 | Verificar antes de declarar pronto | `superpowers:verification-before-completion` | skill |
 | Code review | `superpowers:requesting-code-review` | skill |
@@ -128,6 +131,9 @@ Para refatoração, invocar **`/refactor`**.
 - ❌ Cortar design brief do contexto de componente
 - ❌ Tasks P2/P3 enquanto houver P1 pendentes
 - ❌ Declarar pronto sem `superpowers:verification-before-completion`
+- ❌ Pular QA review (`qa-engineer` em `/feature` 5.1) antes de merge
+- ❌ Pular Security review (`security-engineer` em `/feature` 5.2) quando feature toca auth/input/segredos
+- ❌ Contornar bug pré-existente — aplicar STOP protocol do `claude-debug.md`
 - ❌ Merge sem `superpowers:requesting-code-review`
 
 ---

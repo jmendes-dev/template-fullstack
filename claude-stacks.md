@@ -85,6 +85,7 @@ Frontend tambem precisa de `"@projeto/api": "workspace:*"` como **devDependency*
 ```env
 DATABASE_URL=          # connection string PostgreSQL
 CLERK_SECRET_KEY=      # backend auth
+ADMIN_EMAIL=           # email que vira admin no primeiro cadastro (ver docs/auth-rbac.md)
 VITE_CLERK_PUBLISHABLE_KEY=  # frontend auth
 VITE_API_URL=          # URL da API para o frontend
 APP_CORS_ORIGINS=      # origins permitidas (ex: https://app.exemplo.com)
@@ -289,6 +290,8 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 
 ## Auth middleware (Clerk) — graceful degradation
 
+> **RBAC**: Clerk provê apenas identidade. Papel (`admin`/`user`) vive em tabela custom do projeto. Ver `docs/auth-rbac.md` para schema Drizzle, middleware `requireRole`, service `ensureUser` e bootstrap via `ADMIN_EMAIL`.
+
 - **Pacotes**: `@clerk/react` v6+ (frontend) e `@hono/clerk-auth` v3+ (backend). Histórico: `@clerk/clerk-react` foi renomeado para `@clerk/react` no Core 2 (v5)
 - **Clerk Core 3** (março 2026, v6+): `<Show when="signed-in">` substitui `<Protect>`/`<SignedIn>`/`<SignedOut>`. Upgrade: `npx @clerk/upgrade`
 - **Core 3 breaking**: `getToken()` lança `ClerkOfflineError` (importar de `@clerk/react/errors`) quando offline — ainda retorna `null` se não autenticado; `@clerk/types` deprecated → importar de `@clerk/shared/types`
@@ -300,6 +303,8 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 - **Padrão obrigatório**: registrar `clerkMiddleware()` dentro de `if (process.env.CLERK_SECRET_KEY)`. Nos handlers, `getAuth(c)` retorna o auth context (síncrono). Sem Clerk configurado, helper retorna `userId: "dev-user"`
 
 ## Dev workflow (Docker-first)
+
+> **Scaffold**: samples de referência em `templates/docker-compose.yml` e `templates/vite.config.ts` — copiar e adaptar em `/new-project`. Contêm flags obrigatórias para HMR funcionar em Docker+Windows (polling do inotify). Ver `templates/README.md`.
 
 - **Tudo roda em container** — nunca no host (inclusive dev). `docker compose up` — arquivo único `docker-compose.yml` para dev local em todos os targets (Railway e Portainer)
 - Bind-mount do código para hot reload. `bun install` dentro do container

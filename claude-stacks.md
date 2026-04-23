@@ -312,6 +312,20 @@ Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficiente
 - Portas via env var com defaults (`API_PORT`, `WEB_PORT`, `POSTGRES_PORT`). Se ocupada, incrementar +1
 - **UAT/PRD**: deploy automático via CD → webhook Portainer. Nunca fazer deploy manual
 
+## Backlog — formato com waves
+
+Projeto usa formato de waves em `docs/backlog.md`. Cada wave é uma entrega visível ao cliente final (ex: "MVP", "Release 1") e corresponde a um GitHub Milestone homônimo.
+
+Regras:
+- Heading `## Wave: <Nome>` inicia um bloco de USs da mesma onda
+- Blockquote seguinte: `> Milestone GitHub: \`<Nome>\` · Meta: <descrição>`
+- Wave `Backlog` (catch-all) no final — USs sem onda concreta
+- Dentro de cada wave, USs mantêm P1/P2/P3 (ordem interna)
+- `sync-github-issues.sh` mapeia wave → milestone automaticamente
+- `setup-github-project.sh` cria milestones das waves
+
+Ver `docs/superpowers/specs/2026-04-23-onda-3-backlog-ondas-design.md` para formato completo.
+
 ## Git workflow
 
 - **Branch strategy**: trunk-based com staging — `main` (produção), `uat` (homologação), feature branches curtas (`feat/`, `fix/`, `chore/`)

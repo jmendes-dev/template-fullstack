@@ -25,8 +25,8 @@
         "matcher": "Bash",
         "hooks": [{
           "type": "command",
-          "command": "bash -c 'if echo \"${CLAUDE_TOOL_INPUT:-}\" | grep -q \"bun test\"; then GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); cd \"$ROOT\" && bun install; fi'",
-          "async": false
+          "command": "bash -c 'if echo \"${CLAUDE_TOOL_INPUT:-}\" | grep -q \"bun test\"; then GCD=$(git rev-parse --git-common-dir 2>/dev/null); if [[ \"$GCD\" != /* ]] && [[ ! \"$GCD\" =~ ^[A-Za-z]:/ ]]; then GCD=\"$PWD/$GCD\"; fi; ROOT=$(dirname \"$GCD\"); mkdir -p \"$ROOT/.claude/logs\"; HASHFILE=\"$ROOT/.claude/logs/bun-install-hash\"; CURRENT=$({ cat \"$ROOT/package.json\" \"$ROOT/bun.lock\" 2>/dev/null; } | sha256sum | cut -d\" \" -f1); if [ ! -f \"$HASHFILE\" ] || [ \"$(cat \"$HASHFILE\" 2>/dev/null)\" != \"$CURRENT\" ]; then cd \"$ROOT\" && bun install && echo \"$CURRENT\" > \"$HASHFILE\"; fi; fi'",
+          "async": true
         }]
       }
     ],

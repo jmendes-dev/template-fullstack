@@ -49,6 +49,17 @@ If `claude-stacks.md` is not found, inform the user and ask them to provide the 
 - **.dockerignore** optimized to exclude unnecessary files.
 - **Secrets management**: create `docs/devops/secrets-guide.md`.
 - **.env.example** with all required environment variables documented with descriptions.
+- **Baseline obrigatório**: copiar `templates/docker-compose.yml` e `templates/vite.config.ts` do repo raiz como ponto de partida. Adaptar (não reescrever do zero).
+- **Checklist de validação HMR** (gate para avançar à Fase 5 — todos obrigatórios):
+  - [ ] `docker compose up -d` sobe todos os services sem erro
+  - [ ] `docker compose ps` mostra api, web, postgres, minio, backup como `running/healthy`
+  - [ ] `curl http://localhost:${API_PORT:-3000}/health` retorna 200
+  - [ ] `curl -I http://localhost:${WEB_PORT:-5173}` retorna 200 com HTML do Vite
+  - [ ] Editar `apps/web/src/App.tsx` (trocar uma string visível) → browser recarrega em < 2s SEM F5 manual
+  - [ ] `docker compose exec web sh -c 'touch /app/apps/web/src/test-hmr.txt'` é detectado pelo Vite (confirma polling ativo)
+  - [ ] `apps/web/vite.config.ts` tem `server.host: true`, `server.hmr.host: "localhost"`, `server.watch.usePolling: true`
+  - [ ] `docker-compose.yml` tem `CHOKIDAR_USEPOLLING=true` e `WATCHPACK_POLLING=true` no service `web`
+  - [ ] Se qualquer item falhar → não avançar; revisar bind-mounts e env vars de polling antes de continuar
 
 ### FASE 5 — Testes & QA
 - Validate CI pipeline executes all tests correctly.

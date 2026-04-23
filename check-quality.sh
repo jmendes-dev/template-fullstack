@@ -11,6 +11,12 @@ if [ "${1:-}" = "--from-output" ] && [ -n "${2:-}" ]; then
   FROM_OUTPUT="$2"
 fi
 
+# Hook mode: chamado pelo PostToolUse após bun test. Faz apenas parsing do output do teste
+# e atualização do dashboard. Pula biome/typecheck (full-project scan = 2-40s em background).
+# Modo manual (./check-quality.sh sem args) ainda executa tudo.
+HOOK_MODE=false
+[ -n "$FROM_OUTPUT" ] && HOOK_MODE=true
+
 QUALITY_FILE="docs/quality.md"
 SPECS_DIR="docs/specs"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
@@ -78,7 +84,11 @@ while IFS= read -r line; do
 done <<< "$TEST_OUTPUT"
 
 # ── Lint (Biome) ──────────────────────────────────────────────
-if command -v bunx &>/dev/null && ([ -f "biome.json" ] || [ -f "biome.jsonc" ]); then
+# Em HOOK_MODE pulamos biome full-project (2-10s) — auto-executado com frequência é caro.
+# Fase VERIFY/FINISH (ou CI) é responsável por rodar manualmente.
+if [ "$HOOK_MODE" = "true" ]; then
+  DOD_LINT="- [ ] \`bunx biome check\` zero erros (⏸️ deferido — rode \`./check-quality.sh\` sem args)"
+elif command -v bunx &>/dev/null && ([ -f "biome.json" ] || [ -f "biome.jsonc" ]); then
   set +e
   LINT_OUTPUT=$(bunx biome check . 2>&1)
   LINT_EXIT=$?
@@ -93,7 +103,10 @@ else
 fi
 
 # ── Typecheck ─────────────────────────────────────────────────
-if command -v bun &>/dev/null && [ -f "package.json" ]; then
+# Em HOOK_MODE pulamos typecheck full-workspace (5-30s) — mesmo motivo do biome.
+if [ "$HOOK_MODE" = "true" ]; then
+  DOD_TYPE="- [ ] \`tsc --noEmit\` zero erros (⏸️ deferido — rode \`./check-quality.sh\` sem args)"
+elif command -v bun &>/dev/null && [ -f "package.json" ]; then
   set +e
   TYPE_OUTPUT=$(bun run typecheck 2>&1)
   TYPE_EXIT=$?

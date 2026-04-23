@@ -21,12 +21,17 @@ fi
 # _RAW disponível para todos os blocos abaixo
 _RAW="${_STDIN:-$TOOL_INPUT}"
 
-# Resolver raiz do repo (funciona em worktrees) — necessário para quality-check e learning-loop
-GCD=$(git rev-parse --git-common-dir 2>/dev/null)
-if [[ "$GCD" != /* ]] && [[ ! "$GCD" =~ ^[A-Za-z]:/ ]]; then
-  GCD="$PWD/$GCD"
+# Resolver raiz do repo — usa cache do env var se disponível (fornecido pelo settings.json)
+# Fallback: computar via git rev-parse (para invocações manuais fora do hook)
+if [ -n "${CLAUDE_TEMPLATE_ROOT:-}" ] && [ -d "$CLAUDE_TEMPLATE_ROOT" ]; then
+  ROOT="$CLAUDE_TEMPLATE_ROOT"
+else
+  GCD=$(git rev-parse --git-common-dir 2>/dev/null)
+  if [[ "$GCD" != /* ]] && [[ ! "$GCD" =~ ^[A-Za-z]:/ ]]; then
+    GCD="$PWD/$GCD"
+  fi
+  ROOT=$(dirname "$GCD")
 fi
-ROOT=$(dirname "$GCD")
 
 # ── Quality-check: apenas quando o tool executou "bun test" ──────────────────
 if [ "$_RUN_QUALITY" = "true" ]; then

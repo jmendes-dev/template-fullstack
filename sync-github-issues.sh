@@ -67,18 +67,35 @@ fi
 # ── Phase 1: Parse backlog (local — no API calls) ────────────────────────────
 declare -a P_US=() P_TITLE=() P_PRIO=() P_MILE=() P_TASKS=() P_DONE=() P_TOTAL=()
 
+# _current_wave: setado por heading `## Wave: <Nome>`, aplicado como default milestone
+# para USs subsequentes quando `**Milestone:**` explícito não é fornecido.
+# Wave "Backlog" (case-sensitive) → milestone vazia (USs sem agrupamento).
+_current_wave=""
 _cu=""; _ct=""; _cp=""; _cm=""; _cta=""; _cd=0; _cto=0; _inu=false; _int=false
 
 _flush_parse() {
   [[ -z "$_cu" || -z "$_ct" ]] && return
+  # Fallback: se US não tem Milestone explícito, herda a wave ativa (exceto "Backlog")
+  if [[ -z "$_cm" && -n "$_current_wave" && "$_current_wave" != "Backlog" ]]; then
+    _cm="$_current_wave"
+  fi
   P_US+=("$_cu"); P_TITLE+=("$_ct"); P_PRIO+=("$_cp"); P_MILE+=("$_cm")
   P_TASKS+=("$_cta"); P_DONE+=("$_cd"); P_TOTAL+=("$_cto")
-  debug "  stored: $_cu — $_ct (tasks=$_cto done=$_cd)"
+  debug "  stored: $_cu — $_ct (tasks=$_cto done=$_cd wave=${_current_wave:-<none>})"
   _cu=""; _ct=""; _cp=""; _cm=""; _cta=""; _cd=0; _cto=0; _inu=false; _int=false
 }
 
 while IFS= read -r line || [[ -n "$line" ]]; do
   debug "L: ${line:0:80}"
+  # Wave heading: `## Wave: <Nome>` → seta contexto para USs subsequentes
+  if [[ "$line" =~ ^##[[:space:]]+Wave:[[:space:]]+(.+)$ ]]; then
+    _flush_parse  # Fecha qualquer US pendente antes de mudar contexto de wave
+    _current_wave="${BASH_REMATCH[1]}"
+    # Trim trailing whitespace do nome da wave
+    _current_wave="${_current_wave%"${_current_wave##*[![:space:]]}"}"
+    debug "  wave changed to: $_current_wave"
+    continue
+  fi
   if [[ "$line" =~ ^###[[:space:]]+(US-[0-9]+)[[:space:]]+(—|-)[[:space:]]+(.+)$ ]]; then
     _flush_parse; _cu="${BASH_REMATCH[1]}"; _ct="${BASH_REMATCH[3]}"; _inu=true; _int=false
   elif [[ "$line" =~ ^\*\*(US-[0-9]+):[[:space:]]+([^*]+)\*\* ]]; then

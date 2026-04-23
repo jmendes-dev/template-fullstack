@@ -105,6 +105,9 @@ if [ "$SOURCE" = "remote" ]; then
   info "Fonte: GitHub ($GITHUB_RAW_BASE)"
   echo ""
 
+  # Contador de falhas de download (set -u exige inicialização antes do primeiro $((++)))
+  DOWNLOAD_ERRORS=0
+
   for file in "${GLOBAL_FILES[@]}"; do
     mkdir -p "$(dirname "$TEMP_DIR/$file")"
     if curl -sfL "$GITHUB_RAW_BASE/$file" -o "$TEMP_DIR/$file"; then

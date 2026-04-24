@@ -102,6 +102,63 @@ if [ "$HAS_CLAUDE" = true ]; then
   cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.bak"
 fi
 
+# ── Detecção de contexto do projeto (para Project Context em MEMORY.md) ────
+# Chamado antes do loop de agentes. Exporta variáveis PROJECT_*.
+# Deve rodar ANTES de copiar arquivos globais para ler o .env.example original do target.
+_detect_project_context() {
+  # Project name: package.json → .name ou basename do target
+  if [ -f "$TARGET_DIR/package.json" ] && command -v jq &>/dev/null; then
+    PROJECT_NAME=$(jq -r '.name // empty' "$TARGET_DIR/package.json" 2>/dev/null || echo "")
+  fi
+  [ -z "${PROJECT_NAME:-}" ] && PROJECT_NAME=$(basename "$TARGET_DIR")
+
+  # Stack summary: primeira linha "Stack" de claude-stacks.md
+  if [ -f "$TARGET_DIR/claude-stacks.md" ]; then
+    PROJECT_STACK=$(grep -m1 -E '^[[:space:]]*(Monorepo|Stack)' "$TARGET_DIR/claude-stacks.md" 2>/dev/null \
+                   | head -c 200 | sed 's/^[[:space:]]*//' || echo "")
+  fi
+  [ -z "${PROJECT_STACK:-}" ] && PROJECT_STACK="Stack não detectada — ver claude-stacks.md"
+
+  # Workspace layout
+  local _layout=""
+  [ -d "$TARGET_DIR/apps/api" ] && _layout="${_layout}apps/api "
+  [ -d "$TARGET_DIR/apps/web" ] && _layout="${_layout}apps/web "
+  [ -d "$TARGET_DIR/packages/shared" ] && _layout="${_layout}packages/shared"
+  if [ -z "$_layout" ]; then
+    PROJECT_LAYOUT="monorepo não inicializado (rode /new-project)"
+  else
+    PROJECT_LAYOUT="$_layout"
+  fi
+
+  # Ports do .env.example
+  PROJECT_API_PORT="3000"
+  PROJECT_WEB_PORT="5173"
+  if [ -f "$TARGET_DIR/.env.example" ]; then
+    local _p
+    _p=$(grep -m1 -E '^(API_)?PORT=' "$TARGET_DIR/.env.example" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
+    [ -n "$_p" ] && PROJECT_API_PORT="$_p"
+    _p=$(grep -m1 -E '^WEB_PORT=' "$TARGET_DIR/.env.example" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
+    [ -n "$_p" ] && PROJECT_WEB_PORT="$_p"
+  fi
+
+  # Env vars chave (só echo das linhas inteiras — preserva comentários)
+  PROJECT_DB_URL_LINE="DATABASE_URL=... (não configurada)"
+  PROJECT_ADMIN_EMAIL_LINE="ADMIN_EMAIL=... (ver docs/auth-rbac.md)"
+  if [ -f "$TARGET_DIR/.env.example" ]; then
+    local _l
+    _l=$(grep -m1 -E '^DATABASE_URL=' "$TARGET_DIR/.env.example" 2>/dev/null || echo "")
+    [ -n "$_l" ] && PROJECT_DB_URL_LINE="$_l"
+    _l=$(grep -m1 -E '^ADMIN_EMAIL=' "$TARGET_DIR/.env.example" 2>/dev/null || echo "")
+    [ -n "$_l" ] && PROJECT_ADMIN_EMAIL_LINE="$_l"
+  fi
+
+  export PROJECT_NAME PROJECT_STACK PROJECT_LAYOUT PROJECT_API_PORT PROJECT_WEB_PORT
+  export PROJECT_DB_URL_LINE PROJECT_ADMIN_EMAIL_LINE
+}
+
+_detect_project_context
+info "Contexto detectado: $PROJECT_NAME · $PROJECT_STACK"
+
 # ── Arquivos globais (sempre copiar) ──────────
 
 # Fonte de verdade: .claude/lib/global-files.sh
@@ -114,6 +171,7 @@ mkdir -p "$TARGET_DIR/.claude/hooks"
 mkdir -p "$TARGET_DIR/.superpowers"
 for file in "${GLOBAL_FILES[@]}"; do
   if [ -f "$SCRIPT_DIR/$file" ]; then
+    mkdir -p "$TARGET_DIR/$(dirname "$file")"
     cp "$SCRIPT_DIR/$file" "$TARGET_DIR/$file"
     ok "$file"
   else
@@ -148,9 +206,172 @@ else
   warn ".claude/commands/ não encontrado no template — pulando"
 fi
 
+# Seeds específicos por agente — hardcoded (extraídos de claude-stacks.md e agent prompts)
+_agent_seeds() {
+  case "$1" in
+    backend-developer) cat <<'S'
+- Rotas em `apps/api/src/routes/<kebab-case>.ts` — registrar no `apps/api/src/index.ts`
+- Schemas vivem em `packages/shared/src/schemas/` (nunca redefinir localmente)
+- `getAuth(c)` é síncrono no Hono — nunca reimplementar JWT ou sessões
+S
+      ;;
+    frontend-developer) cat <<'S'
+- Ler `docs/design-system/design-brief.md` ANTES de implementar qualquer componente
+- 4 estados obrigatórios em todo componente com dados: loading/empty/error/success
+- Data fetching em custom hooks (TanStack Query) — nunca em componentes
+S
+      ;;
+    data-engineer-dba) cat <<'S'
+- Schemas Drizzle + Zod em `packages/shared/src/schemas/` — fonte única de verdade
+- Migrations: `bun run db:generate && bun run db:migrate`
+- Cascade FK documentada no schema (ON DELETE CASCADE / SET NULL / RESTRICT)
+S
+      ;;
+    devops-sre-engineer) cat <<'S'
+- Dockerfile sempre multi-stage + non-root user; base `oven/bun:1.3` (nunca `:latest`)
+- Baseline dev: copiar `templates/docker-compose.yml` + `templates/vite.config.ts` do template
+- CI fail-fast: lint → typecheck → test → sonar → build
+S
+      ;;
+    qa-engineer) cat <<'S'
+- Cobertura mínima 95% em business domain code (validators, routes, auth, edge cases)
+- Cenários de spec mapeados via `it('Cenário X.Y: ...')` — checado por `check-spec-coverage.sh`
+- Test runner único: `bun test` (nunca outro)
+S
+      ;;
+    project-manager) cat <<'S'
+- Backlog em `docs/backlog.md` usa waves (`## Wave: <Nome>`) mapeadas a GitHub Milestones
+- P1/P2/P3 é ordem INTERNA da wave ativa (não global)
+- `/finish` Passo 4: marcar US concluída + rodar sync-github-issues.sh (fecha issue)
+S
+      ;;
+    requirements-roadmap-builder) cat <<'S'
+- PRDs em `plans/<feature>.md` · planos de implementação em `plans/<feature>-plano.md`
+- Cada Fase do plano vira uma Wave no backlog (via PM agent — Passo 5.5 do prd-planejamento)
+- Fase 0 (fundação) → Wave: Backlog (não é entrega visível ao cliente)
+S
+      ;;
+    security-engineer) cat <<'S'
+- OWASP Top 10 + validação Zod em toda rota que aceita input
+- RBAC: Clerk provê identidade; papel (admin/user) em tabela custom — ver `docs/auth-rbac.md`
+- `ADMIN_EMAIL` bootstrap: email === `process.env.ADMIN_EMAIL` → role=admin (determinístico)
+S
+      ;;
+    software-architect) cat <<'S'
+- ADRs em `docs/adr/` numeradas (ADR-0001, ADR-0002, ...)
+- Monorepo: `apps/api`, `apps/web`, `packages/shared` — nunca import runtime cross-app
+- Decisões estruturais antes de código; updates em claude-stacks.md requerem justificativa
+S
+      ;;
+    ux-ui-designer) cat <<'S'
+- `docs/design-system/MASTER.md` é fonte de verdade visual (gerada via pipeline da Parte 2 do DESIGN.md)
+- `design-brief.md` é resumo compacto (~800 tokens) injetado em subagentes de componente
+- Regras estruturais em `DESIGN.md` Parte 1 · personalidade visual em MASTER.md
+S
+      ;;
+    *) cat <<'S'
+- (Sem seeds específicos — agente não-padrão. Adicionar notas manualmente.)
+S
+      ;;
+  esac
+}
+
+# Detecta se MEMORY.md existente é boilerplate legacy (ok sobrescrever)
+# Regra: ≤10 linhas não-comentário E sem marcador "## Project Context"
+_is_boilerplate() {
+  local f="$1"
+  [ ! -f "$f" ] && return 1  # não existe → não é boilerplate, é criação fresh
+  if grep -q "^## Project Context" "$f" 2>/dev/null; then
+    return 1  # já está no formato novo — preservar
+  fi
+  local _non_comment_lines
+  _non_comment_lines=$(grep -cvE '^[[:space:]]*(#|<!--|$)' "$f" 2>/dev/null || echo "0")
+  [ "$_non_comment_lines" -le 10 ]
+}
+
+# Gera MEMORY.md para um agente específico
+_generate_memory_file() {
+  local agent="$1"
+  local dir="$TARGET_DIR/.claude/agent-memory/$agent"
+  local file="$dir/MEMORY.md"
+
+  mkdir -p "$dir"
+
+  # Idempotência: se existe E tem conteúdo real, preservar
+  if [ -f "$file" ] && ! _is_boilerplate "$file"; then
+    ok "agent-memory/$agent/MEMORY.md (preservado — conteúdo custom)"
+    return 0
+  fi
+
+  # Gerar/substituir
+  local _today
+  _today=$(date '+%Y-%m-%d')
+  local _seeds
+  _seeds=$(_agent_seeds "$agent")
+
+  cat > "$file" <<MEMEOF
+# MEMORY.md — $agent
+
+> Memória persistente do agente. Carregada automaticamente via frontmatter \`memory: project\`.
+> Gerada inicialmente por \`./adopt-workflow.sh\` em $_today. Atualizada pelo próprio agente durante sessões.
+
+---
+
+## Project Context (comum)
+
+**Projeto:** $PROJECT_NAME
+**Stack:** $PROJECT_STACK
+**Workspace:** $PROJECT_LAYOUT
+
+**Portas:**
+- API: $PROJECT_API_PORT
+- Web: $PROJECT_WEB_PORT
+
+**Env vars chave:**
+- \`$PROJECT_DB_URL_LINE\`
+- \`$PROJECT_ADMIN_EMAIL_LINE\`
+
+> ℹ️ Se a stack ou estrutura mudou substancialmente, rodar \`./adopt-workflow.sh\` novamente para regenerar esta seção (seeds custom em "Agent-specific notes" são preservados se MEMORY.md tiver >10 linhas não-boilerplate).
+
+---
+
+## Agent-specific notes (seeds)
+
+$_seeds
+
+<!-- Abaixo deste comentário, o agente adiciona suas próprias notas durante o trabalho.
+     Criar arquivos \`feedback_<topico>.md\` no mesmo diretório e linkar aqui. -->
+
+---
+
+## Como Capturar Memória (Session Retrospective)
+
+**Quando:**
+- Padrão novo descoberto (configuração, workaround, decisão de design)
+- Bug resolvido após > 15 min de investigação
+- Decisão arquitetural tomada (e o motivo)
+- Anti-pattern encontrado que deve ser evitado
+
+**Como:**
+1. Criar arquivo \`feedback_<topico>.md\` neste diretório com frontmatter:
+   \`\`\`markdown
+   ---
+   name: [nome curto]
+   description: [1 linha — usado para decidir relevância em futuras sessões]
+   type: feedback
+   ---
+   \`\`\`
+2. Adicionar bullet em "Agent-specific notes" acima linkando para o arquivo
+
+**Promover entre projetos:** se o aprendizado é reutilizável, marcar em \`claude-stacks-refactor.md\` como \`⏳ Pendente\` e rodar \`./promote-learning.sh\` no fim do ciclo.
+MEMEOF
+
+  ok "agent-memory/$agent/MEMORY.md"
+}
+
 # ── Estrutura agent-memory ─────────────────────
 
-info "Criando .claude/agent-memory/..."
+info "Criando .claude/agent-memory/ com Project Context + seeds por agente..."
 AGENTS=(
   "backend-developer"
   "data-engineer-dba"
@@ -164,19 +385,7 @@ AGENTS=(
   "ux-ui-designer"
 )
 for agent in "${AGENTS[@]}"; do
-  mkdir -p "$TARGET_DIR/.claude/agent-memory/$agent"
-  if [ ! -f "$TARGET_DIR/.claude/agent-memory/$agent/MEMORY.md" ]; then
-    cat > "$TARGET_DIR/.claude/agent-memory/$agent/MEMORY.md" << MEMEOF
-# MEMORY.md — $agent
-
-> Memória persistente do agente. Atualizada automaticamente durante o desenvolvimento.
-
-## Índice
-
-<!-- Entradas adicionadas pelo agente durante sessões -->
-MEMEOF
-    ok "agent-memory/$agent/MEMORY.md"
-  fi
+  _generate_memory_file "$agent"
 done
 
 # ── Arquivos instanciados (copiar se não existem) ──

@@ -5,6 +5,70 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.0.0] — 2026-04-24
+
+### Mudanças estruturais (4 ondas de remediação baseadas em diagnóstico de uso real)
+
+#### Onda 1 — Destravar fluxo (agentes não-órfãos + STOP protocol)
+- **`backend-developer.md` + `frontend-developer.md`**: integração explícita do STOP protocol do `claude-debug.md` — agentes nunca contornam bugs pré-existentes (≤30min corrige em commit separado, >30min retorna `STATUS: BLOCKED` e cria P1 no backlog). Novos checks em QUALITY SELF-CHECKS / ASSURANCE.
+- **`/feature`**: Passo 5 reescrito com subpassos 5.1 (QA review via `qa-engineer` — sempre obrigatório) e 5.2 (Security review via `security-engineer` — condicional em gatilhos: auth, input, segredos, CORS/CSP, middleware).
+- **`/continue`**: vira PM refresh → feature → PM close. Passo 0 (PM refresh) reconcilia status com git log. Passo 2 (PM close) fecha task e sincroniza GitHub Issues.
+- **`post-tool-use.sh`**: detecta edits em `claude-stacks-refactor.md`/`claude-stacks.md` e alerta sobre entries `⏳ Pendente` (lembra de rodar `./promote-learning.sh`). Restruturado com `_RUN_QUALITY` flag + async para não bloquear.
+- **`CLAUDE.md`**: tabela ROUTING expandida com coluna "Invocação" (zero agentes órfãos). OWNERSHIP inclui QA, Security, PM como donos formais. PROIBIÇÕES novas bloqueando pular QA/Security e contornar bugs pré-existentes.
+
+#### Onda 2 — Scaffold Quality (templates + RBAC + ui-ux pré-requisito)
+- **`templates/docker-compose.yml`**: sample novo com stack completa (api, web, postgres, minio, backup) + bind-mounts + `CHOKIDAR_USEPOLLING` + `WATCHPACK_POLLING` para Windows/Docker + healthchecks.
+- **`templates/vite.config.ts`**: sample com `server.host: true` + `server.hmr.host: "localhost"` + `server.watch.usePolling: true` — HMR funciona em WSL2 bind-mounts.
+- **`templates/README.md`**: regras de uso + checklist HMR de 6 itens obrigatório para advance à Fase 5.
+- **`docs/auth-rbac.md`**: padrão RBAC híbrido documentado — Clerk (identidade) + tabela `users` custom (role enum) + bootstrap determinístico (`email === ADMIN_EMAIL` → `role=admin`). Schema Drizzle, middleware `requireRole`, service `ensureUser`, 6 casos de teste obrigatórios.
+- **`claude-stacks.md`**: nova env var `ADMIN_EMAIL` + nota RBAC no Auth middleware + nota templates/ no Dev workflow.
+- **`DESIGN.md`**: `ui-ux-pro-max` elevada a pré-requisito explícito de `/new-project` (aviso ⚠️ no topo da Parte 2).
+- **`devops-sre-engineer.md`**: FASE 4 ganha baseline templates/ + checklist HMR de 9 itens como gate para FASE 5.
+
+#### Hotfixes de performance (durante Onda 2)
+- **`.claude/settings.json`**: hook `bun install` agora é **condicional por hash SHA-256** de `package.json`+`bun.lock` (só roda quando deps mudaram) + `async: true` (não bloqueia `bun test`). Em ciclos TDD, economia de 5-30min por feature.
+- **`CLAUDE_TEMPLATE_ROOT`**: exportado pelos hooks em `settings.json`, eliminando `git rev-parse` redundante em `post-tool-use.sh` (~100-200ms/invocação no Windows).
+- **`check-quality.sh` HOOK_MODE**: quando chamado com `--from-output` (via hook PostToolUse), pula `bunx biome check .` (2-10s) e `bun run typecheck` (5-30s) — deferido para execução manual em VERIFY/FINISH/CI. DoD markers mostram `⏸️ deferido`.
+
+#### Hotfixes sync-globals.sh (durante remediação — 2 bugs pré-existentes)
+- **`DOWNLOAD_ERRORS unbound variable`**: variável referenciada mas nunca inicializada → `set -u` matava o script após downloads bem-sucedidos. Fix: `DOWNLOAD_ERRORS=0` antes do loop.
+- **Self-overwrite mid-execution**: script se sobrescrevia durante `cp` no loop de apply, causando `bash: syntax error near unexpected token '('`. Fix: self-update deferido para o final do script com `exit 0` explícito.
+
+#### Onda 3 — Backlog em Ondas (waves → GitHub Milestones)
+- **`docs/backlog.md`**: novo formato com `## Wave: <Nome>` como agrupador de alto nível (entrega ao cliente final) + blockquote `> Milestone GitHub: \`<Nome>\` · Meta: <descrição>`. P1/P2/P3 vira ordem **INTERNA** da wave ativa.
+- **`sync-github-issues.sh`**: parser detecta waves e injeta `--milestone <Nome>` em `gh issue create`. Wave `Backlog` (catch-all) → issue sem milestone. Back-compat com formato antigo preservada.
+- **`setup-github-project.sh`**: substitui 6 milestones hardcoded (`Epico 1-6`) por geração automática a partir de waves do backlog. Idempotente.
+- **`/finish`**: novo Passo 4 — PM marca US concluída em backlog (`**Status:** concluída` + tasks `[x]`) + roda sync-github-issues.sh para fechar issue.
+- **`/continue`**: Passo 0 PM prioriza **wave ativa** (primeira wave não-concluída) em vez de P1 global.
+- **`prd-planejamento` skill**: novo Passo 5.5 ensina PM agent a sintetizar backlog com waves a partir das Fases do plano.
+
+#### Onda 4 — Memória que aprende (bootstrap real + density report)
+- **`adopt-workflow.sh`**: 4 funções novas — `_detect_project_context` (extrai nome, stack, workspace, portas, env vars do target), `_agent_seeds` (seeds de domínio hardcoded por agente — 10 agentes cobertos), `_is_boilerplate` (detecta formato legacy: ≤10L não-comentário sem marcador `## Project Context`), `_generate_memory_file` (idempotente — preserva custom, substitui boilerplate).
+- Cada MEMORY.md gerado tem 3 seções: **Project Context** (comum — inline), **Agent-specific notes** (seeds de domínio — rotas em apps/api/src/routes para backend, 4 estados obrigatórios para frontend, etc.), **Como Capturar Memória** (guia de retrospective).
+- **`check-health.sh`**: substitui resumo binário por **tabela visual de densidade por agente** — barra proporcional 10-char + linhas + tópicos + idade/status (`atualizado Xd` ou `boilerplate`). Resumo com média, contagem de boilerplate, contagem de sem-tópicos. Assert mode (`--assert`) falha se há boilerplate.
+
+### Observações da jornada
+
+- **~2.600 linhas** alteradas no template (excluindo specs/plans das ondas)
+- **~50% redução de overhead de processo** ao longo das 4 ondas (paralelismo de subagentes evoluiu de 18 invocações serial na Onda 1 para ~9 na Onda 3)
+- **0 agentes órfãos** após Onda 1 (10 de 10 com caminho de invocação explícito)
+- **2 bugs pré-existentes** consertados dogfood-style (sync-globals — unbound var + self-overwrite)
+- **4 ofensores de performance** identificados e corrigidos
+
+### Arquivos novos
+
+- `templates/README.md`, `templates/docker-compose.yml`, `templates/vite.config.ts`
+- `docs/auth-rbac.md`
+- `docs/superpowers/specs/2026-04-23-onda-1-destravar-fluxo.md`
+- `docs/superpowers/specs/2026-04-23-onda-3-backlog-ondas-design.md`
+- `docs/superpowers/specs/2026-04-24-onda-4-memoria-design.md`
+- `docs/superpowers/plans/2026-04-23-onda-1-destravar-fluxo.md`
+- `docs/superpowers/plans/2026-04-23-onda-2-scaffold-quality.md`
+- `docs/superpowers/plans/2026-04-23-onda-3-backlog-ondas.md`
+- `docs/superpowers/plans/2026-04-24-onda-4-memoria.md`
+
+---
+
 ## [1.7.0] — 2026-04-20
 
 ### Refatorado (P2.1 + P2.3)

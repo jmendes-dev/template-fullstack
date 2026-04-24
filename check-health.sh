@@ -55,28 +55,117 @@ else
 fi
 echo ""
 
-# ── 3. Memória dos agentes ─────────────────────────────────────
-echo "🧠 Memória dos Agentes"
-EMPTY_COUNT=0
-TOTAL_COUNT=0
-if [ -d ".claude/agent-memory" ]; then
-  for mem_file in .claude/agent-memory/*/MEMORY.md; do
-    if [ -f "$mem_file" ]; then
-      TOTAL_COUNT=$((TOTAL_COUNT + 1))
-      LINE_COUNT=$(wc -l < "$mem_file" | tr -d '[:space:]')
-      if [ "$LINE_COUNT" -lt 10 ]; then
-        EMPTY_COUNT=$((EMPTY_COUNT + 1))
-      fi
-    fi
-  done
-fi
-FILLED=$((TOTAL_COUNT - EMPTY_COUNT))
-if [ "$EMPTY_COUNT" -eq 0 ] && [ "$TOTAL_COUNT" -gt 0 ]; then
-  ok "Memória: todos os $TOTAL_COUNT agentes com conteúdo"
-elif [ "$EMPTY_COUNT" -gt 0 ]; then
-  warn "Memória: $FILLED/$TOTAL_COUNT agentes com conteúdo ($EMPTY_COUNT vazios — acumular via uso)"
-else
+# ── 3. Memória dos agentes (densidade com barra visual) ─────────
+echo "🧠 Memória dos Agentes (densidade)"
+echo ""
+
+if [ ! -d ".claude/agent-memory" ]; then
   err "Nenhum agent-memory/ encontrado"
+  echo ""
+else
+  # Coletar dados de cada agente em arrays paralelos
+  _MEM_AGENTS=()
+  _MEM_LINES=()
+  _MEM_TOPICS=()
+  _MEM_AGE_DAYS=()
+  _MEM_IS_BOIL=()
+  _MAX_LINES=1  # evita divisão por zero
+  _BOIL_COUNT=0
+  _NO_TOPIC_COUNT=0
+  _TOTAL_LINES=0
+  _AGENT_COUNT=0
+
+  for dir in .claude/agent-memory/*/; do
+    agent=$(basename "$dir")
+    [ "$agent" = "*" ] && continue  # diretório vazio
+    memfile="$dir/MEMORY.md"
+    [ ! -f "$memfile" ] && continue
+
+    _AGENT_COUNT=$((_AGENT_COUNT + 1))
+    lines=$(wc -l < "$memfile" 2>/dev/null | tr -d '[:space:]')
+    lines=${lines:-0}
+    _TOTAL_LINES=$((_TOTAL_LINES + lines))
+    [ "$lines" -gt "$_MAX_LINES" ] && _MAX_LINES=$lines
+
+    # Contar arquivos .md no diretório EXCLUINDO MEMORY.md
+    topics=$(find "$dir" -maxdepth 1 -type f -name "*.md" ! -name "MEMORY.md" 2>/dev/null | wc -l | tr -d '[:space:]')
+    topics=${topics:-0}
+    [ "$topics" -eq 0 ] && _NO_TOPIC_COUNT=$((_NO_TOPIC_COUNT + 1))
+
+    # Idade em dias
+    now_sec=$(date +%s)
+    # stat funciona diferente em Linux (-c) vs Mac (-f); tentar ambos
+    mod_sec=$(stat -c %Y "$memfile" 2>/dev/null || stat -f %m "$memfile" 2>/dev/null || echo "$now_sec")
+    age_days=$(( (now_sec - mod_sec) / 86400 ))
+
+    # Detectar boilerplate (mesma regra de adopt-workflow)
+    non_comment=$(grep -cvE '^[[:space:]]*(#|<!--|$)' "$memfile" 2>/dev/null || echo "0")
+    is_boil=0
+    if [ "$non_comment" -le 10 ] && ! grep -q "^## Project Context" "$memfile" 2>/dev/null; then
+      is_boil=1
+      _BOIL_COUNT=$((_BOIL_COUNT + 1))
+    fi
+
+    _MEM_AGENTS+=("$agent")
+    _MEM_LINES+=("$lines")
+    _MEM_TOPICS+=("$topics")
+    _MEM_AGE_DAYS+=("$age_days")
+    _MEM_IS_BOIL+=("$is_boil")
+  done
+
+  # Imprimir tabela
+  _i=0
+  while [ "$_i" -lt "${#_MEM_AGENTS[@]}" ]; do
+    agent="${_MEM_AGENTS[$_i]}"
+    lines="${_MEM_LINES[$_i]}"
+    topics="${_MEM_TOPICS[$_i]}"
+    age="${_MEM_AGE_DAYS[$_i]}"
+    boil="${_MEM_IS_BOIL[$_i]}"
+
+    # Barra: proporção de linhas / max × 10
+    filled=$(( lines * 10 / _MAX_LINES ))
+    [ "$filled" -gt 10 ] && filled=10
+    [ "$filled" -lt 0 ] && filled=0
+    bar=""
+    j=0
+    while [ "$j" -lt "$filled" ]; do bar="${bar}█"; j=$((j+1)); done
+    while [ "$j" -lt 10 ]; do bar="${bar}░"; j=$((j+1)); done
+
+    # Age label
+    if [ "$age" -gt 30 ]; then
+      age_label="30d+"
+    else
+      age_label="${age}d"
+    fi
+
+    # Status extra
+    if [ "$boil" -eq 1 ]; then
+      status_label="boilerplate"
+    else
+      status_label="atualizado $age_label"
+    fi
+
+    # Formato: nome padded a 28 chars
+    printf '  %-28s : %s %3dL · %d tópicos · %s\n' "$agent" "$bar" "$lines" "$topics" "$status_label"
+    _i=$((_i + 1))
+  done
+
+  # Resumo
+  echo "  ────────────────────────────────────────────────────────────────────"
+  if [ "$_AGENT_COUNT" -gt 0 ]; then
+    avg=$(( _TOTAL_LINES / _AGENT_COUNT ))
+    summary="Média: ${avg}L/agente"
+    [ "$_BOIL_COUNT" -gt 0 ] && summary="$summary · $_BOIL_COUNT agente(s) com boilerplate"
+    [ "$_NO_TOPIC_COUNT" -gt 0 ] && summary="$summary · $_NO_TOPIC_COUNT agente(s) sem tópicos"
+    info "$summary"
+  else
+    warn "Nenhum MEMORY.md encontrado em agent-memory/"
+  fi
+
+  # Assert mode: falha se há boilerplate
+  if [ "$ASSERT_MODE" = true ] && [ "$_BOIL_COUNT" -gt 0 ]; then
+    FAILURES=$((FAILURES + 1))
+  fi
 fi
 echo ""
 

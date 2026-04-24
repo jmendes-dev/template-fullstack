@@ -12,15 +12,22 @@ Use para continuar o desenvolvimento a partir do backlog priorizado.
 
 Despachar `project-manager` via Agent tool. Prompt esperado:
 
-> Refresh do backlog em `docs/backlog.md`: (a) reconciliar status de tasks concluídas no último ciclo cruzando com `git log --since="7 days ago"`; (b) recalcular ordem de prioridade (P1 > P2 > P3); (c) identificar a próxima P1 pronta para execução (sem dependências não resolvidas). Reportar com `STATUS: DONE` e bloco:
+> Refresh do backlog em `docs/backlog.md`:
+> (a) reconciliar status de tasks concluídas no último ciclo cruzando com `git log --since="7 days ago"`
+> (b) identificar a **wave ativa** — primeira wave (do topo para baixo) com pelo menos uma US que NÃO está `**Status:** concluída`. Ignorar wave `Backlog` para essa finalidade.
+> (c) dentro da wave ativa, recalcular ordem de prioridade (P1 > P2 > P3) e identificar a próxima P1 pronta (sem dependências não resolvidas).
+> (d) se a wave ativa está completa (todas USs com status concluída), informar e sugerir iniciar a próxima wave OU promover USs da wave `Backlog`.
+>
+> Reportar com `STATUS: DONE` e bloco:
 >
 > ```
+> WAVE ATIVA: <nome> (<X> de <Y> USs concluídas)
 > PRÓXIMA P1: <título>
 > Dependências: <nenhuma | lista>
 > Estimativa: XS/S/M/L/XL
 > ```
 
-Se PM retornar `STATUS: BLOCKED` (ex: nenhuma P1 pronta) → perguntar ao usuário como proceder antes de seguir.
+Se PM retornar `STATUS: BLOCKED` (ex: nenhuma wave com P1 pronta) → perguntar ao usuário como proceder antes de seguir.
 
 ### Passo 1 — Apresentar e executar
 

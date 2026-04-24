@@ -40,10 +40,23 @@ Seguir o procedimento da skill para:
 - Criar PR com template
 - Aguardar aprovação ou auto-merge se configurado
 - Limpar a branch e o worktree
-- Atualizar `docs/backlog.md` com o item concluído
+
+### 4 — Atualizar backlog + fechar issue (obrigatório)
+
+Após merge do PR, despachar `project-manager` via Agent tool. Prompt esperado:
+
+> Para a US recém-finalizada (ID extraído do título do PR/commit, formato `US-<N>`):
+> (a) Em `docs/backlog.md`: alterar `**Status:** pendente|em andamento` para `**Status:** concluída`; marcar todas as tasks pendentes (`- [ ]`) da US como concluídas (`- [x]`).
+> (b) Commitar com mensagem `docs(backlog): US-<N> concluída`.
+> (c) Rodar `./sync-github-issues.sh` — fingerprint detecta mudança de status e fecha a issue GitHub correspondente automaticamente.
+> (d) Confirmar via `gh issue view <N>` que a issue está `state: closed`.
+> (e) Se a US era a última pendente da wave ativa, mencionar no relatório que a wave foi completada e sugerir próximos passos (iniciar próxima wave, ou promover USs da wave `Backlog`).
+>
+> Reportar com `STATUS: DONE` e lista de arquivos atualizados + número da issue fechada + status da milestone da wave.
 
 ## Regras
 
 - ❌ Merge sem todos os itens da verificação passando
 - ❌ Merge sem code review
 - ❌ `--force`, `--no-verify`, `[skip ci]`
+- ❌ Pular Passo 4 (backlog desatualizado rompe visibilidade de progresso das waves no GitHub Milestones)

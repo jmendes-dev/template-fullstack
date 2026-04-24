@@ -81,8 +81,8 @@ Para refatoração, invocar **`/refactor`**.
 
 | Gatilho | Script |
 |---|---|
-| `docs/backlog.md` atualizado | `./sync-github-issues.sh` |
-| Primeiro uso em projeto novo | `./setup-github-project.sh` |
+| `docs/backlog.md` atualizado | `./sync-github-issues.sh` (detecta `## Wave:` e mapeia para GitHub Milestone) |
+| Primeiro uso em projeto novo | `./setup-github-project.sh` (cria milestones a partir das waves do backlog) |
 | `claude-stacks-refactor.md` com `⏳ Pendente` | Perguntar: rodar `./promote-learning.sh`? |
 | Verificar saúde do projeto | `./check-health.sh` |
 | Após `bun test` (automático via hook) | `./check-quality.sh` |

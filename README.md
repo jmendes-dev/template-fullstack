@@ -117,19 +117,32 @@ Continuar o backlog
 ### 1. Preview — ver o que seria instalado antes de aplicar
 
 ```bash
-# Do diretório do template
+# Do diretório do template (Linux/macOS/WSL)
 ./adopt-workflow.sh --dry-run /path/to/seu-projeto
+
+# Windows nativo (PowerShell 7+) — significativamente mais rápido
+pwsh ./adopt-workflow.ps1 --dry-run C:\path\to\seu-projeto
 ```
 
 ### 2. Aplicar o workflow
 
 ```bash
+# Linux/macOS/WSL
 ./adopt-workflow.sh /path/to/seu-projeto
 cd /path/to/seu-projeto
 git add . && git commit -m "docs: adopt SDD/TDD workflow"
 ```
 
-> `adopt-workflow.sh` detecta contexto do projeto (stack, workspace, portas, env vars) e **popula cada `MEMORY.md` com Project Context + seeds específicos do agente**. Copia: `CLAUDE.md`, agentes, commands, hooks, scripts, estrutura `docs/`, `agent-memory/`. **Nunca** sobrescreve código de aplicação nem `MEMORY.md` com conteúdo customizado (>10 linhas não-boilerplate).
+```powershell
+# Windows nativo (PowerShell 7+)
+pwsh ./adopt-workflow.ps1 C:\path\to\seu-projeto
+cd C:\path\to\seu-projeto
+git add . && git commit -m "docs: adopt SDD/TDD workflow"
+```
+
+> `adopt-workflow.sh` / `adopt-workflow.ps1` detectam contexto do projeto (stack, workspace, portas, env vars) e **populam cada `MEMORY.md` com Project Context + seeds específicos do agente**. Copiam: `CLAUDE.md`, agentes, commands, hooks, scripts, estrutura `docs/`, `agent-memory/`. **Nunca** sobrescrevem código de aplicação nem `MEMORY.md` com conteúdo customizado (>10 linhas não-boilerplate).
+>
+> **Windows**: prefira `adopt-workflow.ps1` — usa cmdlets nativos (`Copy-Item`, `Select-String`, `ConvertFrom-Json`) sem spawnar processos externos, eliminando o overhead de ~150 subprocessos do `.sh` via Git Bash.
 
 ### 3. Ajustar CLAUDE.md ao projeto
 
@@ -404,7 +417,8 @@ Configure via `cd-railway.yml.example`. Migrations como pre-deploy command. Ver 
 | Puxar atualizações do template (via GitHub) | `./sync-globals.sh` | No projeto |
 | Puxar de cópia local do template | `./sync-globals.sh /path/template` | No projeto |
 | Enviar aprendizados para o template | `./promote-learning.sh /path/template` | No projeto |
-| Preview antes de adotar | `./adopt-workflow.sh --dry-run /path` | No template |
+| Preview antes de adotar (Linux/macOS) | `./adopt-workflow.sh --dry-run /path` | No template |
+| Preview antes de adotar (Windows) | `pwsh ./adopt-workflow.ps1 --dry-run /path` | No template |
 
 O sync **nunca** toca: `CLAUDE.md`, `claude-stacks-refactor.md`, `docs/`, `.claude/agent-memory/`, `.claude/settings*.json`.
 
@@ -425,7 +439,8 @@ O Claude registra padrões novos e bugs evitáveis em `claude-stacks-refactor.md
 | `./check-health.sh [--assert]` | Diagnóstico do workflow + densidade de memória por agente (`--assert` falha se há boilerplate) |
 | `./check-quality.sh [--from-output FILE]` | Roda testes + lint + typecheck + spec coverage. Com `--from-output`: HOOK_MODE (pula lint/tc) |
 | `./check-spec-coverage.sh [specs-dir]` | Verifica cenários de spec → testes correspondentes |
-| `./adopt-workflow.sh [--dry-run] /path` | Adota workflow em projeto existente (+ Project Context em MEMORY.md) |
+| `./adopt-workflow.sh [--dry-run] /path` | Adota workflow em projeto existente — Linux/macOS/WSL (+ Project Context em MEMORY.md) |
+| `pwsh ./adopt-workflow.ps1 [--dry-run] /path` | Versão PowerShell nativa para Windows — mesma lógica, sem overhead de subprocessos |
 | `./sync-globals.sh [/path/template]` | Atualiza arquivos globais (self-update deferido para evitar bash race) |
 | `./promote-learning.sh /path/template` | Promove aprendizados de volta ao template |
 | `./setup-github-project.sh` | Cria GitHub Project board + labels + **Milestones das waves do backlog** |
@@ -508,7 +523,8 @@ docs/
 
 setup-github-project.sh      ← Cria labels + milestones das waves
 sync-github-issues.sh        ← backlog.md → GitHub Issues (com milestones)
-adopt-workflow.sh            ← Adota template + gera MEMORY.md ricos
+adopt-workflow.sh            ← Adota template + gera MEMORY.md ricos (Linux/macOS/WSL)
+adopt-workflow.ps1           ← Versão PowerShell nativa (Windows — sem overhead de subprocessos)
 sync-globals.sh              ← Puxa atualizações do template (self-update deferido)
 promote-learning.sh          ← Promove aprendizados de projeto → template
 check-health.sh              ← Diagnóstico + densidade de memória

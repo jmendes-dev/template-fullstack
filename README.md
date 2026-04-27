@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Workflow SDD/TDD com Claude Code para projetos fullstack TypeScript.
-> Versão: **v2.0.0** · [Changelog](CHANGELOG.md)
+> Versão: **v2.1.0** · [Changelog](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun ≥1.3 · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui · Clerk
 
@@ -22,6 +22,7 @@ Um template que transforma o Claude Code em um orquestrador de desenvolvimento d
 - **RBAC pattern documentado**: Clerk (identidade) + tabela custom (papéis) + bootstrap determinístico via `ADMIN_EMAIL`
 - **Scaffolds prontos**: samples de `docker-compose.yml` e `vite.config.ts` com HMR configurado para Docker+Windows (polling correto)
 - **Memória persistente que aprende**: cada agente recebe Project Context + seeds de domínio no bootstrap; `check-health.sh` reporta densidade
+- **Five-response selector**: para toda resposta substantiva, 5 candidatos são avaliados internamente com fórmula ponderada (`acurácia × 0.30 + completude × 0.25 + alinhamento × 0.25 + praticidade × 0.15 + segurança × 0.05`) — apenas o de maior probabilidade é entregue
 - **Quality gates automáticos**: lint, typecheck, coverage e spec-coverage no CI
 - **Hooks otimizados**: injeção de contexto, `bun install` condicional por hash, quality dashboard em background
 
@@ -58,6 +59,7 @@ Um template que transforma o Claude Code em um orquestrador de desenvolvimento d
 | `drizzle-database-debugging` | Debug de queries, migrations e schemas Drizzle |
 | `react-tanstack-debugging` | Debug de componentes React/TanStack Query |
 | `escalation-and-bug-journal` | Journaling de bugs persistentes após 3 tentativas |
+| `five-response-selector` | Protocolo de resposta: 5 candidatos + probabilidade ponderada — local em `.claude/skills/` |
 
 ---
 
@@ -493,9 +495,10 @@ templates/                   ← Samples prontos para scaffold em /new-project
   agent-memory/              ← MEMORY.md por agente (Project Context + seeds + session retro)
   settings.example.json      ← Settings com hooks (copiar para settings.json)
   settings.local.example.json
-  skills/                    ← Skills locais (novo-prd, prd-planejamento)
+  skills/                    ← Skills locais (novo-prd, prd-planejamento, five-response-selector)
     novo-prd/SKILL.md
     prd-planejamento/SKILL.md
+    five-response-selector/SKILL.md  ← Protocolo de resposta: 5 candidatos + probabilidade
 
 .github/
   pull_request_template.md   ← Template de PR com DoD checklist
@@ -536,6 +539,7 @@ check-spec-coverage.sh       ← Valida cenários de spec → testes
 
 ## Changelog resumido
 
+- **v2.1.0** (2026-04-27) — Five-response selector: protocolo obrigatório de resposta com 5 candidatos avaliados por fórmula ponderada; skill local em `.claude/skills/five-response-selector/`; CLAUDE.md atualizado com seção `🎯 PROTOCOLO DE RESPOSTA`.
 - **v2.0.0** (2026-04-24) — 4 ondas de remediação: agentes não-órfãos com QA+Security integrados, scaffolds Docker/Vite/RBAC, backlog em waves → milestones, memória persistente com bootstrap rico. Ver `CHANGELOG.md`.
 - **v1.7.0** (2026-04-20) — DESIGN.md 60% menor, global-files.sh como fonte única
 - **v1.6.0** (2026-04-19) — README condensado, versões pinadas extraídas

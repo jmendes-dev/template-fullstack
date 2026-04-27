@@ -6,6 +6,19 @@
 
 ---
 
+## 🎯 PROTOCOLO DE RESPOSTA — OBRIGATÓRIO PARA TODA RESPOSTA
+
+Antes de entregar **qualquer** resposta substantiva ao usuário:
+1. Invocar skill `five-response-selector`
+2. Gerar internamente 5 candidatos de resposta
+3. Pontuar cada candidato com a fórmula de probabilidade do skill
+4. Retornar **apenas** o candidato de maior probabilidade
+5. Append ao final: `[Candidato X selecionado | P = 0.XX | 5 avaliados]`
+
+**Exceções** (não aplicar): confirmações de uma palavra ("ok", "sim"), etapas internas de workflow de skills.
+
+---
+
 ## 🔀 TRIAGEM — Todo pedido segue este fluxo
 
 Para qualquer pedido novo ou ambíguo, invocar **`/triage`**.
@@ -61,6 +74,7 @@ Para refatoração, invocar **`/refactor`**.
 
 | Situação | Skill OBRIGATÓRIA |
 |---|---|
+| **Antes de qualquer resposta substantiva** | `five-response-selector` |
 | Qualquer feature nova ou criativa | `superpowers:brainstorming` |
 | Spec aprovado → decompor em micro-tasks | `superpowers:writing-plans` |
 | Executando plano na sessão atual | `superpowers:subagent-driven-development` |

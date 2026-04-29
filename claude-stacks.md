@@ -184,6 +184,7 @@ Toda rota usa `c.json({ data: ... })`. Nunca array/objeto solto. Frontend acessa
 - Variáveis de ambiente via Railway dashboard
 - Railway detecta Dockerfile automaticamente
 - **Migrations**: rodar como [pre-deploy command](https://docs.railway.com/guides/pre-deploy-command) → `bun run db:migrate`
+- **railway.toml**: `preDeployCommand` deve ficar em `[deploy]`, nunca em `[deploy.lifecycle]` — esta seção não existe no schema do Railway e é silenciosamente ignorada, fazendo migrations nunca rodarem
 
 ### Portainer (on-premises)
 - Deploy via **Portainer Stacks** — cada ambiente (UAT, PRD) é uma stack separada com seu próprio compose
@@ -192,6 +193,7 @@ Toda rota usa `c.json({ data: ... })`. Nunca array/objeto solto. Frontend acessa
 - Migrations: via entrypoint script (`bun run db:migrate && bun run start`)
 - Volumes nomeados para dados persistentes (postgres data)
 - Webhook Portainer dispara redeploy após push da imagem
+- **Dockerfile multi-stage**: migrations Drizzle ficam em `apps/api/drizzle/` — `COPY --from=builder /app/apps/api/drizzle ./drizzle`. Nunca `COPY --from=builder /app/drizzle ./drizzle` (caminho não existe no builder)
 
 **Três compose files**:
 

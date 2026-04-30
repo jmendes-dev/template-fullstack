@@ -317,6 +317,11 @@ for cmd in "${CHANGED_COMMANDS[@]}"; do
   ok "Atualizado: .claude/commands/$cmd"
 done
 
+# Atualizar .template-version para que próximas execuções não exibam falso "desatualizado"
+if [ -f "$TEMP_DIR/TEMPLATE_VERSION" ]; then
+  cp "$TEMP_DIR/TEMPLATE_VERSION" "./.template-version"
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✅ $CHANGES arquivo(s) sincronizado(s)"

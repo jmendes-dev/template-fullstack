@@ -51,7 +51,33 @@ Depois, invocar automaticamente a personal skill correspondente ao contexto:
 
 **Nunca invocar mais de uma personal skill simultaneamente.** Diagnosticar, isolar, fixar uma de cada vez.
 
-## Passo 5 — Fix com TDD
+## Passo 4.5 — Tech Lead Brief (bugs não-óbvios)
+
+> **Aplicar apenas se o bug passou pelo Passo 4** (systematic-debugging + personal skill).
+> Bugs óbvios (triados no Passo 3 → TDD direto) pulam este passo.
+
+Invocar agente `tech-lead` via Agent tool com o seguinte contexto:
+
+```
+Tipo: BUG_FIX
+Descrição original: <bug reportado em $ARGUMENTS>
+Output do diagnóstico: <resultado do systematic-debugging e personal skill do Passo 4>
+Spec de referência: <docs/specs/US-XX.spec.md se existir, senão omitir>
+```
+
+O tech-lead assume a implementação a partir daqui:
+- ANALYZE → confirma causa raiz diretamente no código
+- BRIEF → cria `docs/tasks/brief-YYYY-MM-DD-<slug>.md` com critérios de aceite específicos
+- DELEGATE → despacha ao especialista correto (backend-developer, frontend-developer, etc.)
+- VALIDATE → verifica critérios de aceite de forma independente; back-delega se necessário
+
+O Passo 5 (Fix com TDD) é executado **dentro** do tech-lead, pelo agente especialista.
+Avançar para Passo 6 apenas após o tech-lead reportar `STATUS: VALIDATED`.
+
+## Passo 5 — Fix com TDD (bugs óbvios — sem tech-lead)
+
+> **Apenas para bugs triados no Passo 3 como óbvios** (typo, import errado, campo faltando, configuração).
+> Bugs não-óbvios são tratados no Passo 4.5.
 
 1. Escrever **teste que reproduz o bug** (Red)
 2. Implementar fix mínimo (Green) — não refatorar

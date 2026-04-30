@@ -33,10 +33,30 @@ O plano deve:
 
 Invocar skill: `superpowers:subagent-driven-development`
 
-Para cada task do plano:
-- Invocar skill: `superpowers:test-driven-development` (obrigatório por task)
-- Despachar agente correto conforme tabela de routing (ver `/triage`)
-- Verificar que nenhuma task P2/P3 é iniciada com P1 pendentes
+### Fluxo por task (via tech-lead)
+
+Para cada task do plano, **não despachar o especialista diretamente**. Invocar o agente `tech-lead` como intermediário:
+
+```
+Para tasks independentes (sem dependência entre si):
+  1. [PARALELO] Invocar tech-lead para cada task com:
+       - Contexto da task (descrição do plano)
+       - Spec de referência: docs/specs/US-XX.spec.md (se existir)
+       - Critérios de aceite do spec mapeados para esta task
+     → Tech-lead executa ANALYZE + BRIEF em paralelo para todas
+  2. [PARALELO] Tech-lead executa DELEGATE em paralelo → especialistas trabalham
+  3. [INDIVIDUAL] Tech-lead executa VALIDATE por task:
+       STATUS: VALIDATED → avançar para próxima task
+       STATUS: ESCALATED → pausar essa task, reportar ao orquestrador, continuar as outras
+
+Para tasks com dependência (ex: schema antes de endpoint):
+  → Executar em sequência mesmo no modo paralelo
+  → Aguardar VALIDATED da task anterior antes de iniciar a seguinte
+```
+
+- `superpowers:test-driven-development` é executado pelo especialista, dentro do tech-lead
+- Nenhuma task P2/P3 iniciada com P1 pendentes
+- Avançar para Passo 5 apenas após todas as tasks reportarem `VALIDATED`
 
 **O orquestrador não escreve código de produção diretamente.**
 

@@ -45,6 +45,7 @@ Para refatoração, invocar **`/refactor`**.
 | Levantamento de requisitos, roadmap | `requirements-roadmap-builder` | `/new-project` Fase 1/2 |
 | Test plans, coverage, bug reports | `qa-engineer` | `/feature` Passo 5.1 (sempre) |
 | OWASP, dependency audit, security review | `security-engineer` | `/feature` Passo 5.2 (gatilhos: auth, input, segredos, CORS) |
+| Bug não-óbvio após diagnóstico ou task de feature antes de delegar | `tech-lead` | `/bug` Passo 4.5 e `/feature` Passo 4 |
 
 ---
 
@@ -59,6 +60,7 @@ Para refatoração, invocar **`/refactor`**.
 | Redigir spec | `claude-sdd.md` + `/feature` | template + command |
 | Decompor em micro-tasks | `superpowers:writing-plans` | skill |
 | Executar tasks em paralelo | `superpowers:subagent-driven-development` | skill |
+| Analisar causa raiz + criar brief + delegar + validar | `tech-lead` | agente (intermediário entre orquestrador e especialista) |
 | QA review de cada feature | `qa-engineer` + `/feature` Passo 5.1 | agente |
 | Security review condicional | `security-engineer` + `/feature` Passo 5.2 | agente |
 | Manter backlog vivo | `project-manager` + `/continue` Passos 0/2 | agente |

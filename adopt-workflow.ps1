@@ -97,6 +97,7 @@ $AGENT_FILES = @(
     'requirements-roadmap-builder.md'
     'security-engineer.md'
     'software-architect.md'
+    'tech-lead.md'
     'ux-ui-designer.md'
 )
 

@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Workflow SDD/TDD com Claude Code para projetos fullstack TypeScript.
-> Versão: **v2.1.0** · [Changelog](CHANGELOG.md)
+> Versão: **v2.2.0** · [Changelog](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun ≥1.3 · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui · Clerk
 
@@ -15,7 +15,8 @@ Um template que transforma o Claude Code em um orquestrador de desenvolvimento d
 
 - **SDD** (Spec-Driven Development): contratos aprovados antes de qualquer código
 - **TDD enforced**: testes antes da implementação, cobertura ≥ 95% por módulo
-- **10 agentes especializados** não-órfãos: cada camada tem seu agente (API, frontend, banco, DevOps, QA, Security, PM…) com caminho de invocação explícito
+- **11 agentes especializados** não-órfãos: cada camada tem seu agente (API, frontend, banco, DevOps, QA, Security, PM…) com caminho de invocação explícito
+- **Tech Lead como intermediário independente**: analisa causa raiz antes de implementar, cria task brief com critérios de aceite explícitos, delega ao especialista correto e valida sem conflito de interesse — resolve os dois problemas clássicos de agentes: pular análise e se auto-declarar "pronto"
 - **STOP protocol** para bugs pré-existentes: agentes nunca contornam — corrigem ≤30min ou viram P1 no backlog
 - **QA + Security gates obrigatórios**: `qa-engineer` em todo `/feature`, `security-engineer` quando há gatilhos (auth/input/segredos)
 - **Backlog em Ondas** (Waves): entregas visíveis ao cliente final mapeadas 1:1 com GitHub Milestones
@@ -191,8 +192,11 @@ Pedido recebido
                │
                ▼
            EXECUTE (superpowers:subagent-driven-development)
-           TDD por task: Red → Green → Refactor
-           Agente correto por camada
+           ↓ tech-lead (intermediário por task)
+             ANALYZE  → causa raiz / ponto de entrada
+             BRIEF    → docs/tasks/brief-*.md com critérios de aceite explícitos
+             DELEGATE → agente especialista correto por camada (TDD: Red→Green→Refactor)
+             VALIDATE → validação independente; back-delegation até 2x; escala ao humano
            Bugs pré-existentes: STOP protocol (≤30min corrige, >30min vira P1)
                │
                ▼
@@ -232,14 +236,15 @@ Pedido recebido
 
 ## Agentes especializados
 
-Todos os 10 agentes têm caminho de invocação explícito — zero órfãos.
+Todos os 11 agentes têm caminho de invocação explícito — zero órfãos.
 
 | Domínio / Gatilho | Agente | Invocação |
 |---|---|---|
-| `apps/api/**` (rotas, serviços, middleware) | `backend-developer` | Automática por arquivo |
-| `apps/web/**` (componentes, pages, hooks) | `frontend-developer` | Automática por arquivo |
-| `packages/shared/src/schemas/**` | `data-engineer-dba` | Automática por arquivo |
-| CI/CD, Dockerfile, GitHub Actions, docker-compose | `devops-sre-engineer` | Automática por arquivo |
+| Bug não-óbvio após diagnóstico ou task de feature antes de delegar | `tech-lead` | `/bug` Passo 4.5 · `/feature` Passo 4 |
+| `apps/api/**` (rotas, serviços, middleware) | `backend-developer` | Via `tech-lead` (automática por arquivo) |
+| `apps/web/**` (componentes, pages, hooks) | `frontend-developer` | Via `tech-lead` (automática por arquivo) |
+| `packages/shared/src/schemas/**` | `data-engineer-dba` | Via `tech-lead` (automática por arquivo) |
+| CI/CD, Dockerfile, GitHub Actions, docker-compose | `devops-sre-engineer` | Via `tech-lead` (automática por arquivo) |
 | `docs/design-system/**`, componentes visuais novos | `ux-ui-designer` | Via `/feature` quando há UI nova |
 | Arquitetura, ADRs, revisão estrutural | `software-architect` | Via `/new-project` ou review explícito |
 | Backlog, sprint, DoD, issues/PRs | `project-manager` | `/continue` Passos 0 e 2 · `/finish` Passo 4 |
@@ -247,7 +252,7 @@ Todos os 10 agentes têm caminho de invocação explícito — zero órfãos.
 | Test plans, coverage, bug reports | `qa-engineer` | `/feature` Passo 5.1 (sempre) |
 | OWASP, dependency audit, security review | `security-engineer` | `/feature` Passo 5.2 (gatilhos: auth, input, segredos, CORS) |
 
-> **O orquestrador nunca escreve código de produção diretamente.** Toda implementação é delegada ao agente correto.
+> **O orquestrador nunca escreve código de produção diretamente.** Toda implementação passa pelo `tech-lead` (análise → brief → delegação → validação) e chega ao agente especialista.
 
 ---
 
@@ -486,7 +491,7 @@ templates/                   ← Samples prontos para scaffold em /new-project
 
 .claude/
   commands/                  ← /bug /triage /feature /finish /continue /new-project /refactor
-  agents/                    ← 10 agentes especializados (*.md)
+  agents/                    ← 11 agentes especializados (*.md)
   hooks/
     inject-context.sh        ← UserPromptSubmit: contexto relevante por keyword + enforço de TRIAGEM
     pre-tool-use.sh          ← Proteção de CI/CD e arquivos globais
@@ -539,6 +544,7 @@ check-spec-coverage.sh       ← Valida cenários de spec → testes
 
 ## Changelog resumido
 
+- **v2.2.0** (2026-04-30) — Agente `tech-lead`: intermediário independente entre orquestrador e especialistas. Resolve causa raiz antes de implementar (ANALYZE), cria task brief com critérios de aceite explícitos (BRIEF), delega ao agente correto (DELEGATE) e valida sem conflito de interesse com back-delegation até 2x (VALIDATE). Integrado em `/bug` Passo 4.5 e `/feature` Passo 4. `global-files.sh` e `adopt-workflow.ps1` atualizados.
 - **v2.1.0** (2026-04-27) — Five-response selector: protocolo obrigatório de resposta com 5 candidatos avaliados por fórmula ponderada; skill local em `.claude/skills/five-response-selector/`; CLAUDE.md atualizado com seção `🎯 PROTOCOLO DE RESPOSTA`.
 - **v2.0.0** (2026-04-24) — 4 ondas de remediação: agentes não-órfãos com QA+Security integrados, scaffolds Docker/Vite/RBAC, backlog em waves → milestones, memória persistente com bootstrap rico. Ver `CHANGELOG.md`.
 - **v1.7.0** (2026-04-20) — DESIGN.md 60% menor, global-files.sh como fonte única

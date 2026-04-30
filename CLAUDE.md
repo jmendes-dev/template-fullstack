@@ -6,6 +6,14 @@
 
 ---
 
+## 🧭 PRINCÍPIOS GERAIS — Tom de toda resposta e implementação
+
+- **Simplicity First** — toda mudança o mais simples possível. Impacto mínimo no código.
+- **No Laziness** — encontrar causas raiz. Sem fix temporário. Padrão de senior engineer.
+- **Minimal Impact** — tocar apenas o necessário. Não introduzir bugs nem regressões.
+
+---
+
 ## 🎯 PROTOCOLO DE RESPOSTA — OBRIGATÓRIO PARA TODA RESPOSTA
 
 Antes de entregar **qualquer** resposta substantiva ao usuário:
@@ -85,7 +93,7 @@ Para refatoração, invocar **`/refactor`**.
 | **Erro em query Drizzle** | `drizzle-database-debugging` |
 | **Erro em React/TanStack** | `react-tanstack-debugging` |
 | 3 tentativas falhadas (ver nível 2 em `claude-debug.md`) | `escalation-and-bug-journal` |
-| Prestes a declarar "pronto" | `superpowers:verification-before-completion` |
+| Prestes a declarar "pronto" | `superpowers:verification-before-completion` — pergunta-gatilho obrigatória: *"Would a staff engineer approve this?"* |
 | Após concluir feature | `superpowers:requesting-code-review` |
 | Implementação completa → merge/PR | `superpowers:finishing-a-development-branch` |
 | 2+ tasks independentes | `superpowers:dispatching-parallel-agents` |

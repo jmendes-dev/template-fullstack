@@ -1,7 +1,7 @@
 # template-fullstack
 
 > Workflow SDD/TDD com Claude Code para projetos fullstack TypeScript.
-> Versão: **v2.2.0** · [Changelog](CHANGELOG.md)
+> Versão: **v2.2.1** · [Changelog](CHANGELOG.md)
 
 **Stack**: Monorepo TypeScript · Bun ≥1.3 · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui · Clerk
 
@@ -24,6 +24,7 @@ Um template que transforma o Claude Code em um orquestrador de desenvolvimento d
 - **Scaffolds prontos**: samples de `docker-compose.yml` e `vite.config.ts` com HMR configurado para Docker+Windows (polling correto)
 - **Memória persistente que aprende**: cada agente recebe Project Context + seeds de domínio no bootstrap; `check-health.sh` reporta densidade
 - **Five-response selector**: para toda resposta substantiva, 5 candidatos são avaliados internamente com fórmula ponderada (`acurácia × 0.30 + completude × 0.25 + alinhamento × 0.25 + praticidade × 0.15 + segurança × 0.05`) — apenas o de maior probabilidade é entregue
+- **Core Principles + heurísticas de verificação/refactor**: tom geral *Simplicity First / No Laziness / Minimal Impact* fixado no topo do `CLAUDE.md`; pergunta-gatilho *"Would a staff engineer approve this?"* obrigatória em `verification-before-completion`; critério de entrada *"Knowing everything I know now, what would I implement?"* em `/refactor` Passo 0 (decide prosseguir / abortar / virar feature)
 - **Quality gates automáticos**: lint, typecheck, coverage e spec-coverage no CI
 - **Hooks otimizados**: injeção de contexto, `bun install` condicional por hash, quality dashboard em background
 
@@ -544,6 +545,7 @@ check-spec-coverage.sh       ← Valida cenários de spec → testes
 
 ## Changelog resumido
 
+- **v2.2.1** (2026-04-30) — Core Principles e heurísticas de qualidade. Bloco `🧭 PRINCÍPIOS GERAIS` (Simplicity First / No Laziness / Minimal Impact) adicionado no topo do `CLAUDE.md`. Pergunta-gatilho *"Would a staff engineer approve this?"* reforçada na linha de `verification-before-completion`. Novo `Passo 0 — Critério de entrada` em `/refactor` com a pergunta *"Knowing everything I know now, what would I implement?"* (decide prosseguir / abortar / virar feature). Mudanças derivadas de avaliação comparativa contra protocolo externo de orquestração.
 - **v2.2.0** (2026-04-30) — Agente `tech-lead`: intermediário independente entre orquestrador e especialistas. Resolve causa raiz antes de implementar (ANALYZE), cria task brief com critérios de aceite explícitos (BRIEF), delega ao agente correto (DELEGATE) e valida sem conflito de interesse com back-delegation até 2x (VALIDATE). Integrado em `/bug` Passo 4.5 e `/feature` Passo 4. `global-files.sh` e `adopt-workflow.ps1` atualizados.
 - **v2.1.0** (2026-04-27) — Five-response selector: protocolo obrigatório de resposta com 5 candidatos avaliados por fórmula ponderada; skill local em `.claude/skills/five-response-selector/`; CLAUDE.md atualizado com seção `🎯 PROTOCOLO DE RESPOSTA`.
 - **v2.0.0** (2026-04-24) — 4 ondas de remediação: agentes não-órfãos com QA+Security integrados, scaffolds Docker/Vite/RBAC, backlog em waves → milestones, memória persistente com bootstrap rico. Ver `CHANGELOG.md`.

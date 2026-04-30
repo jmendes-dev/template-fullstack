@@ -7,6 +7,16 @@ description: "Refatoração disciplinada: branch isolada, sem novas features, te
 Use para reestruturar código sem mudar comportamento observável.
 Passe o escopo: `/refactor extrair módulo de autenticação de apps/api/src/routes`
 
+## Passo 0 — Critério de entrada (OBRIGATÓRIO)
+
+Antes de iniciar qualquer refactor, responder à pergunta-gatilho:
+
+> *"Knowing everything I know now, what would I implement?"*
+
+- Se um fix recente parece hacky ou contornado → o refactor é a forma elegante; prosseguir.
+- Se o código atual já é a forma elegante para o conhecimento atual → **não há refactor a fazer**; abortar.
+- Se a resposta envolve adicionar comportamento novo → **não é refactor**, é feature; invocar `/feature`.
+
 ## Passo 1 — Checkpoint git (OBRIGATÓRIO)
 
 ```bash

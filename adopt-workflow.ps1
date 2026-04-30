@@ -322,6 +322,11 @@ function Get-AgentSeeds {
 - Monorepo: `apps/api`, `apps/web`, `packages/shared` — nunca import runtime cross-app
 - Decisoes estruturais antes de codigo; updates em claude-stacks.md requerem justificativa
 '@ }
+        'tech-lead' { @'
+- Nunca escreve codigo — apenas ANALYZE → BRIEF → DELEGATE → VALIDATE
+- Brief em `docs/tasks/brief-YYYY-MM-DD-<slug>.md` com criterios de aceite explícitos
+- Invocar para bugs nao-obvios (apos diagnostico) e para tasks de feature antes de delegar ao especialista
+'@ }
         'ux-ui-designer' { @'
 - `docs/design-system/MASTER.md` e fonte de verdade visual (gerada via pipeline da Parte 2 do DESIGN.md)
 - `design-brief.md` e resumo compacto (~800 tokens) injetado em subagentes de componente
@@ -434,6 +439,7 @@ $AGENTS = @(
     'requirements-roadmap-builder'
     'security-engineer'
     'software-architect'
+    'tech-lead'
     'ux-ui-designer'
 )
 foreach ($agent in $AGENTS) {

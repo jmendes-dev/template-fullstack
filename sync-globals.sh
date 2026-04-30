@@ -48,7 +48,7 @@ else
     "backend-developer.md" "data-engineer-dba.md" "devops-sre-engineer.md"
     "frontend-developer.md" "project-manager.md" "qa-engineer.md"
     "requirements-roadmap-builder.md" "security-engineer.md"
-    "software-architect.md" "ux-ui-designer.md"
+    "software-architect.md" "tech-lead.md" "ux-ui-designer.md"
   )
   COMMAND_FILES=(
     "bug.md" "triage.md" "feature.md" "finish.md"

@@ -263,6 +263,12 @@ S
 - Decisões estruturais antes de código; updates em claude-stacks.md requerem justificativa
 S
       ;;
+    tech-lead) cat <<'S'
+- Nunca escreve código — apenas ANALYZE → BRIEF → DELEGATE → VALIDATE
+- Brief em `docs/tasks/brief-YYYY-MM-DD-<slug>.md` com critérios de aceite explícitos
+- Invocar para bugs não-óbvios (após diagnóstico) e para tasks de feature antes de delegar ao especialista
+S
+      ;;
     ux-ui-designer) cat <<'S'
 - `docs/design-system/MASTER.md` é fonte de verdade visual (gerada via pipeline da Parte 2 do DESIGN.md)
 - `design-brief.md` é resumo compacto (~800 tokens) injetado em subagentes de componente
@@ -382,6 +388,7 @@ AGENTS=(
   "requirements-roadmap-builder"
   "security-engineer"
   "software-architect"
+  "tech-lead"
   "ux-ui-designer"
 )
 for agent in "${AGENTS[@]}"; do

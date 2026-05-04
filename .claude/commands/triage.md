@@ -17,10 +17,13 @@ Pedido recebido: $ARGUMENTS
 ├── "Adotar workflow / retrofit"
 │     └── Rodar ./adopt-workflow.sh no projeto alvo
 │
-├── Bug / erro / CI quebrando
+├── "CI quebrou" / "workflow vermelho" / "actions falhou"
+│     └── Invocar /bug (que delega a `master-ci-fix` automaticamente — ver Passo 3 do /bug)
+│
+├── Bug / erro (genérico)
 │     └── Invocar /bug [descrição do erro]
 │
-├── "Continuar backlog"
+├── "Continuar backlog" (avançar tasks P1 do `docs/backlog.md`)
 │     └── Invocar /continue
 │
 ├── Encerrar feature / declarar pronto
@@ -38,7 +41,7 @@ Pedido recebido: $ARGUMENTS
 ├── "fasear PRD" / "plano de implementação" / "quebrar em fases"
 │     └── Invocar skill `master-plan` (kit empresa)
 │
-├── "executar próxima fase" / "fase N" / "continuar plano"
+├── "executar próxima fase" / "fase N" (de plano `plans/<slug>-plano.md` do master-plan, NÃO confundir com /continue do backlog)
 │     └── Invocar skill `master-fase` (kit empresa)
 │
 ├── "criar tabela" / "alterar schema" / "nova entidade" / "migration"

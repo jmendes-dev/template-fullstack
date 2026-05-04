@@ -33,12 +33,14 @@ A organização mantém um kit oficial obrigatório em todos os projetos. Esses 
 
 | Caminho | Conteúdo |
 |---|---|
-| `claude-stacks.md` | Stack pinada + 33 regras técnicas (fonte de verdade) |
-| `start_project.md` | 8 fases com gates para projeto novo |
+| `claude-stacks.md` | Stack pinada + regras técnicas (fonte de verdade) |
+| `start_project.md` | Fases com gates para projeto novo |
 | `.claude/skills/master-*/` | 7 skills operacionais oficiais (PRD, plan, fase, schema, deploy, security review, CI fix) |
 | `docs/auth-clerk.md`, `docs/deploy-*.md`, `docs/observability.md`, etc. | ~33 guias técnicos por domínio |
 
 **Conteúdo local** (template) costura sobre o kit via `CLAUDE.md`, `.claude/commands/`, `.claude/agents/` — preservado integralmente.
+
+> ⚠️ **Fallback (projeto novo)**: se uma skill `master-*` referenciada por commands ainda não existe localmente, é porque a Action corporativa não rodou neste projeto ainda. Nesse caso, seguir o fluxo equivalente do template (`superpowers:writing-plans` no lugar de `master-plan`, agente especialista no lugar de `master-fase`, etc.) até a próxima sincronização.
 
 ---
 
@@ -92,6 +94,8 @@ Para refatoração, invocar **`/refactor`**.
 | Code review | `superpowers:requesting-code-review` | skill |
 | Merge / PR | `superpowers:finishing-a-development-branch` | skill |
 | Encerrar ciclo | `/finish` | command (wrapper) |
+
+> Skills `master-*` (kit empresa) complementam etapas específicas: `master-prd`/`master-plan` para PRD/plano, `master-fase` para execução por fase, `master-schema` para mudanças de schema, `master-deploy` para deploy, `master-security-review` para revisão por endpoint, `master-ci-fix` para CI vermelho. Ver tabela completa em "⚡ SKILLS" abaixo.
 
 ---
 
@@ -170,7 +174,7 @@ Para refatoração, invocar **`/refactor`**.
 - ❌ Test runner diferente de `bun test`
 - ❌ Ignorar lint (Biome) ou typecheck
 - ❌ `[skip ci]`, `--no-verify`, `--force`
-- ❌ Tecnologias fora do `claude-stacks.md` sem aprovação
+- ❌ Tecnologias fora do `claude-stacks.md` (kit empresa) sem aprovação
 - ❌ Modificar spec sem amendment aprovado
 - ❌ Componente frontend sem `DESIGN.md`
 - ❌ Cores/fontes/espaçamentos hardcoded

@@ -91,7 +91,7 @@ Claude conduz uma entrevista de requisitos e executa a sequência de agentes. Ca
 | Passo | Agente | Output | Gate |
 |---|---|---|---|
 | 1 | `requirements-roadmap-builder` | `plans/<feature>.md` (PRD) | Aprovação explícita |
-| 2 | `prd-planejamento` skill | `plans/<feature>-plano.md` + `docs/backlog.md` com waves | Aprovação explícita |
+| 2 | `master-plan` skill (kit empresa) | `plans/<feature>-plano.md` + `docs/backlog.md` com waves | Aprovação explícita |
 | 3 | `software-architect` | `docs/adr/ADR-001-stack-selection.md` | Review antes de avançar |
 | 4 | `ux-ui-designer` | `docs/design-system/MASTER.md` (via `ui-ux-pro-max` + entrevista) | Aprovação explícita |
 | 5 | `ux-ui-designer` | `docs/design-system/design-brief.md` (~800 tokens) | Auto |
@@ -501,9 +501,7 @@ templates/                   ← Samples prontos para scaffold em /new-project
   agent-memory/              ← MEMORY.md por agente (Project Context + seeds + session retro)
   settings.example.json      ← Settings com hooks (copiar para settings.json)
   settings.local.example.json
-  skills/                    ← Skills locais (novo-prd, prd-planejamento, five-response-selector)
-    novo-prd/SKILL.md
-    prd-planejamento/SKILL.md
+  skills/                    ← Skills locais do template (master-* vêm via kit empresa)
     five-response-selector/SKILL.md  ← Protocolo de resposta: 5 candidatos + probabilidade
 
 .github/

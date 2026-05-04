@@ -31,6 +31,8 @@ O plano deve:
 
 ## Passo 4 — EXECUTE
 
+> **Plano gerado pelo `master-plan`?** Se o plano em uso é `plans/<slug>-plano.md` (kit empresa), preferir a skill `master-fase` para execução fase a fase. O `master-fase` cuida do gate da fase, security review por endpoint (via `master-security-review`) e fechamento do CI (via `master-ci-fix`). O fluxo `tech-lead` abaixo aplica-se a planos do template em `docs/superpowers/plans/`.
+
 Invocar skill: `superpowers:subagent-driven-development`
 
 ### Fluxo por task (via tech-lead)
@@ -80,7 +82,7 @@ Se QA retornar `DONE_WITH_CONCERNS` ou `BLOCKED` → escrever tasks no backlog (
 
 ### 5.2 — Security Review (condicional)
 
-Despachar `security-engineer` **APENAS SE** a feature toca um destes gatilhos:
+**Gatilhos** — feature toca qualquer um destes:
 
 - Qualquer arquivo em `apps/api/src/middleware/` ou que importa `getAuth`/`clerkMiddleware`
 - Rota nova que recebe input do usuário (`c.req.json()`, `c.req.query()`, form data)
@@ -88,11 +90,19 @@ Despachar `security-engineer` **APENAS SE** a feature toca um destes gatilhos:
 - Variável nova em `.env.example` com sufixo `_SECRET`, `_KEY`, `_TOKEN`
 - Mudança em políticas de CORS, CSP, rate-limit, ou headers de segurança
 
+Quando algum gatilho aplica, executar **dois passos em sequência**:
+
+**5.2.a — Skill operacional (kit empresa):**
+Invocar `master-security-review` para rodar checklist 9-itens por endpoint Hono (auth, authz, validation, mass assignment, injection, rate limit, CORS, secure headers, response envelope) e gerar relatório arquivo:linha. Achados 🔴 críticos bloqueiam o merge — corrigir antes de prosseguir.
+
+**5.2.b — Agente estrutural (template):**
+Despachar `security-engineer` para review OWASP Top 10 estrutural complementar (vazamento de segredos em logs, RBAC consistency, ataques de timing, considerações de modelo de ameaça).
+
 Prompt esperado ao `security-engineer`:
 
-> Revisar a feature `<título>` contra OWASP Top 10 e checklist do template. Focar em: validação de input, autorização por role (RBAC), vazamento de segredos, cabeçalhos de segurança, rate-limiting. Reportar com `STATUS` e achados acionáveis.
+> Revisar a feature `<título>` contra OWASP Top 10 e o relatório do `master-security-review` em [arquivo, se gerado]. Focar em: validação de input, autorização por role (RBAC), vazamento de segredos, cabeçalhos de segurança, rate-limiting, gaps que o checklist por endpoint não cobre. Reportar com `STATUS` e achados acionáveis.
 
-Se Security retornar `DONE_WITH_CONCERNS` → avaliar com usuário se vira P1; se `BLOCKED` → não fazer merge.
+Se algum dos dois passos retornar `DONE_WITH_CONCERNS` → avaliar com usuário se vira P1; se `BLOCKED` → não fazer merge.
 
 ## Passo 6 — FINISH
 

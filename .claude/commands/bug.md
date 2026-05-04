@@ -26,6 +26,10 @@ Se encontrar erros **que não são o bug reportado**, aplicar a política de `cl
 ## Passo 3 — Triagem
 
 ```
+Bug é "CI quebrou após push" (workflow GitHub Actions vermelho)?
+  └── Sim → Invocar skill `master-ci-fix` (kit empresa) — loop ≤7 tentativas até CI verde
+           NÃO seguir Passos 4–7 (skill assume o ciclo completo)
+
 Bug óbvio (typo, import errado, campo faltando, erro de configuração)?
   └── Sim → TDD direto: Red → Green → Refactor → commit
            Invocar skill: superpowers:test-driven-development

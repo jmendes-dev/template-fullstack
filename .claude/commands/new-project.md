@@ -21,7 +21,7 @@ Nenhuma fase pode ser iniciada sem o gate da fase anterior estar cumprido.
 
 ## Fase 1 — Levantamento de Requisitos
 
-> **Skills disponíveis**: invocar `novo-prd` (entrevista guiada) e `prd-planejamento` (geração de backlog).
+> **Skills disponíveis**: invocar `master-prd` (entrevista guiada) e `master-plan` (geração de backlog) do kit empresa.
 > Se as skills estiverem disponíveis, prefira-as — elas mantêm o mesmo protocolo de entrevista abaixo.
 > Se as skills não estiverem disponíveis, executar o protocolo inline a seguir.
 

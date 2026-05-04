@@ -32,6 +32,24 @@ Pedido recebido: $ARGUMENTS
 ├── Refatoração
 │     └── Próximo passo: /refactor (branch isolada, sem novas features)
 │
+├── "criar PRD" / "novo produto" / "documentar feature"
+│     └── Invocar skill `master-prd` (kit empresa)
+│
+├── "fasear PRD" / "plano de implementação" / "quebrar em fases"
+│     └── Invocar skill `master-plan` (kit empresa)
+│
+├── "executar próxima fase" / "fase N" / "continuar plano"
+│     └── Invocar skill `master-fase` (kit empresa)
+│
+├── "criar tabela" / "alterar schema" / "nova entidade" / "migration"
+│     └── Invocar skill `master-schema` (kit empresa)
+│
+├── "configurar deploy" / "primeiro deploy" / "publicar"
+│     └── Invocar skill `master-deploy` (kit empresa) — pergunta target
+│
+├── "review de segurança" / "auditar endpoint" / "security review"
+│     └── Invocar skill `master-security-review` (kit empresa)
+│
 └── Pedido ambíguo
       └── Fazer UMA pergunta antes de qualquer ação
 ```

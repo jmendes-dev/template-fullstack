@@ -4,6 +4,8 @@
 > Para regras de uso e padrões técnicos, ver `claude-stacks.md`.
 > Sincronizado via `sync-globals.sh` (arquivo global).
 
+> ⚠️ **Fonte de verdade**: a partir da adoção do kit empresa, `claude-stacks.md` (sincronizado via Action corporativa) é a fonte canônica das versões pinadas. Este arquivo registra apenas notas locais de compatibilidade e diffs entre upgrades. Em conflito, `claude-stacks.md` da empresa prevalece — atualizar este arquivo para alinhar.
+
 ---
 
 ## Versões Atuais

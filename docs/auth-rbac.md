@@ -1,6 +1,6 @@
 # Auth + RBAC — Padrão obrigatório
 
-> Complementa a seção "Auth middleware" de `claude-stacks.md`. Clerk provê **identidade** (quem é o usuário); **papel** (admin/user) é responsabilidade deste projeto, via tabela custom no DB.
+> Complementa `docs/auth-clerk.md` (kit empresa, fonte canônica de Clerk). Clerk provê **identidade** (quem é o usuário); **papel** (admin/user) é responsabilidade deste projeto, via tabela custom no DB. Este doc trata só do RBAC — para detalhes de Clerk middleware, Core 3 breaking changes, dev sem Clerk, etc., ver `docs/auth-clerk.md`.
 
 ---
 

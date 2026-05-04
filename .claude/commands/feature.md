@@ -100,7 +100,7 @@ Despachar `security-engineer` para review OWASP Top 10 estrutural complementar (
 
 Prompt esperado ao `security-engineer`:
 
-> Revisar a feature `<título>` contra OWASP Top 10 e o relatório do `master-security-review` em [arquivo, se gerado]. Focar em: validação de input, autorização por role (RBAC), vazamento de segredos, cabeçalhos de segurança, rate-limiting, gaps que o checklist por endpoint não cobre. Reportar com `STATUS` e achados acionáveis.
+> Revisar a feature `<título>` contra OWASP Top 10. Se houver relatório recente do `master-security-review` (geralmente em `docs/security/<feature-slug>.md` ou no comentário mais recente da PR), referenciar para evitar reverificar achados já endereçados. Focar em: validação de input, autorização por role (RBAC), vazamento de segredos, cabeçalhos de segurança, rate-limiting, gaps que o checklist por endpoint não cobre. Reportar com `STATUS` e achados acionáveis.
 
 Se algum dos dois passos retornar `DONE_WITH_CONCERNS` → avaliar com usuário se vira P1; se `BLOCKED` → não fazer merge.
 

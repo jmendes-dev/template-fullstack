@@ -2,7 +2,7 @@
 
 > Waves = entregas visíveis ao cliente · P1/P2/P3 = ordem interna dentro da wave.
 > Cada wave corresponde a um GitHub Milestone homônimo (ver `sync-github-issues.sh`).
-> Gerado via `/new-project` (skill `novo-prd` → `prd-planejamento` → `project-manager` agent).
+> Gerado via `/new-project` (skill `master-prd` → `master-plan` → `project-manager` agent).
 
 ---
 

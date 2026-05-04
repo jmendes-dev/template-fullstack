@@ -309,7 +309,7 @@ function Get-AgentSeeds {
 '@ }
         'requirements-roadmap-builder' { @'
 - PRDs em `plans/<feature>.md` · planos de implementacao em `plans/<feature>-plano.md`
-- Cada Fase do plano vira uma Wave no backlog (via PM agent — Passo 5.5 do prd-planejamento)
+- Cada Fase do plano vira uma Wave no backlog (via PM agent — Passo 5.5 do master-plan)
 - Fase 0 (fundacao) → Wave: Backlog (nao e entrega visivel ao cliente)
 '@ }
         'security-engineer' { @'

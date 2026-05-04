@@ -1,7 +1,7 @@
 # CLAUDE.md — Protocolo de Orquestração
 
 > Arquivo carregado automaticamente. Sub-arquivos: lidos **sob demanda** conforme tabela abaixo.
-> **Hierarquia:** Instruções do usuário > Superpowers skills > `.claude/commands/` > `claude-sdd.md` > `claude-stacks.md` > `DESIGN.md` > `claude-stacks-refactor.md`
+> **Hierarquia:** Instruções do usuário > **Kit Empresa** (`claude-stacks.md`, `start_project.md`, `master-*` skills, `docs/<empresa>`) > Superpowers skills > `.claude/commands/` > `claude-sdd.md` > `DESIGN.md` > `claude-stacks-refactor.md`
 > Para decisões visuais: `docs/design-system/MASTER.md` prevalece sobre `DESIGN.md` (Parte 1).
 
 ---
@@ -24,6 +24,21 @@ Antes de entregar **qualquer** resposta substantiva ao usuário:
 5. Append ao final: `[Candidato X selecionado | P = 0.XX | 5 avaliados]`
 
 **Exceções** (não aplicar): confirmações de uma palavra ("ok", "sim"), etapas internas de workflow de skills.
+
+---
+
+## 📦 KIT EMPRESA — Camada imutável (sincronizada via Action)
+
+A organização mantém um kit oficial obrigatório em todos os projetos. Esses arquivos são **sincronizados pela GitHub Action corporativa** (allowlist) e **não devem ser editados localmente** — em conflito, a versão da empresa prevalece.
+
+| Caminho | Conteúdo |
+|---|---|
+| `claude-stacks.md` | Stack pinada + 33 regras técnicas (fonte de verdade) |
+| `start_project.md` | 8 fases com gates para projeto novo |
+| `.claude/skills/master-*/` | 7 skills operacionais oficiais (PRD, plan, fase, schema, deploy, security review, CI fix) |
+| `docs/auth-clerk.md`, `docs/deploy-*.md`, `docs/observability.md`, etc. | ~33 guias técnicos por domínio |
+
+**Conteúdo local** (template) costura sobre o kit via `CLAUDE.md`, `.claude/commands/`, `.claude/agents/` — preservado integralmente.
 
 ---
 
@@ -85,6 +100,13 @@ Para refatoração, invocar **`/refactor`**.
 | Situação | Skill OBRIGATÓRIA |
 |---|---|
 | **Antes de qualquer resposta substantiva** | `five-response-selector` |
+| **Criar PRD / novo produto** | `master-prd` (kit empresa) — substitui `novo-prd` |
+| **Transformar PRD em plano de fases** | `master-plan` (kit empresa) — substitui `prd-planejamento` |
+| **Executar fase pendente do plano** | `master-fase` (kit empresa) |
+| **Mudança de schema (Drizzle/Zod) ou migration** | `master-schema` (kit empresa) |
+| **Configurar deploy de produção** | `master-deploy` (kit empresa) — pergunta target obrigatoriamente (regra 32) |
+| **CI quebrou após push** | `master-ci-fix` (kit empresa) — loop ≤7 tentativas |
+| **Security review por endpoint Hono** | `master-security-review` (kit empresa) — gatilho do Passo 5.2 do `/feature` |
 | Qualquer feature nova ou criativa | `superpowers:brainstorming` |
 | Spec aprovado → decompor em micro-tasks | `superpowers:writing-plans` |
 | Executando plano na sessão atual | `superpowers:subagent-driven-development` |
@@ -119,7 +141,8 @@ Para refatoração, invocar **`/refactor`**.
 | Arquivo | Ler quando... |
 |---|---|
 | `claude-sdd.md` | Triage → spec necessária + contextos de subagente |
-| `claude-stacks.md` | Regras de stack, padrões técnicos |
+| `claude-stacks.md` | Regras de stack, padrões técnicos (kit empresa — fonte de verdade) |
+| `docs/auth-clerk.md`, `docs/deploy-*.md`, `docs/observability.md`, etc. | Guias técnicos por domínio (kit empresa) |
 | `claude-stacks-versions.md` | Versões pinadas e notas de compatibilidade (atualizar ao trocar versão) |
 | `claude-stacks-refactor.md` | Aprendizados, bug journal |
 | `claude-debug.md` | Política de bugs pré-existentes + tabela de escalação (referência para `/bug`) |

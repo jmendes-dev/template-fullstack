@@ -1,18 +1,79 @@
-# claude-stacks.md — Regras e Padrões Técnicos
+# CLAUDE.md
 
-> **Versões pinadas e notas de compatibilidade**: ver `claude-stacks-versions.md`.
-> Este arquivo contém apenas regras de uso, padrões e anti-patterns (princípios estáveis).
+## Diretrizes comportamentais
+
+Reduzem erros comuns de LLM ao escrever código. Essas diretrizes têm precedência sobre as regras técnicas abaixo. Tradeoff: priorizam cautela sobre velocidade — para tarefas triviais, usar bom senso.
+
+### 1. Pensar antes de codar
+
+Não assumir. Não esconder confusão. Levantar tradeoffs.
+
+Antes de implementar:
+
+- Declarar assunções explicitamente. Se incerto, perguntar
+- Se existem múltiplas interpretações, apresentar — não escolher em silêncio
+- Se existe uma abordagem mais simples, dizer. Contrapor quando justificado
+- Se algo não está claro, parar. Nomear o que confunde. Perguntar
+
+### 2. Simplicidade primeiro
+
+Código mínimo que resolve o problema. Nada especulativo.
+
+- Sem features além do pedido
+- Sem abstrações para código de uso único
+- Sem "flexibilidade" ou "configurabilidade" que não foi pedida
+- Sem error handling para cenários impossíveis
+- Se escreveu 200 linhas e cabia em 50, reescrever
+
+Pergunta de validação: "um engenheiro sênior diria que isso está overengineered?" Se sim, simplificar.
+
+### 3. Mudanças cirúrgicas
+
+Tocar só no que precisa. Limpar só a própria bagunça.
+
+Ao editar código existente:
+
+- Não "melhorar" código, comentários ou formatação adjacentes
+- Não refactorar o que não está quebrado
+- Manter o estilo existente, mesmo que você faria diferente
+- Se notar código morto não relacionado, mencionar — não deletar
+
+Quando suas mudanças criam órfãos:
+
+- Remover imports/variáveis/funções que **suas** mudanças tornaram inúteis
+- Não remover código morto pré-existente sem pedido
+
+Teste: toda linha alterada rastreia direto até o pedido do usuário.
+
+### 4. Execução dirigida por objetivo
+
+Definir critério de sucesso. Iterar até verificar.
+
+Transformar tarefas em goals verificáveis:
+
+- "Adicionar validação" → "Escrever testes para inputs inválidos, então fazê-los passar"
+- "Consertar o bug" → "Escrever teste que reproduz o bug, então fazê-lo passar"
+- "Refactorar X" → "Garantir que os testes passam antes e depois"
+
+Para tarefas multi-step, declarar plano breve:
+
+```
+1. [passo] → verificar: [check]
+2. [passo] → verificar: [check]
+3. [passo] → verificar: [check]
+```
+
+Critério forte de sucesso permite iterar independente. Critério fraco ("fazer funcionar") exige clarificação constante.
+
+---
 
 ## Stack
 
-Monorepo TypeScript ≥6.0 · Bun ≥1.3 · Hono ≥4.12.4 · React 19 · Drizzle ORM · Drizzle Kit ≥0.31 · PostgreSQL · Biome 2.x · Vite 8 (Rolldown) · Tailwind CSS v4 · Zod v4 · Node ≥20.19 ou ≥22.12 (para tooling)
+Monorepo TypeScript ≥6.0 · Bun ≥1.3 · Hono ≥4.12.14 (CVE-2026-29045 corrigida em 4.12.4 · CVE-2026-39407 em 4.12.12 · cookie bypass em 4.12.14) · React 19.2+ · React Router v7.14+ · TanStack Query v5.99+ · Zustand v5+ · Drizzle ORM ≥0.45.2 · Drizzle Kit ≥0.31 · PostgreSQL · Biome 2.4+ · Vite 8 (Rolldown) · `@vitejs/plugin-react` v6+ · Tailwind CSS v4.2+ · Zod v4.0+ · `@clerk/react` v6+ (Core 3) · `@clerk/hono` v0.1+ · Node ≥22.12 ou ≥24.x (para tooling; Node 20 EOL abr/2026). Detalhes por camada: `docs/tech-stack.md`. Versões + breaking changes: `docs/version-matrix.md`.
 
-## Bun — regras de uso
+## Bun 1.3
 
-- **Lockfile**: `bun.lock` (JSONC). Se `bun.lockb` existir, deletar e rodar `bun install`.
-- **Hot reload**: `bun --hot` para API (preserva `globalThis`). `--watch` reinicia processo.
-- **Bun.cron**: **não funciona em containers Docker** — usar `setInterval` + tabela `jobs` em containers.
-- **Docker image**: `oven/bun:1.3` (reprodutibilidade). Alternativas: `slim`, `distroless`, `alpine`.
+Lockfile `bun.lock` (não `bun.lockb`) · hot reload `bun --hot` · `Bun.cron()` in-process disponível desde Bun 1.3.12 (lançado 9/abr/2026, funciona em containers) · latest 1.3.13 (20/abr/2026) · imagem runtime `oven/bun:1.3-slim`. Notas completas: `docs/bun-notes.md`.
 
 ## Estrutura
 
@@ -22,94 +83,27 @@ apps/api/         # Hono REST + RPC
 packages/shared/  # Zod schemas, Drizzle schema, tipos compartilhados
 ```
 
-## Monorepo Architecture
+## Monorepo — regras de importação
 
-**Workspace manager**: Bun workspaces — config no `package.json` raiz:
-```json
-{ "workspaces": ["apps/*", "packages/*"] }
-```
+- Bun workspaces (`"workspaces": ["apps/*", "packages/*"]` no root)
+- `apps/api` → `packages/shared` · `apps/web` → `packages/shared`
+- `apps/api` ✕ `apps/web` — nunca importar código runtime entre apps. Toda comunicação via HTTP/RPC. Única exceção: `import type { AppType }` no frontend para Hono RPC
+- Apps importam de `@projeto/shared` (barrel file), nunca de caminhos internos
+- Comandos por workspace: `bun run --filter=@projeto/<nome> <script>`
 
-**Grafo de dependencias** (direcao: quem depende de quem):
-- `apps/api` → `packages/shared`
-- `apps/web` → `packages/shared`
-- `apps/api` ✕ `apps/web` — **nunca** importar codigo runtime entre apps. Toda comunicacao via HTTP/RPC. **Excecao unica**: `import type` do AppType da API para Hono RPC (ver abaixo)
+Setup completo (linkage, exports, RPC tipado): `docs/monorepo-setup.md`.
 
-**Workspace linkage** (obrigatorio em cada `package.json` de app):
-```json
-{ "dependencies": { "@projeto/shared": "workspace:*" } }
-```
-Frontend tambem precisa de `"@projeto/api": "workspace:*"` como **devDependency** (apenas para `import type` do AppType — sem codigo runtime).
+## Tailwind CSS v4
 
-**Exports do shared**: `packages/shared/src/index.ts` e barrel file — re-exporta schemas, tipos e constantes. Apps importam de `@projeto/shared`, nunca de caminhos internos do package.
-
-**Hono RPC**: API exporta `type AppType = typeof app`. Frontend: `import type { AppType } from "@projeto/api"` → `hc<AppType>(baseUrl)`. `import type` eliminado em compile time — type-safety end-to-end sem dep runtime.
-
-**Comandos por workspace**: `bun run --filter=@projeto/api <script>`
-
-## Tecnologias core
-
-| Camada | Tech |
-|---|---|
-| Runtime/PM/Test | Bun |
-| API | Hono + @hono/standard-validator (Zod v4 via Standard Schema) + hono/client RPC |
-| Frontend | React 19 + React Router v7 (`react-router`) |
-| Data fetching | TanStack Query (nunca React Router loaders) |
-| Client state | Zustand |
-| Forms | React Hook Form + zodResolver (`@hookform/resolvers/zod`) + schema de shared/ |
-| UI | shadcn/ui + Tailwind CSS v4 (CSS-first) |
-| Toasts | Sonner (nunca alert() ou outra lib) |
-| Charts | shadcn Charts (Recharts). Tremor para dashboards |
-| DB | PostgreSQL + Drizzle ORM |
-| Schemas | Zod v4 + Drizzle Zod integration em packages/shared (fonte única de verdade) — ver regra 26 para stable vs beta |
-| Auth | Clerk |
-| Lint/Format | Biome 2.x |
-| CI | GitHub Actions + Blacksmith runners + SonarQube |
-| Email | Resend + React Email (on demand) |
-| Jobs | Nativo primeiro → pg-boss só se necessário (ver seção Background jobs) |
-| Storage | S3-compatible via serviço externo (env vars) — nunca container local |
-
-## Tailwind CSS v4 — configuração CSS-first
-
-`tailwind.config.js` é opcional (suportado via `@config` para migração), mas **projetos novos não devem criá-lo**.
-
-**CSS principal**: substituir todas as diretivas `@tailwind` por `@import "tailwindcss"` (uma linha). Customizar via `@theme { --{tipo}-{nome}: valor; }` no mesmo CSS — gera classes automaticamente.
-
-**Vite plugin**: usar `@tailwindcss/vite` (não PostCSS) — adicionar como plugin no `vite.config.ts`.
-
-**Breaking v4**: `border-*`/`divide-*` usam `currentColor` (era `gray-200` no v3) — especificar cor.
-
-**shadcn/ui**: `bunx shadcn@latest init -t vite`. `components.json`: `tailwind.config: ""` para v4. Estilo "new-york" usa pacote **unificado `radix-ui`** (ver regra 31).
+CSS-first: `@import "tailwindcss"` + `@theme {}` no CSS, plugin `@tailwindcss/vite` no Vite. Não criar `tailwind.config.js` em projeto novo. Detalhes e breaking changes: `docs/tailwind-v4.md`.
 
 ## Variáveis de ambiente obrigatórias
 
-```env
-DATABASE_URL=          # connection string PostgreSQL
-CLERK_SECRET_KEY=      # backend auth
-ADMIN_EMAIL=           # email que vira admin no primeiro cadastro (ver docs/auth-rbac.md)
-VITE_CLERK_PUBLISHABLE_KEY=  # frontend auth
-VITE_API_URL=          # URL da API para o frontend
-APP_CORS_ORIGINS=      # origins permitidas (ex: https://app.exemplo.com)
-PORT=                  # porta da API (default: 3000)
-WEB_PORT=              # porta do frontend (default: 4000)
-PGPORT=                # porta do PostgreSQL (default: 5432)
-S3_ENDPOINT=           # URL do serviço S3 externo (ex: http://minio-host:9000)
-S3_ACCESS_KEY=         # access key do bucket
-S3_SECRET_KEY=         # secret key do bucket
-S3_REGION=             # região S3 (default: us-east-1)
-S3_BUCKET=             # nome do bucket (default: uploads)
-S3_FORCE_PATH_STYLE=   # "true" para S3-compatible (MinIO, etc.)
-MINIO_ROOT_USER=       # usuário admin do MinIO local (dev)
-MINIO_ROOT_PASSWORD=   # senha admin do MinIO local (dev)
-MINIO_PORT=            # porta API S3 do MinIO local (default: 9000, dev only)
-MINIO_CONSOLE_PORT=    # porta console web do MinIO local (default: 9001, dev only)
-REGISTRY=              # endereço do registry Docker privado (ex: 10.10.254.66:5000)
-APP_NAME=              # nome do app (prefixo das imagens: APP_NAME-api, APP_NAME-web)
-S3_BACKUP_BUCKET=      # bucket de backup do banco (ex: backup-app-name-db)
-BACKUP_RETENTION_DAYS= # dias de retenção dos backups (default: 30 PRD, 7 UAT/dev)
-BACKUP_INTERVAL=       # intervalo entre backups em segundos (default: 86400 = 24h)
-```
+**Obrigatórias em `.env` local / Portainer**: `DATABASE_URL` · `CLERK_SECRET_KEY` · `VITE_CLERK_PUBLISHABLE_KEY` · `VITE_API_URL` · `APP_CORS_ORIGINS` · `PORT` · `WEB_PORT` · `PGPORT` · `S3_ENDPOINT` · `S3_ACCESS_KEY` · `S3_SECRET_KEY` · `S3_BUCKET`.
 
-Arquivos: `.env` (dev local apenas), `.env.example`. **UAT e PRD**: variáveis configuradas exclusivamente na UI do Portainer — nunca via arquivo `.env` (Portainer Stacks não processam `.env` files, quebrando o deploy). Compose de UAT/PRD usam sintaxe `${VARIAVEL}` e os valores são definidos na UI do Portainer. Nunca commitar secrets.
+**Condicionais (Portainer/dev — MinIO em container)**: `MINIO_PORT` · `MINIO_CONSOLE_PORT`. Em Railway storage usa Railway Buckets — essas vars não existem.
+
+Descrições, defaults e arquivos `.env.*`: `docs/env-vars.md`. Nunca commitar secrets. **Railway**: `PORT` é injetado automaticamente (não setar); vars `S3_*` vêm do addon Railway Buckets. **Portainer**: setar `PORT` explicitamente no compose (`${PORT:-3000}`).
 
 ## Regras de estado (nunca misture)
 
@@ -122,450 +116,141 @@ Arquivos: `.env` (dev local apenas), `.env.example`. **UAT e PRD**: variáveis c
 
 ## TanStack Query defaults
 
-```typescript
-new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60,     // 1 min
-      gcTime: 1000 * 60 * 5,    // 5 min
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-```
+`staleTime: 60_000` · `gcTime: 300_000` · `retry: 1` · `refetchOnWindowFocus: false`. Sobrescrever por query apenas quando justificado. Config completa: `docs/tanstack-query.md`.
 
-Sobrescrever por query apenas quando justificado (ex: dashboard com polling).
+## API response format (contrato)
 
-## API response format (obrigatório)
+- **Sucesso**: `{ data: ... }` (item ou lista) · listas paginadas incluem `pagination: { page, limit, total, totalPages }`
+- **Erro**: `{ error: string, code: string, details?: object }`
+- Status: 400 validação · 401 não autenticado · 403 sem permissão · 404 não encontrado · 429 rate limit · 500 interno (nunca expor stack em prod)
+- Toda rota usa `c.json({ data })`. Nunca array/objeto solto. Middleware global captura exceções.
 
-Frontend e backend devem concordar neste contrato **antes** de escrever código.
-
-**Sucesso — item único**:
-```json
-{ "data": { ... } }
-```
-
-**Sucesso — lista paginada**:
-```json
-{ "data": [ ... ], "pagination": { "page": 1, "limit": 10, "total": 87, "totalPages": 9 } }
-```
-
-**Erro**:
-```json
-{ "error": "mensagem legível", "code": "VALIDATION_ERROR", "details": {} }
-```
-
-| Status | Uso |
-|---|---|
-| 400 | Validação / input inválido |
-| 401 | Não autenticado |
-| 403 | Sem permissão |
-| 404 | Recurso não encontrado |
-| 429 | Rate limit excedido |
-| 500 | Erro interno (nunca expor stack trace em prod) |
-
-Middleware global de error handling no Hono captura exceções e retorna no formato de erro.
-
-Toda rota usa `c.json({ data: ... })`. Nunca array/objeto solto. Frontend acessa `response.data`.
+Exemplos JSON e detalhes: `docs/api-response.md`.
 
 ## Resource efficiency (obrigatório)
 
 - Target: **≤256MB RAM por container** em produção
-- Dockerfile **sempre multi-stage** (build → `oven/bun:slim` ou `distroless`). Sem devDependencies na imagem final
+- Dockerfile **sempre multi-stage** (build → `oven/bun:1.3-slim`). Sem devDependencies na imagem final
 - API: `bun build --minify --target=bun`. Web: Vite 8 build (Rolldown, 10-30x mais rápido)
 - Monitorar: se ultrapassar 256MB, investigar leaks/dependências pesadas
 
 ## Deploy: dois targets
 
-### Railway
-- Um service por app (api, web) + PostgreSQL addon
-- Railway Buckets para object storage S3-compatible
-- Variáveis de ambiente via Railway dashboard
-- Railway detecta Dockerfile automaticamente
-- **Migrations**: rodar como [pre-deploy command](https://docs.railway.com/guides/pre-deploy-command) → `bun run db:migrate`
-- **railway.toml**: `preDeployCommand` deve ficar em `[deploy]`, nunca em `[deploy.lifecycle]` — esta seção não existe no schema do Railway e é silenciosamente ignorada, fazendo migrations nunca rodarem
+- **Railway**: um service por app + PostgreSQL addon + Railway Buckets. Migrations via pre-deploy command. Ver `docs/deploy-railway.md`
+- **Portainer**: stack via docker-compose na UI + Traefik + MinIO. Migrations via entrypoint. Ver `docs/deploy-portainer.md`
 
-### Portainer (on-premises)
-- Deploy via **Portainer Stacks** — cada ambiente (UAT, PRD) é uma stack separada com seu próprio compose
-- PostgreSQL como container na mesma stack
-- Imagens pré-buildadas pelo CD e pushadas para registry interno
-- Migrations: via entrypoint script (`bun run db:migrate && bun run start`)
-- Volumes nomeados para dados persistentes (postgres data)
-- Webhook Portainer dispara redeploy após push da imagem
-- **Dockerfile multi-stage**: migrations Drizzle ficam em `apps/api/drizzle/` — `COPY --from=builder /app/apps/api/drizzle ./drizzle`. Nunca `COPY --from=builder /app/drizzle ./drizzle` (caminho não existe no builder)
+## Storage
 
-**Três compose files**:
-
-| Arquivo | Uso | Imagens |
-|---|---|---|
-| `docker-compose.yml` | Dev local | Build local (Dockerfile) |
-| `docker-compose-uat.yml` | Homologação (Portainer) | `${REGISTRY}/${APP_NAME}-{service}:uat-latest` |
-| `docker-compose-prd.yml` | Produção (Portainer) | `${REGISTRY}/${APP_NAME}-{service}:latest` |
-
-**Diferenças entre ambientes**:
-- **Dev**: build local, portas mapeadas no host, volumes bind-mount, sem resource limits
-- **UAT**: imagens do registry com tag `uat-latest`, resource limits moderados, `restart: unless-stopped`
-- **PRD**: imagens do registry com tag `latest`, resource limits maiores, `restart: unless-stopped`
-
-**UAT e PRD não fazem build** — usam `image:` apontando para o registry interno. O CD faz build e push; o webhook Portainer faz pull e redeploy.
-
-### Web serving — nginx reverse proxy
-
-O container `web` em produção/UAT usa **nginx** para servir o SPA e fazer proxy reverso para a API:
-
-- `/` → serve `index.html` (SPA catch-all via `try_files`)
-- `/api/*` → proxy para `http://api:3000` (backend)
-- `/uploads/*` → proxy para `http://api:3000` (se houver uploads servidos pela API)
-- Assets estáticos (`.js`, `.css`, `.woff2`, etc.) → cache 1 ano com `immutable`
-- Security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`
-- `VITE_API_URL` deve ser `""` (vazio) — frontend faz requests same-origin, nginx roteia
-
-Criar `apps/web/nginx.conf` com esta configuração. O Dockerfile do web copia o nginx.conf para `/etc/nginx/conf.d/default.conf`.
-
-### Storage (S3-compatible — serviço externo)
-
-Código da aplicação usa `@aws-sdk/client-s3` apontando para `S3_ENDPOINT`. Nunca usar filesystem local para uploads em prod. **Caveat**: SDK v3.729+ envia checksums que S3-compatible pode rejeitar — usar `requestChecksumCalculation: "WHEN_REQUIRED"` no client config.
-
-**Em dev**: MinIO roda como container local no compose para desenvolvimento (service `minio`). **Em UAT/PRD**: MinIO é serviço externo centralizado no servidor de monitoramento, conexão via env vars do Portainer. Conexão via variáveis de ambiente seguindo o mesmo padrão do registry Docker:
-
-```env
-S3_ENDPOINT=           # URL do serviço S3 (ex: http://minio-host:9000)
-S3_ACCESS_KEY=         # access key
-S3_SECRET_KEY=         # secret key
-S3_REGION=             # região (default: us-east-1)
-S3_BUCKET=             # nome do bucket
-S3_FORCE_PATH_STYLE=   # "true" para S3-compatible
-```
-
-Compose para Portainer — ver regras detalhadas em `start_project.md` Fase 4. Regras obrigatórias por service:
-
-| Regra | Aplica a |
-|---|---|
-| `restart: unless-stopped` | todos |
-| `deploy.resources.limits.memory` | todos (variar por ambiente: UAT menor, PRD maior) |
-| `healthcheck` | postgres, redis (se houver) |
-| `depends_on: condition: service_healthy` | api → postgres/redis, web → api |
-| Portas via env var com default (`${API_PORT:-3000}`, `${WEB_PORT:-80}`) | todos |
-| Volumes nomeados | postgres, redis (se houver) |
-| `image: ${REGISTRY}/${APP_NAME}-{service}:{tag}` | api, web (UAT/PRD — nunca build local) |
-| Service `backup` com `${REGISTRY}/backup-postgres:latest` | UAT/PRD (backup automático do PostgreSQL para MinIO) |
-| Service `minio` (container local) | apenas dev (UAT/PRD usam MinIO central via env vars) |
+S3-compatible em todos os ambientes via `@aws-sdk/client-s3` + `S3_ENDPOINT`. Nunca filesystem local em prod. Endpoints por ambiente e caveat de checksum: `docs/storage-s3.md`.
 
 ## Production-readiness (obrigatório)
 
-- **Health**: `GET /health` em toda API. Compose: `healthcheck` com `wget`
+- **Health**: `GET /health` + `/ready` + `/live` (ver `docs/observability.md`). Compose: `healthcheck` com `wget`
 - **Graceful shutdown**: capturar SIGTERM, fechar conexões DB
-- **Logs**: JSON stdout via `pino` com `requestId`. Nunca `console.log` em prod
+- **Logs**: JSON stdout via `pino` com `requestId`. Nunca `console.log` em prod. Error tracking via Sentry condicional: `docs/observability.md`
 - **CORS**: origins explícitas via `APP_CORS_ORIGINS`. Nunca `origin: '*'` em prod
+- **Security headers**: `hono/secure-headers` + CSP. Ver `docs/security-headers.md`
+- **Rate limiting**: `hono-rate-limiter` com 429 + `Retry-After`. Ver `docs/rate-limiting.md`
+- **Backup**: Postgres e S3 com retenção ≥30 dias, teste de restore trimestral. Ver `docs/backup-restore.md`
+- **Secrets rotation**: Clerk/S3 semestral, Postgres anual, emergencial quando vazar. Ver `docs/secrets-rotation.md`
+- **Error boundaries (frontend)**: `ErrorBoundary` raiz + por rota + feature, integrado ao Sentry. Ver `docs/error-boundaries.md`
 
-## Backup PostgreSQL (obrigatório)
+## Background jobs
 
-Todo projeto on-premises deve ter backup automático do PostgreSQL com envio para MinIO.
+Escalar por níveis: `setTimeout`/`queueMicrotask` → tabela `jobs` + `setInterval` → pg-boss. Nunca começar pelo pg-boss. Detalhes: `docs/background-jobs.md`.
 
-**Imagem**: `${REGISTRY}/backup-postgres:latest` — container sidecar que roda `pg_dump | gzip | mc pipe` em loop, enviando diretamente para o MinIO sem uso de disco local.
+## Data migrations
 
-**Compose**: service `backup` obrigatório em todos os compose files (dev, UAT, PRD). Ver `start_project.md` Fase 4 para configuração completa.
+Schema migrations (Drizzle Kit) ≠ data migrations (backfill, seed, transformação). Data migrations em `apps/api/src/data-migrations/YYYYMMDD-descricao.ts`, idempotentes, registradas em `data_migrations_log`, executadas no pre-deploy. Ver `docs/data-migrations.md`.
 
-| Ambiente | S3_ENDPOINT | Bucket | Retenção |
-|---|---|---|---|
-| Dev | `http://minio:9000` (container local, credenciais via `.env`) | `backup-${APP_NAME}-db` | via `.env` |
-| UAT | `${S3_ENDPOINT}` (MinIO central, via Portainer UI) | `${S3_BACKUP_BUCKET}` (via Portainer UI) | via Portainer UI |
-| PRD | `${S3_ENDPOINT}` (MinIO central, via Portainer UI) | `${S3_BACKUP_BUCKET}` (via Portainer UI) | via Portainer UI |
+## Opcionais (adotar só se necessário)
 
-**Restore**: o mesmo container suporta restore via variáveis de ambiente:
-- Listar backups: `docker compose run --rm -e MODE=restore backup`
-- Restaurar: `docker compose run --rm -e MODE=restore -e RESTORE_FILE=<arquivo> backup`
-- Antes de restaurar, parar services `api` e `web` para evitar escrita durante o restore
+- **i18n**: `@lingui/core` + `@lingui/react`, chaves em `src/locales/<locale>/messages.po`, `Intl` API para datas/números. Ver `docs/i18n.md`
+- **Feature flags**: escalar por níveis — env var (Tier 1) → tabela `feature_flags` no Postgres (Tier 2) → SaaS (Tier 3). Toda flag com `expires_at` (data-alvo para remover a flag — semanticamente diferente de `deleted_at` de soft-delete). Ver `docs/feature-flags.md`
+- **Email transacional**: Resend + React Email com client condicional (mesmo padrão Clerk/Sentry). Ver `docs/email-resend.md`
+- **OpenAPI**: só se a API tem consumidores fora do `apps/web` (mobile, terceiros). Hono RPC já cobre frontend interno. Ver `docs/openapi.md`
 
-**MinIO em dev**: o compose de dev inclui um container MinIO local (`minio/minio:latest`) com credenciais via `.env` (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`), acessível em `http://localhost:${MINIO_PORT:-9000}` (API S3) e `http://localhost:${MINIO_CONSOLE_PORT:-9001}` (console web). Nunca hardcodar credenciais nos compose files, usar sempre `${VARIAVEL}` com valores definidos no `.env` (dev) ou Portainer UI (UAT/PRD).
+## Auth (Clerk)
 
-## Background jobs (escala progressiva)
-
-Escalar só quando necessário:
-
-1. **Fire-and-forget** → `setTimeout` ou `queueMicrotask`. Nota: `c.executionCtx.waitUntil()` é exclusivo de Cloudflare Workers
-2. **Jobs com retry/agendamento** → tabela `jobs` no Drizzle + `setInterval`. `Bun.cron` é OS-level (não funciona em containers)
-3. **Filas robustas** (retry exponencial, concurrency, scheduling complexo) → pg-boss
-
-Nunca começar pelo pg-boss. Só introduzir se os níveis 1-2 forem insuficientes.
-
-## Auth middleware (Clerk) — graceful degradation
-
-> **RBAC**: Clerk provê apenas identidade. Papel (`admin`/`user`) vive em tabela custom do projeto. Ver `docs/auth-rbac.md` para schema Drizzle, middleware `requireRole`, service `ensureUser` e bootstrap via `ADMIN_EMAIL`.
-
-- **Pacotes**: `@clerk/react` v6+ (frontend) e `@hono/clerk-auth` v3+ (backend). Histórico: `@clerk/clerk-react` foi renomeado para `@clerk/react` no Core 2 (v5)
-- **Clerk Core 3** (março 2026, v6+): `<Show when="signed-in">` substitui `<Protect>`/`<SignedIn>`/`<SignedOut>`. Upgrade: `npx @clerk/upgrade`
-- **Core 3 breaking**: `getToken()` lança `ClerkOfflineError` (importar de `@clerk/react/errors`) quando offline — ainda retorna `null` se não autenticado; `@clerk/types` deprecated → importar de `@clerk/shared/types`
-- Em **produção**, `CLERK_SECRET_KEY` é obrigatória — `clerkMiddleware()` é aplicado em `/api/*`
-- Em **dev sem Clerk configurado**, o middleware deve ser condicional: só registrar se `CLERK_SECRET_KEY` existir no env
-- Helpers de auth retornam `userId` fixo (`"dev-user"`) quando Clerk não está configurado — dev local sem auth real
-- **No Hono, `getAuth(c)` é síncrono** — o middleware já populou o contexto
-- Nunca deixar `clerkMiddleware()` crashar a API inteira por falta de env var
-- **Padrão obrigatório**: registrar `clerkMiddleware()` dentro de `if (process.env.CLERK_SECRET_KEY)`. Nos handlers, `getAuth(c)` retorna o auth context (síncrono). Sem Clerk configurado, helper retorna `userId: "dev-user"`
+`clerkMiddleware()` condicional (`if (process.env.CLERK_SECRET_KEY)`), graceful degradation em dev, `getAuth(c)` síncrono no Hono. Padrão completo + Core 3 breaking changes: `docs/auth-clerk.md`.
 
 ## Dev workflow (Docker-first)
 
-> **Scaffold**: samples de referência em `templates/docker-compose.yml` e `templates/vite.config.ts` — copiar e adaptar em `/new-project`. Contêm flags obrigatórias para HMR funcionar em Docker+Windows (polling do inotify). Ver `templates/README.md`.
-
-- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose up` — arquivo único `docker-compose.yml` para dev local em todos os targets (Railway e Portainer)
+- **Tudo roda em container** — nunca no host (inclusive dev). `docker compose -f docker-compose.dev.yml up`
 - Bind-mount do código para hot reload. `bun install` dentro do container
 - Lint, typecheck, test, build: `docker compose exec <service> <comando>`
-- Portas via env var com defaults (`API_PORT`, `WEB_PORT`, `POSTGRES_PORT`). Se ocupada, incrementar +1
-- **UAT/PRD**: deploy automático via CD → webhook Portainer. Nunca fazer deploy manual
-
-## Backlog — formato com waves
-
-Projeto usa formato de waves em `docs/backlog.md`. Cada wave é uma entrega visível ao cliente final (ex: "MVP", "Release 1") e corresponde a um GitHub Milestone homônimo.
-
-Regras:
-- Heading `## Wave: <Nome>` inicia um bloco de USs da mesma onda
-- Blockquote seguinte: `> Milestone GitHub: \`<Nome>\` · Meta: <descrição>`
-- Wave `Backlog` (catch-all) no final — USs sem onda concreta
-- Dentro de cada wave, USs mantêm P1/P2/P3 (ordem interna)
-- `sync-github-issues.sh` mapeia wave → milestone automaticamente
-- `setup-github-project.sh` cria milestones das waves
-
-Ver `docs/superpowers/specs/2026-04-23-onda-3-backlog-ondas-design.md` para formato completo.
+- Portas via env var com defaults (`PORT`, `WEB_PORT`, `PGPORT`). Se ocupada, incrementar +1
+- Compose completo, Dockerfiles de dev e comandos do dia a dia: `docs/docker-dev.md`
 
 ## Git workflow
 
-- **Branch strategy**: trunk-based com staging — `main` (produção), `uat` (homologação), feature branches curtas (`feat/`, `fix/`, `chore/`)
-- **Fluxo**: feature branch → PR para `uat` → teste em UAT → merge para `main` → deploy PRD
+- **Branch strategy**: trunk-based — `main` sempre deployável, feature branches curtas (`feat/`, `fix/`, `chore/`)
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`)
-- **PRs**: squash merge. CI deve passar antes de merge
-
-| Branch | CI | CD | Ambiente |
-|---|---|---|---|
-| `main` | push + PR target | `cd-prd.yml` (após CI verde) | Produção |
-| `uat` | push | `cd-uat.yml` (após CI verde) | Homologação |
-| `feat/*` | PR para main/uat | nenhum | — |
+- **PRs**: squash merge para main. CI deve passar antes de merge
+- **GitHub setup**: `.github/dependabot.yml` (ecosystem `bun`), `pull_request_template.md`, `CODEOWNERS`, branch protection em `main`. Padrão completo: `docs/github-setup.md`
 
 ## Testes
 
 - Runner único: **bun test** (backend e frontend)
-- **Cobertura mínima: >= 95%** — enforced via quality gate (domínio, validators, routes, auth, edge cases, error handling)
-- **Security review por endpoint**: auth 401/403, injection (SQL/XSS), mass assignment (rejeitar `role`/`isAdmin`), rate limiting 429, CORS, headers (HSTS, X-Content-Type-Options, X-Frame-Options)
+- **Cobertura mínima: >= 80%** — enforced via `bunfig.toml` na raiz (`coverageThreshold = { line = 80, function = 80, statement = 80 }`). Sem este arquivo o threshold não é enforced
+- **Security review por endpoint**: auth 401/403, injection (SQL/XSS), mass assignment (rejeitar `role`/`isAdmin`), rate limiting 429, CORS, headers (HSTS, X-Content-Type-Options, X-Frame-Options) — automatizado via skill `master-security-review`
 - Testes rodam no CI antes de build
+- Estrutura, fixtures, mocks e checklist completo: `docs/testing.md`
 
 ## CI/CD — GitHub Actions
 
-### CI (`ci.yml`)
-
-Roda em push para `main` e `uat`, e em PRs para `main`.
-
-```yaml
-name: CI
-on:
-  push:
-    branches: [main, uat]
-  pull_request:
-    branches: [main]
-
-jobs:
-  quality:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: oven-sh/setup-bun@v2
-        with: { bun-version: latest }
-      - run: bun install --frozen-lockfile
-      - run: bun run lint                    # bunx biome check .
-      - run: bun run typecheck               # tsc --noEmit
-      - run: bun test --recursive --coverage --coverage-reporter lcov --coverage-dir ./coverage
-      - uses: SonarSource/sonarqube-scan-action@v6
-        env: { SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}" }
-```
-
-**SonarQube**: `sonar-project.properties` na raiz. Quality gate: coverage >= 95%.
-
-### CD — Deploy Portainer (`cd-uat.yml` / `cd-prd.yml`)
-
-CD **nunca** roda diretamente em push — é acionado via `workflow_run` após CI verde. Isso garante que código quebrado jamais chegue a UAT ou PRD.
-
-**Mecanismo**: `workflow_run` com `types: [completed]` + guard `if: github.event.workflow_run.conclusion == 'success'`.
-
-```yaml
-# cd-uat.yml — deploy para homologação
-name: Deploy UAT
-on:
-  workflow_run:
-    workflows: ['CI']
-    branches: [uat]
-    types: [completed]
-
-jobs:
-  deploy-api:
-    if: github.event.workflow_run.conclusion == 'success'
-    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
-    with:
-      app_name: ${{ vars.APP_NAME }}-api
-      registry: ${{ vars.INTERNAL_REGISTRY }}
-      dockerfile: apps/api/Dockerfile
-      skip_deploy: true           # build + push, mas NÃO dispara webhook ainda
-    secrets:
-      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
-
-  deploy-web:
-    needs: deploy-api               # web só deploya após API estar no registry
-    uses: masterboiteam/.github/.github/workflows/deploy-uat.yml@main
-    with:
-      app_name: ${{ vars.APP_NAME }}-web
-      registry: ${{ vars.INTERNAL_REGISTRY }}
-      dockerfile: apps/web/Dockerfile
-    secrets:
-      PORTAINER_WEBHOOK_UAT: ${{ secrets.PORTAINER_WEBHOOK_UAT }}
-      BUILD_SECRETS: |
-        VITE_CLERK_PUBLISHABLE_KEY=${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-```
-
-```yaml
-# cd-prd.yml — deploy para produção (mesmo padrão, branch main)
-name: Deploy PRD
-on:
-  workflow_run:
-    workflows: ['CI']
-    branches: [main]
-    types: [completed]
-# ... mesma estrutura, usando deploy-prd.yml e PORTAINER_WEBHOOK_PRD
-```
-
-**Regras obrigatórias do CD**:
-
-| Regra | Detalhe |
-|---|---|
-| CD só roda após CI verde | `workflow_run` + `conclusion == 'success'` — nunca trigger direto em push |
-| Branches permitidas | `uat` → `cd-portainer-uat.yml`, `main` → `cd-portainer-prd.yml`. Nenhum outro branch dispara CD |
-| Runner | Self-hosted on-prem: UAT usa `[self-hosted, onprem, uat]`, PRD usa `[self-hosted, onprem, prd]` — não GitHub-hosted |
-| Ordem de deploy | API primeiro (`skip_deploy: true` = build+push sem webhook), depois Web (dispara webhook que atualiza a stack inteira) |
-| Reusable workflows | Usar workflows do org repo (`masterboiteam/.github`) para padronizar build/push/webhook |
-| Image tags | UAT: `uat-{sha}` + `uat-latest`. PRD: `{sha}` + `latest`. Nunca misturar tags entre ambientes |
-| Build context | Sempre `.` (raiz do repo) para Dockerfiles em `apps/*/` que precisam de `packages/shared` |
-| Build args públicos | Usar `build_args` do reusable workflow (multiline `KEY=VALUE`) para args não-sensíveis |
-| Build secrets (Web) | `VITE_*` injetadas via `BUILD_SECRETS` como build args do Docker — embutidas no bundle JS em build time |
-| Webhook Portainer | Após push da imagem, o reusable workflow chama o webhook para Portainer redeployar a stack |
-| PRD environment | O reusable `deploy-prd.yml` usa `environment: production` (aprovação manual se configurada no GitHub) |
-| Cleanup automático | Reusable workflows rodam `docker image prune -f` após cada deploy (UAT: 72h, PRD: 168h) |
-
-**Inputs do reusable workflow** (`deploy-uat.yml` / `deploy-prd.yml`):
-
-| Input | Obrigatório | Default | Descrição |
-|---|---|---|---|
-| `app_name` | ✅ | — | Nome da imagem: `{APP_NAME}-api` ou `{APP_NAME}-web` |
-| `registry` | ✅ | — | Endereço do registry: `${{ vars.INTERNAL_REGISTRY }}` |
-| `dockerfile` | ❌ | `Dockerfile` | Caminho do Dockerfile (ex: `apps/api/Dockerfile`) |
-| `build_context` | ❌ | `.` | Contexto do build — sempre `.` em monorepo |
-| `build_args` | ❌ | `''` | Build args públicos (multiline `KEY=VALUE`) |
-| `skip_deploy` | ❌ | `false` | `true` = build+push sem webhook (API na ordem de deploy) |
-
-**Secrets do reusable workflow**:
-
-| Secret | Descrição |
-|---|---|
-| `PORTAINER_WEBHOOK_UAT` / `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer |
-| `BUILD_SECRETS` | Build args sensíveis (ex: `VITE_CLERK_PUBLISHABLE_KEY=...`) |
-
-**Secrets e vars obrigatórias no GitHub**:
-
-| Tipo | Escopo | Nome | Descrição |
-|---|---|---|---|
-| var | organização | `APP_NAME` | Nome do app (prefixo das imagens: `{APP_NAME}-api`, `{APP_NAME}-web`) |
-| var | organização | `INTERNAL_REGISTRY` | Endereço do registry Docker privado |
-| secret | repositório | `SONAR_TOKEN` | Token SonarCloud/SonarQube |
-| secret | repositório | `PORTAINER_WEBHOOK_UAT` | URL do webhook Portainer stack UAT |
-| secret | repositório | `PORTAINER_WEBHOOK_PRD` | URL do webhook Portainer stack PRD |
-| secret | repositório | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (injetada no build do frontend) |
-
-**Nota**: `APP_NAME` e `INTERNAL_REGISTRY` são vars da **organização** — disponíveis em todos os repos sem configuração por repo.
-
-**Segurança em workflows**: nunca interpolar `${{ github.event.* }}` diretamente em `run:` (command injection). Usar `env:` + variável shell. Ver regra 35.
-
-Scripts obrigatórios no root `package.json`:
-- `lint` → `bunx biome check .`
-- `typecheck` → `bun run --filter='*' typecheck`
-- `test` → `bun test`
-- `test:coverage` → `bun test --coverage` (usado no CI)
-- `build` → build de cada app
-- `dev` → dev de cada app com HMR
-- `db:generate` → `drizzle-kit generate`
-- `db:migrate` → `drizzle-kit migrate`
-
-### Loop de autocorreção pós-push (obrigatório)
-
-Após cada push, verificar GitHub Actions. Máximo **7 tentativas** até CI verde.
-
-1. Push → aguardar CI
-2. Passou → concluído (CD dispara automaticamente via `workflow_run`)
-3. Falhou → identificar step quebrado → logar `step → causa → correção` → fix → push
-4. Repetir até verde ou 7 tentativas
-5. Se 7 tentativas: parar, reportar resumo das tentativas + erro persistente + próximos passos
-
-Nunca considerar tarefa finalizada com CI vermelho. CD bloqueado automaticamente quando CI falha.
-
-### Rollback (Portainer)
-
-Se um deploy quebrar produção:
-
-1. Identificar SHA anterior: GitHub Actions history do CD ou `docker images` no registry
-2. No Portainer, editar a stack PRD e trocar tag `latest` pelo SHA anterior:
-   - `${REGISTRY}/${APP_NAME}-api:latest` → `${REGISTRY}/${APP_NAME}-api:{sha}`
-   - `${REGISTRY}/${APP_NAME}-web:latest` → `${REGISTRY}/${APP_NAME}-web:{sha}`
-3. Portainer faz pull e reinicia (ou acionar webhook manualmente se necessário)
-4. Após estabilizar: criar `hotfix/` branch, corrigir, seguir fluxo normal `uat` → `main`
-
-> Tags SHA ficam no registry por 168h em PRD e 72h em UAT (cleanup automático do CD).
-> UAT: mesma lógica com tag `uat-latest` → `uat-{sha}`.
+Pipeline: `install → biome → typecheck → test:coverage → osv-scanner → SonarQube → build`. **Timeout máximo de 15 minutos por job** (`timeout-minutes: 15`) — padrão da org, obrigatório em qualquer pipeline (CI, CD, jobs reutilizáveis). Sem isso, GitHub aplica default de 360 min e job travado queima runner-minutes da org. Loop de autocorreção pós-push: máximo 7 tentativas até CI verde — após esgotar, parar e reportar o último erro ao usuário (nunca forçar merge com CI vermelho). YAML, scripts obrigatórios e loop completo: `docs/ci-github-actions.md`.
 
 ## Planejamento
 
-Projeto novo → seguir `start_project.md`. Feature nova ou dependência desconhecida → consultar context7 MCP para documentação de API/sintaxe (ou docs oficiais). Para versão latest de pacotes, usar `bun info <pacote>` (requer `package.json` no diretório — se falhar, usar `npm view <pacote> version` como fallback) — context7 não é confiável como fonte de versão. Nunca assumir APIs, subpaths ou compatibilidade de versão de memória — sempre verificar.
+Projeto novo → seguir `START_PROJECT.md`. Feature nova ou dependência desconhecida → consultar context7 MCP para documentação de API/sintaxe (ou docs oficiais). Para versão latest de pacotes, usar `bun info <pacote>` — context7 não é confiável como fonte de versão. Nunca assumir APIs, subpaths ou compatibilidade de versão de memória — sempre verificar.
+
+## Skills disponíveis
+
+Skills user-invocáveis em `.claude/skills/` automatizam fluxos críticos do template:
+
+| Skill | Trigger | Cobre |
+|---|---|---|
+| `master-prd` | "criar PRD", "novo produto" | Entrevista guiada para gerar PRD |
+| `master-plan` | "plano", "fasear PRD" | Quebra PRD em fases verticais |
+| `master-fase` | "implementar fase N" | Executa próxima fase do plano até gate verde |
+| `master-schema` | "criar tabela", "alterar schema" | Drizzle pgTable + Zod + migration com validação de nullability/imports |
+| `master-deploy` | "configurar deploy", "primeiro deploy" | Gera railway.toml ou docker-compose prod (sempre pergunta target — regra 32) |
+| `master-security-review` | "review de segurança", "auditar endpoint" | Checklist 9 itens por endpoint Hono com relatório arquivo:linha |
+| `master-ci-fix` | "CI quebrou" | Loop de autocorreção até CI verde (máx 7 tentativas) |
 
 ## Regras para IA
 
-1. Todo tipo/schema novo nasce em `packages/shared` — nunca redefinir
-2. **Imports monorepo**: apps importam de `@projeto/shared`, nunca codigo runtime entre si. Unica excecao: `import type` do AppType (ver seção "Monorepo Architecture")
-3. Componentes UI → shadcn/ui. Nunca criar do zero se existe equivalente
-4. Data fetching → TanStack Query + Hono RPC client tipado (`hc<AppType>`). Nunca fetch manual solto
-5. DB changes → migration Drizzle (`bun run db:generate && bun run db:migrate`)
-6. Estilos → Tailwind classes. Nunca CSS inline ou arquivos .css avulsos
-7. Informar contexto de workspace ao modificar (`apps/web`, `apps/api`, `packages/shared`)
-8. Priorizar economia de recursos: evitar dependências pesadas, preferir libs leves
-9. Dockerfile sempre multi-stage. Imagem final sem devDeps
-10. Compose para Portainer: seguir tabela de regras em "Deploy: dois targets"
-11. **Versões alinhadas**: pacotes do mesmo ecossistema (`@clerk/*`, `@tanstack/*`, `@hono/*`) devem usar a mesma major. Verificar compatibilidade antes de instalar/atualizar
-12. **Nunca `sql.raw()` com input externo** — usar placeholders parametrizados. Em `sql` tagged templates, converter `Date` com `.toISOString()` antes de interpolar
-13. **API response format**: seguir rigorosamente a seção "API response format". Nunca retornar sem envelope `{ data }`
-14. Commits seguem Conventional Commits. Branches seguem o padrão `feat/`/`fix/`/`chore/`
-15. **Storage sempre via S3 SDK** (`@aws-sdk/client-s3` + `S3_ENDPOINT` env var). Nunca salvar uploads no filesystem local em prod. **Em dev**: MinIO roda como container local no compose (service `minio`) — credenciais via `.env`, nunca hardcoded. **Em UAT/PRD**: MinIO é serviço externo centralizado — conexão via env vars do Portainer, nunca container no compose de produção
-16. **Projeto novo**: se o repositório não contém `apps/` ou `packages/shared/`, considerar projeto novo. Ler e executar `start_project.md` **antes de qualquer outra ação**
-17. **Nullable fields**: colunas Drizzle sem `.notNull()` produzem `T | null` no TypeScript. Frontend **deve** tratar nulls explicitamente (ex: `user.firstName || ""`, `user.avatarUrl ?? undefined`)
-18. **shadcn/ui — verificar antes de usar**: conferir o código real em `src/components/ui/<componente>.tsx` antes de passar props. Variantes não-padrão não existem — usar `className`
-19. **Contrato API-Frontend**: antes de construir o frontend, verificar responses reais da API (via curl ou tests). Nunca inventar campos ou assumir transformações. Ver seção "API response format"
-20. **Tooling version sync**: após instalar/atualizar Biome (agora 2.x), rodar `bunx biome migrate --write`. Nunca hardcodar versão do schema sem verificar
-21. **Clerk condicional**: nunca `clerkMiddleware()` sem checar `CLERK_SECRET_KEY`. `getAuth(c)` é síncrono no Hono. Ver seção "Auth middleware"
-22. **CI verde obrigatório**: ver seção "Loop de autocorreção pós-push". Nunca considerar tarefa concluída com CI vermelho
-23. **Tailwind v4 CSS-first**: não criar `tailwind.config.js` — usar `@import "tailwindcss"` + `@theme { }` no CSS e `@tailwindcss/vite` plugin no Vite. Ver seção "Tailwind CSS v4"
-24. **React Router v7 — pacote unificado**: instalar `react-router` (não `react-router-dom`, que foi descontinuado)
-25. **Zustand v5 — named exports**: usar `import { create } from 'zustand'` (default export removido no v5)
-26. **Zod v4 + Drizzle**: dois cenários conforme a versão do drizzle-orm: **Stable (0.45.x)**: usar pacote `drizzle-zod` (v0.8.3+, já suporta Zod v4 nativamente) — `import { createInsertSchema, createSelectSchema } from 'drizzle-zod'`. **Beta (≥1.0.0-beta.15)**: usar `drizzle-orm/zod` integrado (standalone `drizzle-zod` deprecated nesta versão) — `import { createInsertSchema, createSelectSchema } from 'drizzle-orm/zod'`. Com React Hook Form: usar `z.input<typeof schema>` no useForm (não `z.infer`)
-27. **Vite 8 (Rolldown)**: `build.rollupOptions` substituído por `build.rolldownOptions` (auto-conversão existe para backward compat, mas usar `rolldownOptions` em projetos novos). `resolve.tsconfigPaths: true` elimina `vite-tsconfig-paths`. Node ≥20.19 ou ≥22.12 (21.x e 22.0-22.11 não suportados)
-28. **Drizzle config**: `defineConfig` de `drizzle-kit`. Comandos: `generate`, `migrate`, `push`, `pull`, `check`, `up`, `studio`
-29. **Hono validator + Zod v4**: preferir `@hono/standard-validator` (`sValidator`) — suporta qualquer lib via Standard Schema (Zod, Valibot, ArkType). `@hono/zod-validator` funciona com Zod v4 desde v0.7.6+, mas `standard-validator` é mais genérico e futuro-proof
-30. **Biome 2.x**: `include`/`ignore` → `includes`. Suppression: `// biome-ignore lint/group/rule:` (com `/`, não `()`)
-31. **shadcn/ui Radix unificado** (fev 2026): pacote `radix-ui` substitui `@radix-ui/react-*`. Verificar com `bunx shadcn@latest diff`
-32. **Verificar antes de afirmar inexistência**: antes de dizer que um pacote, subpath, API ou feature não existe em determinada versão, **verificar** usando context7 MCP (para documentação de API/sintaxe — não confiar em versões reportadas), `bun info <pacote>` (para versão latest real), docs oficiais ou `node_modules/<pacote>/package.json` (campo `exports`). Nunca migrar para versão beta, deprecated ou alternativa sem confirmar com o usuário primeiro. Se a verificação falhar (ex: subpath não exportado), informar o resultado exato e perguntar como proceder
-33. **Instalar pacotes com `bun add`, nunca escrever versões manualmente**: ao adicionar dependências, usar `bun add <pacote>` (resolve a latest automaticamente). **Nunca** editar `package.json` à mão com versões inventadas (ex: `"^0.3.0"` quando a latest é `0.2.x`). Se precisar de versão específica: `bun add <pacote>@<versão>` — e verificar que a versão existe antes via `bun info <pacote>`
-34. **Diagnosticar antes de corrigir**: ao encontrar um erro de build/typecheck/runtime, **ler o arquivo e a linha exata do erro** antes de tentar qualquer fix. Rastrear a cadeia de tipos/imports até a causa raiz. Nunca adivinhar a causa pelo texto do erro e mexer em arquivos não relacionados (ex: erro de tipo `unknown` no RPC client → ler o arquivo do hook e o setup do client, não mexer em `tsconfig.json` ou `vite-env.d.ts`)
-35. **GitHub Actions — segurança obrigatória**: nunca usar input não-confiável (`github.event.issue.title`, `github.event.pull_request.body`, `github.event.comment.body`, commit messages) diretamente em `run:`. Passar via `env:` com quoting. Padrão seguro: `env: TITLE: ${{ github.event.issue.title }}` → `run: echo "$TITLE"`. Ref: https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
-36. **Context7 MCP — escopo de confiança**: context7 é confiável para documentação de API, sintaxe, exemplos de uso e breaking changes. **Não é confiável para versão latest** de pacotes — pode reportar versões defasadas. Para verificar versão atual: `bun info <pacote>` (requer `package.json` no diretório; fallback: `npm view <pacote> version`). Para documentação/como usar: context7 MCP. Para fallback de ambos: docs oficiais via web
-37. **CD nunca roda direto em push** — sempre via `workflow_run` após CI verde. Guard obrigatório: `if: github.event.workflow_run.conclusion == 'success'`. CD sem este guard é deploy cego
-38. **CD só em `uat` e `main`** — `cd-uat.yml` escuta branch `uat`, `cd-prd.yml` escuta branch `main`. Nenhum outro branch dispara CD
-39. **Deploy order**: API primeiro com `skip_deploy: true` (build+push sem webhook), depois Web (dispara webhook que atualiza a stack). Nunca inverter — frontend pode depender da nova API
-40. **Image tags por ambiente**: UAT usa `uat-latest`, PRD usa `latest`. Nunca misturar tags entre ambientes
-41. **Build secrets do frontend**: `VITE_*` são variáveis de build (embutidas no bundle pelo Vite). Passar via `BUILD_SECRETS` no CD, não como env var runtime. nginx não tem acesso a env vars
-42. **Três compose files**: `docker-compose.yml` (dev, build local), `docker-compose-uat.yml` (imagens do registry com tag `uat-latest`), `docker-compose-prd.yml` (imagens do registry com tag `latest`). UAT/PRD nunca fazem build local
-43. **nginx reverse proxy**: Web em UAT/PRD usa nginx. `VITE_API_URL` deve ser `""` (vazio) — frontend faz requests same-origin, nginx roteia `/api/*` para o container `api`. Criar `apps/web/nginx.conf`
-44. **Compose UAT/PRD: nunca `.env` file** — Portainer Stacks não processam arquivos `.env`, quebrando o deploy. Compose de UAT e PRD devem usar `${VARIAVEL}` com valores configurados na UI do Portainer. `.env` é permitido apenas no compose de dev local
-45. **Service backup obrigatório** em todos os compose files (dev, UAT, PRD). Imagem: `${REGISTRY}/backup-postgres:latest`. Em dev, MinIO roda como container local (service `minio`). Em UAT/PRD, MinIO é serviço externo via env vars do Portainer. Nunca hardcodar credenciais nos compose files — usar sempre `${VARIAVEL}` com valores definidos no `.env` (dev) ou Portainer UI (UAT/PRD)
-46. **Credenciais nunca hardcoded** em compose files. Mesmo em dev, usar `${MINIO_ROOT_USER}`, `${MINIO_ROOT_PASSWORD}`, etc. com valores no `.env`. O `.env.example` deve listar todas as variáveis com valores de exemplo
+1. **Schemas compartilhados**: todo tipo/schema novo nasce em `packages/shared` — nunca redefinir
+2. **Imports monorepo**: apps importam de `@projeto/shared`, nunca código runtime entre si. Única exceção: `import type` do `AppType` (ver `docs/monorepo-setup.md`)
+3. **UI components**: shadcn/ui sempre. Nunca criar do zero se existe equivalente
+4. **Data fetching**: TanStack Query + Hono RPC client tipado (`hc<AppType>`). Nunca fetch manual solto
+5. **DB changes**: migration Drizzle (`bun run db:generate && bun run db:migrate`)
+6. **Estilos**: Tailwind classes. Nunca CSS inline ou arquivos `.css` **de componente** avulsos. O CSS global de entrada (`apps/web/src/index.css`) com `@import "tailwindcss"` + `@theme {}` é exigido pelo Tailwind v4 — ver `docs/tailwind-v4.md`
+7. **Contexto de workspace**: informar qual workspace foi modificado (`apps/web`, `apps/api`, `packages/shared`)
+8. **Economia de recursos**: antes de adicionar lib nova, verificar se já existe solução na stack atual (ex: não instalar axios — usar `hono/client`). Preferir imports pontuais a pacotes inteiros quando possível. Meta: ≤256MB RAM por container (ver Resource efficiency acima)
+9. **Dockerfile**: sempre multi-stage. Imagem final sem devDeps
+10. **Versões alinhadas**: pacotes do mesmo ecossistema (`@clerk/*`, `@tanstack/*`, `@hono/*`) devem usar a mesma major. Verificar antes de instalar
+11. **SQL injection**: nunca `sql.raw()` com input externo — usar placeholders parametrizados. Converter `Date` com `.toISOString()` antes de interpolar em tagged templates
+12. **API response**: envelope `{ data }` ou `{ error, code, details }` — ver `docs/api-response.md`
+13. **Commits e branches**: Conventional Commits + branches `feat/`/`fix/`/`chore/` — ver Git workflow acima
+14. **Storage**: sempre via S3 SDK (`@aws-sdk/client-s3` + `S3_ENDPOINT`). Nunca filesystem local em prod
+15. **Projeto novo**: se o repo não contém `apps/` ou `packages/shared/`, abrir `START_PROJECT.md` e seguir todas as fases em sequência (0–8). Aprovação obrigatória do usuário na Fase 1 (plano + deploy target) **antes de criar qualquer arquivo**
+16. **Nullable fields**: colunas Drizzle sem `.notNull()` produzem `T | null`. Frontend **deve** tratar nulls (`user.firstName || ""`, `user.avatarUrl ?? undefined`)
+17. **shadcn/ui — verificar antes de usar**: conferir `src/components/ui/<componente>.tsx` antes de passar props. Variantes não-padrão não existem — usar `className`
+18. **Contrato API-Frontend**: verificar responses reais da API (curl ou tests) antes de construir o frontend. Nunca inventar campos. Ver `docs/api-response.md`
+19. **Biome 2.x**: `includes` (não `include`/`ignore`), suppression `// biome-ignore lint/group/rule:` com `/`. Rodar `bunx biome migrate --write` uma vez ao instalar Biome em projeto novo (Fase 5) ou ao atualizar de Biome 1.x para 2.x. **Linter Domains**: adicionar `"linter": { "domains": { "react": "all" } }` no `biome.json` — sem isso, regras de React não são ativadas automaticamente no 2.x. Detalhes: `docs/version-matrix.md`
+20. **Clerk condicional + Core 3**: nunca `clerkMiddleware()` sem checar `CLERK_SECRET_KEY`. `getAuth(c)` síncrono. **Core 3 (v6+)**: `<SignedIn>`/`<SignedOut>`/`<Protect>` deprecated → usar `<Show when="signed-in">`. `@clerk/types` deprecated → importar de `@clerk/react/types`. `getToken()` lança `ClerkOfflineError` (de `@clerk/react/errors`). Ver `docs/auth-clerk.md`
+21. **CI verde obrigatório**: loop de autocorreção até 7 tentativas. Ver `docs/ci-github-actions.md`. Nunca concluir com CI vermelho
+22. **React Router v7**: instalar `react-router` (não `react-router-dom` — deprecated/unificado no v7, ainda funciona como re-export mas projetos novos usam `react-router` diretamente)
+23. **Zustand v5**: `import { create } from 'zustand'` (default export removido)
+24. **Zod v4 + Drizzle**: schemas em `packages/shared` como fonte única. Padrão do template: **Drizzle stable (0.45.x)** — usar `drizzle-zod` (v0.8.3+). Migração para beta só com aprovação explícita do usuário. **Com `react-hook-form`**: usar `z.input<typeof schema>` no `useForm` (não `z.infer`) — Zod v4 tornou `input` e `output` distintos. Ver `docs/version-matrix.md`
+25. **Vite 8 (Rolldown)**: usar `build.rolldownOptions`. Node ≥22.12 ou ≥24.x (Node 20 EOL abr/2026). Detalhes: `docs/version-matrix.md`
+26. **Drizzle**: `defineConfig` de `drizzle-kit`. Campo `out: "apps/api/src/db/migrations"` obrigatório no `drizzle.config.ts` — sem ele, migrations vão para `./drizzle` na raiz e os scripts `db:migrate` não encontram os arquivos. Comandos: `generate`, `migrate`, `push`, `pull`, `check`, `up`, `studio`
+27. **Hono validator**: preferir `@hono/standard-validator` (`sValidator`) sobre `@hono/zod-validator`. Ver `docs/version-matrix.md`
+28. **shadcn/ui Radix unificado**: pacote `radix-ui` substitui `@radix-ui/react-*` **no estilo `new-york`**. O estilo `default` ainda usa os pacotes individuais. Migrar projeto inteiro: `bunx shadcn@latest migrate radix`. Componente avulso: `bunx shadcn@latest add <componente> --overwrite`
+29. **Pacotes**: instalar via `bun add <pacote>` ou `bun add <pacote>@<versão>` — nunca versão manual no `package.json`. Latest real via `bun info` (context7 não é confiável para versão, apenas para docs/API/sintaxe). Nunca migrar para beta/deprecated sem confirmar
+30. **Bug fix**: ler arquivo e linha do erro antes de qualquer fix. Nunca adivinhar pela mensagem
+31. **GitHub Actions — segurança**: nunca interpolar `${{ github.event.* }}` em `run:`. Passar via `env:` + variável shell. Ver [workflow injections](https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/) e `docs/ci-github-actions.md`.
+32. **Deploy target**: nunca assumir Railway ou Portainer. Se o usuário não informou, perguntar antes de gerar `docker-compose.yml`, `railway.toml`, Dockerfile de prod ou qualquer config de infra. Ver `docs/deploy-railway.md` e `docs/deploy-portainer.md`
+33. **CI timeout obrigatório**: todo job de qualquer workflow GitHub Actions criado neste repo (CI, CD, manuais, reutilizáveis) deve declarar `timeout-minutes: 15` por job — teto da org. Sem isso, GitHub aplica default de 360 min e um job travado consome runner-minutes da org até o limite. Aumentar acima de 15 só com justificativa documentada no PR. Ver `docs/ci-github-actions.md`

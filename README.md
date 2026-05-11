@@ -1,9 +1,9 @@
 # template-fullstack
 
 > Workflow SDD/TDD com Claude Code para projetos fullstack TypeScript.
-> Versão: **v2.2.1** · [Changelog](CHANGELOG.md)
+> Versão: **v2.3.0** · [Changelog](CHANGELOG.md)
 
-**Stack**: Monorepo TypeScript · Bun ≥1.3 · Hono · React 19 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui · Clerk
+**Stack**: Monorepo TypeScript · Bun ≥1.3 · Hono ≥4.12.14 · React 19.2 · TanStack Query v5 · Zustand v5 · Drizzle ORM · PostgreSQL · Tailwind CSS v4 · shadcn/ui · Clerk Core 3 · Node ≥22.12
 
 **Plugins**: [Superpowers](https://github.com/obra/superpowers) · [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
 
@@ -13,6 +13,7 @@
 
 Um template que transforma o Claude Code em um orquestrador de desenvolvimento disciplinado:
 
+- **Kit Empresa (camada imutável)**: 7 skills `master-*` (PRD, plan, fase, schema, deploy, security review, CI fix), `claude-stacks.md`, `start_project.md` e ~33 guias técnicos em `docs/` sincronizados via GitHub Action corporativa (allowlist). Em conflito, kit prevalece; sistema pt-BR (commands, agentes, skills locais) costura sobre o kit e é preservado integralmente. Hierarquia no `CLAUDE.md`: **Usuário > Kit Empresa > Superpowers > `.claude/commands/` > template**
 - **SDD** (Spec-Driven Development): contratos aprovados antes de qualquer código
 - **TDD enforced**: testes antes da implementação, cobertura ≥ 95% por módulo
 - **11 agentes especializados** não-órfãos: cada camada tem seu agente (API, frontend, banco, DevOps, QA, Security, PM…) com caminho de invocação explícito
@@ -543,6 +544,7 @@ check-spec-coverage.sh       ← Valida cenários de spec → testes
 
 ## Changelog resumido
 
+- **v2.3.0** (2026-05-11) — Adoção formal do **Kit Empresa** via GitHub Action allowlist. 7 skills `master-*` (PRD/plan/fase/schema/deploy/security review/CI fix) + ~33 guias técnicos em `docs/` + `claude-stacks.md` e `start_project.md` sincronizados como camada imutável. Hierarquia explícita no `CLAUDE.md` (Usuário > Kit Empresa > Superpowers > template). `/new-project` e fluxos de plano apontam para `master-prd` / `master-plan` (substituem skills locais `novo-prd` / `prd-planejamento`, removidas). Sistema pt-BR preservado; fallback documentado para projetos sem Action rodada.
 - **v2.2.1** (2026-04-30) — Core Principles e heurísticas de qualidade. Bloco `🧭 PRINCÍPIOS GERAIS` (Simplicity First / No Laziness / Minimal Impact) adicionado no topo do `CLAUDE.md`. Pergunta-gatilho *"Would a staff engineer approve this?"* reforçada na linha de `verification-before-completion`. Novo `Passo 0 — Critério de entrada` em `/refactor` com a pergunta *"Knowing everything I know now, what would I implement?"* (decide prosseguir / abortar / virar feature). Mudanças derivadas de avaliação comparativa contra protocolo externo de orquestração.
 - **v2.2.0** (2026-04-30) — Agente `tech-lead`: intermediário independente entre orquestrador e especialistas. Resolve causa raiz antes de implementar (ANALYZE), cria task brief com critérios de aceite explícitos (BRIEF), delega ao agente correto (DELEGATE) e valida sem conflito de interesse com back-delegation até 2x (VALIDATE). Integrado em `/bug` Passo 4.5 e `/feature` Passo 4. `global-files.sh` e `adopt-workflow.ps1` atualizados.
 - **v2.1.0** (2026-04-27) — Five-response selector: protocolo obrigatório de resposta com 5 candidatos avaliados por fórmula ponderada; skill local em `.claude/skills/five-response-selector/`; CLAUDE.md atualizado com seção `🎯 PROTOCOLO DE RESPOSTA`.

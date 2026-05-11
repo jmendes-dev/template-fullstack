@@ -5,6 +5,43 @@ Formato: [Semver](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.3.0] — 2026-05-11
+
+### Adoção formal do Kit Empresa (camada imutável via GitHub Action)
+
+- **GitHub Action corporativa (allowlist)** sincroniza arquivos do kit oficial mantido pela organização. Em conflito, kit prevalece — não editar localmente.
+- **7 skills `master-*` (oficiais)** instaladas em `.claude/skills/`:
+  - `master-prd` — entrevista guiada para gerar PRD (substitui skill local `novo-prd`, removida)
+  - `master-plan` — quebra PRD em fases verticais com fatias entregáveis (substitui `prd-planejamento`, removida)
+  - `master-fase` — executa próxima fase pendente até gate verde
+  - `master-schema` — Drizzle pgTable + Zod + migration com validação de nullability/imports
+  - `master-deploy` — gera `railway.toml` ou `docker-compose.yml` de produção (sempre pergunta target — regra 32)
+  - `master-security-review` — checklist 9 itens por endpoint Hono com relatório arquivo:linha + correção mínima
+  - `master-ci-fix` — loop de autocorreção pós-push (máx 7 tentativas) até CI verde
+- **`claude-stacks.md` e `start_project.md`** atualizados como fonte de verdade do kit (regras técnicas + gates de projeto novo). `claude-stacks.md` agora abre com bloco `Diretrizes comportamentais` (Pensar antes de codar, Simplicidade primeiro, Mudanças cirúrgicas, Execução dirigida por objetivo) com precedência sobre regras técnicas.
+- **~33 guias técnicos** em `docs/` cobrem domínios específicos: `auth-clerk.md`, `deploy-railway.md`, `deploy-portainer.md`, `observability.md`, `security-headers.md`, `rate-limiting.md`, `backup-restore.md`, `secrets-rotation.md`, `error-boundaries.md`, `background-jobs.md`, `data-migrations.md`, `i18n.md`, `feature-flags.md`, `email-resend.md`, `openapi.md`, `tailwind-v4.md`, `tanstack-query.md`, `api-response.md`, `env-vars.md`, `bun-notes.md`, `monorepo-setup.md`, `storage-s3.md`, `docker-dev.md`, `github-setup.md`, `testing.md`, `ci-github-actions.md`, `version-matrix.md`, `tech-stack.md`, entre outros.
+
+### Hierarquia explícita no `CLAUDE.md`
+
+`Usuário > Kit Empresa (claude-stacks.md, start_project.md, master-* skills, docs/<empresa>) > Superpowers skills > .claude/commands/ > claude-sdd.md > DESIGN.md > claude-stacks-refactor.md`
+
+### Atualizações de orquestração
+
+- **`/new-project`** Passo 2 aponta para `master-plan` (kit empresa) ao invés da skill local `prd-planejamento` removida.
+- **`/triage`** ganha gatilho explícito de CI vermelho (roteia para `master-ci-fix`) e desambigua "continuar plano" (`master-fase`) vs "continuar backlog" (`/continue`).
+- **`/feature`** Passo 5.2 (Security review) clarifica localização esperada do relatório `master-security-review`.
+- **`CLAUDE.md`** ganha seções `🚫 PROIBIÇÕES`, `🔁 OWNERSHIP DE ETAPAS` (commands vs skills) e fallback documentado para projetos novos sem Action rodada (usar `superpowers:writing-plans` no lugar de `master-plan` até próxima sincronização).
+
+### Sistema pt-BR preservado
+
+Toda a camada do template (`.claude/commands/*.md`, agentes em `.claude/agents/`, skills locais como `five-response-selector`, hooks, scripts) continua em português brasileiro. O kit empresa é tratado como camada **complementar** — não substitui o orquestrador pt-BR.
+
+### Backfill de versões intermediárias (consolidação)
+
+Entradas 2.1.0, 2.2.0 e 2.2.1 estão documentadas no `README.md` (seção "Changelog resumido") e refletidas no `CLAUDE.md`. Versionamento agora alinhado: `TEMPLATE_VERSION` = 2.3.0, README header = 2.3.0, este changelog = 2.3.0.
+
+---
+
 ## [2.0.0] — 2026-04-24
 
 ### Mudanças estruturais (4 ondas de remediação baseadas em diagnóstico de uso real)
